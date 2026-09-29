@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGame } from '../game/store';
+import { DAY_HARD_END, useGame } from '../game/store';
 import { DAILY_LIVING_COST } from '../game/balance';
 import { callTimeQuality, formatClock, isBusinessHours, weekday } from '../game/time';
 import { AnimatedNumber, money } from './components/AnimatedNumber';
@@ -7,7 +7,7 @@ import { Button } from './components/Button';
 import { Modal } from './components/Modal';
 
 export function TopBar() {
-  const { day, minute, money: cash, activeCall, endDay } = useGame();
+  const { day, minute, money: cash, activeCall, endDay, wait } = useGame();
   const [confirming, setConfirming] = useState(false);
   const open = isBusinessHours(day, minute);
   const quality = callTimeQuality(day, minute);
@@ -40,6 +40,9 @@ export function TopBar() {
         </div>
         <div className="small faint hide-sm">Bank balance</div>
       </div>
+      <Button className="hide-sm" disabled={midCall || minute >= DAY_HARD_END} onClick={() => wait(60)} title="Let an hour pass">
+        Wait 1 hr
+      </Button>
       <Button variant="primary" disabled={midCall} onClick={() => (open ? setConfirming(true) : endDay())}>
         End day
       </Button>

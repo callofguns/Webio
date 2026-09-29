@@ -2,13 +2,13 @@ import type { ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { spring } from '../motion';
 
-export function Modal({ open, children }: { open: boolean; children: ReactNode }) {
+export function Modal({ open, wide, children }: { open: boolean; wide?: boolean; children: ReactNode }) {
   return (
     <AnimatePresence>
       {open && (
         <motion.div className="overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div
-            className="modal"
+            className={`modal ${wide ? 'wide' : ''}`}
             role="dialog"
             aria-modal
             initial={{ opacity: 0, scale: 0.94, y: 12 }}

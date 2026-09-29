@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Business, DayStats, GameState, LogEntry, SkillId } from './types';
+import type { Business, DayStats, Deal, GameState, LogEntry, Project, Quote, SkillId } from './types';
 import {
   DAILY_LIVING_COST,
   DIRECTORY_SEARCH_MINUTES,
@@ -20,10 +20,20 @@ import {
 } from './balance';
 import { generateBusinesses } from './businesses';
 import { chooseOption, startCall, type CallContext, type CallState } from './calls';
+import {
+  createDeal,
+  DAY_MINUTES,
+  endOfDayDeal,
+  QUOTE_MINUTES,
+  sendQuote as sendQuoteToClient,
+  sendText as sendTextToClient,
+  toGameTime,
+  type TextContext,
+} from './deals';
 import { chance, pick, uid } from './rng';
 import { formatHour, isBusinessHours } from './time';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 /** After this time you're too tired to keep working. */
 export const DAY_HARD_END = 22 * 60;
 
@@ -44,6 +54,8 @@ function newGameState(): GameState {
       development: { level: 1, xp: 0 },
     },
     businesses: generateBusinesses(START_BUSINESSES),
+    deals: [],
+    projects: [],
     log: [],
     today: emptyStats(),
     lifetime: emptyStats(),
@@ -70,6 +82,11 @@ interface Store extends GameState {
   beginCall: (bizId: string) => void;
   choose: (choiceId: string) => void;
   closeCall: () => void;
+  sendText: (dealId: string, choiceId: string) => void;
+  sendQuote: (dealId: string, quote: Quote) => void;
+  markRead: (dealId: string) => void;
+  /** Let time pass, e.g. while waiting for a reply. */
+  wait: (minutes: number) => void;
   endDay: () => void;
   dismissSummary: () => void;
 }
@@ -78,7 +95,8 @@ interface Store extends GameState {
 export function callBlocker(biz: Business, day: number, minute: number): string | null {
   if (!isBusinessHours(day, minute)) return 'Businesses are closed';
   if (biz.status === 'do_not_call') return 'Asked you not to call';
-  if (biz.status === 'interested') return 'Already interested';
+  if (biz.status === 'interested') return 'You’re texting them';
+  if (biz.status === 'client') return 'Already a client';
   if (biz.cooldownUntil !== null && day < biz.cooldownUntil) return `Said no — wait until day ${biz.cooldownUntil}`;
   const hasCallbackToday = biz.callback?.day === day;
   if (biz.lastCalledDay === day && !hasCallbackToday) return 'Already called today';
@@ -115,7 +133,71 @@ export const useGame = create<Store>()(
         });
       };
 
-      const spendTime = (minutes: number) => set({ minute: Math.min(get().minute + minutes, 24 * 60 - 1) });
+      const now = () => toGameTime(get().day, get().minute);
+
+      /** Applies deals whose final reply has now arrived: pays deposits, creates projects. */
+      const settleDeals = () => {
+        const t = now();
+        const ready = get().deals.filter((d) => !d.settled && d.closedAt !== null && d.closedAt <= t);
+        for (const deal of ready) {
+          const biz = get().businesses.find((b) => b.id === deal.businessId)!;
+          if (deal.stage === 'won' && deal.quote && deal.agreedPrice !== null) {
+            const deposit = Math.round((deal.agreedPrice * deal.quote.depositPct) / 100);
+            const project: Project = {
+              id: uid('proj'),
+              businessId: biz.id,
+              dealId: deal.id,
+              pages: deal.quote.pages,
+              features: deal.quote.features,
+              price: deal.agreedPrice,
+              depositPaid: deposit,
+              signedDay: get().day,
+              dueDay: get().day + deal.quote.days,
+              hasContent: deal.needs.hasContent,
+              status: 'not_started',
+            };
+            const s = get();
+            set({
+              money: s.money + deposit,
+              today: { ...s.today, moneyIn: s.today.moneyIn + deposit },
+              projects: [...s.projects, project],
+            });
+            updateBiz(biz.id, { status: 'client' });
+            addXp('sales', 25);
+            log(
+              `Contract signed with ${biz.name} for $${deal.agreedPrice.toLocaleString()}!${deposit ? ` $${deposit.toLocaleString()} deposit received.` : ''}`,
+              'good',
+            );
+          } else {
+            updateBiz(biz.id, { status: 'not_interested', cooldownUntil: get().day + 30 });
+            log(`${biz.name} decided not to go ahead.`, 'bad');
+          }
+          set({ deals: get().deals.map((d) => (d.id === deal.id ? { ...d, settled: true } : d)) });
+        }
+      };
+
+      const spendTime = (minutes: number) => {
+        set({ minute: Math.min(get().minute + minutes, 24 * 60 - 1) });
+        settleDeals();
+      };
+
+      const textContext = (): TextContext => {
+        const s = get();
+        return {
+          now: now(),
+          playerName: s.profile?.playerName ?? 'Alex',
+          agencyName: s.profile?.agencyName ?? 'my agency',
+          reputation: s.reputation,
+          devLevel: s.skills.development.level,
+        };
+      };
+
+      const updateDeal = (id: string, fn: (d: Deal, biz: Business) => Deal) => {
+        const s = get();
+        set({
+          deals: s.deals.map((d) => (d.id === id ? fn(d, s.businesses.find((b) => b.id === d.businessId)!) : d)),
+        });
+      };
 
       const callContext = (): CallContext => {
         const s = get();
@@ -156,7 +238,8 @@ export const useGame = create<Store>()(
         switch (call.outcome) {
           case 'interested':
             updateBiz(biz.id, { ...base, status: 'interested', warmth: call.interest, callback: null });
-            log(`${biz.name} is interested! They’re waiting for your text.`, 'good');
+            set({ deals: [...get().deals, createDeal(biz, call.interest, now())] });
+            log(`${biz.name} is interested! Text them from Messages.`, 'good');
             break;
           case 'callback':
             updateBiz(biz.id, { ...base, status: 'callback', callback: call.callback });
@@ -253,6 +336,38 @@ export const useGame = create<Store>()(
           set({ activeCall: null });
         },
 
+        sendText: (dealId, choiceId) => {
+          const s = get();
+          if (s.activeCall && s.activeCall.phase !== 'ended') return;
+          if (s.minute + 3 > DAY_HARD_END) return;
+          const before = s.deals.find((d) => d.id === dealId);
+          updateDeal(dealId, (d, biz) => sendTextToClient(d, biz, choiceId, textContext()));
+          if (get().deals.find((d) => d.id === dealId) !== before) spendTime(3);
+        },
+
+        sendQuote: (dealId, quote) => {
+          const s = get();
+          if (s.activeCall && s.activeCall.phase !== 'ended') return;
+          if (s.minute + QUOTE_MINUTES > DAY_HARD_END) return;
+          const before = s.deals.find((d) => d.id === dealId);
+          updateDeal(dealId, (d, biz) => sendQuoteToClient(d, biz, quote, textContext()));
+          if (get().deals.find((d) => d.id === dealId) !== before) spendTime(QUOTE_MINUTES);
+        },
+
+        markRead: (dealId) => {
+          const t = now();
+          const deal = get().deals.find((d) => d.id === dealId);
+          if (!deal || deal.readAt >= t) return;
+          set({ deals: get().deals.map((d) => (d.id === dealId ? { ...d, readAt: t } : d)) });
+        },
+
+        wait: (minutes) => {
+          const s = get();
+          if (s.activeCall && s.activeCall.phase !== 'ended') return;
+          if (s.minute >= DAY_HARD_END) return;
+          spendTime(Math.min(minutes, DAY_HARD_END - s.minute));
+        },
+
         endDay: () => {
           const s = get();
           if (s.activeCall && s.activeCall.phase !== 'ended') return;
@@ -274,6 +389,11 @@ export const useGame = create<Store>()(
               returned.push(id);
             }
           }
+          // Clients you left waiting cool off.
+          const dayEnd = toGameTime(s.day, DAY_MINUTES - 1);
+          const nextStart = toGameTime(nextDay, WORKDAY_START);
+          const deals = s.deals.map((d) => endOfDayDeal(d, businesses.find((b) => b.id === d.businessId)!, dayEnd, nextStart));
+
           // Businesses whose "no" has cooled off can be called again.
           businesses = businesses.map((b) =>
             b.status === 'not_interested' && b.cooldownUntil !== null && nextDay >= b.cooldownUntil
@@ -286,6 +406,7 @@ export const useGame = create<Store>()(
             minute: WORKDAY_START,
             money: s.money - expenses,
             businesses,
+            deals,
             activeCall: null,
             voicemailsToday: [],
             lifetime: {
@@ -299,6 +420,7 @@ export const useGame = create<Store>()(
             lastDaySummary: summary,
           });
           log(`Paid $${expenses} in living costs.`, 'bad');
+          settleDeals();
           for (const id of returned) {
             const b = get().businesses.find((x) => x.id === id)!;
             log(`${b.name} returned your voicemail! Call back today around ${formatHour(b.callback!.hour)}.`, 'good');
@@ -311,6 +433,16 @@ export const useGame = create<Store>()(
     {
       name: 'webio-save',
       version: SAVE_VERSION,
+      migrate: (saved, version) => {
+        const state = saved as Store;
+        if (version < 2) {
+          // Part 2 added texting. Turn anyone who was "interested" into a deal.
+          const t = toGameTime(state.day, state.minute);
+          state.deals = state.businesses.filter((b) => b.status === 'interested').map((b) => createDeal(b, b.warmth, t));
+          state.projects = [];
+        }
+        return state;
+      },
       // The active call is saved too, so reloading the page can't be used
       // to escape a call that's going badly.
     },

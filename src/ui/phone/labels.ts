@@ -17,6 +17,8 @@ export function statusBadge(b: Business, today: number): { text: string; tone: T
     case 'do_not_call':
       return { text: 'Do not call', tone: 'bad' };
     case 'interested':
-      return { text: 'Interested', tone: 'good' };
+      return { text: 'Texting', tone: 'good' };
+    case 'client':
+      return { text: 'Client', tone: 'good' };
   }
 }

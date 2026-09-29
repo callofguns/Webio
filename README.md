@@ -10,7 +10,7 @@ and growing is hard.
 ## The main loop
 
 1. **Cold call** local businesses from the Phone screen *(done — part 1)*
-2. **Text** the interested ones, work out what they need, and agree on a price *(part 2)*
+2. **Text** the interested ones, work out what they need, and agree on a price *(done — part 2)*
 3. **Build** their website by choosing layouts, features and content *(part 3)*
 4. Get paid, grow your reputation, and repeat
 
@@ -33,6 +33,20 @@ Later on: **hire** employees to automate the work *(part 4)*, **upgrade your off
   - Best and worst times of day to call
 - Sales skill that levels up as you make calls
 - Autosave in your browser
+
+## What's in part 2
+
+- **Messages:** every business that says yes on the phone gets a text thread
+- Replies take game time (busy owners are slow, nobody texts at night), so you keep
+  calling while you wait, or use **Wait 1 hr**
+- Ask about their needs, budget, deadline and content. Ask too much and they get annoyed
+- **Client notes** fill in as you learn things (grumpy owners lowball their budget!)
+- **Quote builder:** pages, features, timeline, deposit and price. Some features need a
+  higher Development skill before you can offer them
+- Clients accept, ask for a revision, counter-offer, or say no
+- **Negotiate:** accept, meet in the middle, hold firm, or walk away
+- Ignore a client for a day and they cool off. Keep ignoring them and they ghost you
+- Signed deals pay the deposit right away and show up in **Projects**
 
 ## Running it on your computer
 
@@ -66,12 +80,14 @@ src/
     balance.ts     All the difficulty numbers in one place (start money, costs…)
     businesses.ts  Generates random local businesses
     calls.ts       The cold call engine (who picks up, replies, outcomes)
+    deals.ts       The texting engine (questions, quotes, haggling, ghosting)
     store.ts       The game state and every action that changes it, plus saving
     time.ts        Clock and calendar helpers
   ui/            Everything you see
     components/    Buttons, popups, tabs, icons
     phone/         The Phone screen and the live call view
-    screens/       Dashboard, Skills, start screen, end-of-day summary
+    messages/      The Messages screen, chat and quote builder
+    screens/       Dashboard, Projects, Skills, start screen, end-of-day summary
     motion.ts      Shared spring animation settings
 ```
 

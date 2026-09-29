@@ -15,6 +15,7 @@ export function DaySummary() {
         ['Calls made', String(summary.dials)],
         ['Real conversations', String(summary.conversations)],
         ['Interested businesses', String(summary.leadsWon)],
+        ['Money earned', money(summary.moneyIn)],
         ['Money spent', money(summary.moneyOut)],
       ]
     : [];
@@ -25,7 +26,7 @@ export function DaySummary() {
         <>
           <p className="small faint">End of day {summary.day}</p>
           <h2 style={{ fontSize: 20, marginTop: 2 }}>
-            {summary.leadsWon > 0 ? 'Good day.' : summary.dials === 0 ? 'A quiet day.' : 'Tough day.'}
+            {summary.moneyIn > 0 ? 'Payday!' : summary.leadsWon > 0 ? 'Good day.' : summary.dials === 0 ? 'A quiet day.' : 'Tough day.'}
           </h2>
           <div className="stack" style={{ marginTop: 16, gap: 0 }}>
             {rows.map(([k, v]) => (

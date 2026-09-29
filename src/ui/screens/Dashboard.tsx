@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { DAILY_LIVING_COST } from '../../game/balance';
 import { formatClock } from '../../game/time';
+import { dealStatus, toGameTime } from '../../game/deals';
 import { AnimatedNumber, money } from '../components/AnimatedNumber';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
@@ -20,15 +21,18 @@ const TIPS = [
 export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void }) {
   const s = useGame();
   const [confirmReset, setConfirmReset] = useState(false);
-  const interested = s.businesses.filter((b) => b.status === 'interested').length;
+  const now = toGameTime(s.day, s.minute);
+  const openDeals = s.deals.filter((d) => !['won', 'lost'].includes(dealStatus(d, now)));
+  const yourTurn = openDeals.filter((d) => dealStatus(d, now) === 'your_turn').length;
+  const earned = s.lifetime.moneyIn + s.today.moneyIn;
   const callbacks = s.businesses.filter((b) => b.status === 'callback' && b.callback?.day === s.day).length;
   const runway = Math.max(0, Math.floor(s.money / DAILY_LIVING_COST));
   const tip = TIPS[(s.day - 1) % TIPS.length];
 
   const stats = [
     { label: 'Bank balance', value: <AnimatedNumber value={s.money} format={money} />, sub: `${runway} days of runway` },
-    { label: 'Interested leads', value: <AnimatedNumber value={interested} />, sub: 'Waiting for your text' },
-    { label: 'Calls today', value: <AnimatedNumber value={s.today.dials} />, sub: `${s.today.conversations} real conversations` },
+    { label: 'Open deals', value: <AnimatedNumber value={openDeals.length} />, sub: yourTurn ? `${yourTurn} waiting on your reply` : `${s.projects.length} signed so far` },
+    { label: 'Earned', value: <AnimatedNumber value={earned} format={money} />, sub: `${s.today.dials} calls today` },
     { label: 'Sales skill', value: `Lv ${s.skills.sales.level}`, sub: `${s.lifetime.dials + s.today.dials} calls all-time` },
   ];
 
@@ -40,14 +44,17 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
           <p className="muted">
             {callbacks > 0
               ? `You have ${callbacks} callback${callbacks > 1 ? 's' : ''} scheduled today.`
-              : interested > 0
-                ? 'You have businesses waiting to hear from you.'
+              : yourTurn > 0
+                ? `${yourTurn} client${yourTurn > 1 ? 's are' : ' is'} waiting for your text.`
                 : 'No clients yet. Time to pick up the phone.'}
           </p>
         </div>
-        <Button variant="primary" onClick={() => onNavigate('phone')}>
-          Open phone
-        </Button>
+        <div className="row">
+          {yourTurn > 0 && <Button onClick={() => onNavigate('messages')}>Open messages</Button>}
+          <Button variant="primary" onClick={() => onNavigate('phone')}>
+            Open phone
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-4">

@@ -1,0 +1,176 @@
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { DAY_HARD_END, useGame } from '../../game/store';
+import { dealStatus, FEATURES, fromGameTime, OPEN_QUOTE, textChoices, toGameTime, visibleMessages } from '../../game/deals';
+import { vibe } from '../../game/calls';
+import type { Business, Deal, Quote, TextMessage } from '../../game/types';
+import { formatClock } from '../../game/time';
+import { Button } from '../components/Button';
+import { money } from '../components/AnimatedNumber';
+import { spring } from '../motion';
+import { QuoteBuilder } from './QuoteBuilder';
+
+function QuoteCard({ quote }: { quote: Quote }) {
+  return (
+    <div className="quote-card">
+      <div className="small faint" style={{ marginBottom: 6, fontWeight: 600 }}>QUOTE</div>
+      <div className="qc-row">
+        <span className="muted">Pages</span>
+        <span>{quote.pages}</span>
+      </div>
+      {quote.features.map((f) => (
+        <div key={f} className="qc-row">
+          <span className="muted">{FEATURES[f].label}</span>
+          <span>&#10003;</span>
+        </div>
+      ))}
+      <div className="qc-row">
+        <span className="muted">Ready in</span>
+        <span>{quote.days} days</span>
+      </div>
+      <div className="qc-row">
+        <span className="muted">Deposit</span>
+        <span>{quote.depositPct ? `${quote.depositPct}% up front` : 'None'}</span>
+      </div>
+      <div className="qc-row qc-total">
+        <span>Total</span>
+        <span className="num">{money(quote.price)}</span>
+      </div>
+    </div>
+  );
+}
+
+function Bubble({ m }: { m: TextMessage }) {
+  const time = formatClock(fromGameTime(m.t).minute);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={spring}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: m.from === 'you' ? 'flex-end' : m.from === 'them' ? 'flex-start' : 'center' }}
+    >
+      {m.text && (
+        <div className={`bubble ${m.from}`}>
+          {m.text}
+          {m.from !== 'system' && <span className="msg-time">{time}</span>}
+        </div>
+      )}
+      {m.quote && <div style={{ marginTop: 6, width: '100%', display: 'flex', justifyContent: 'flex-end' }}><QuoteCard quote={m.quote} /></div>}
+    </motion.div>
+  );
+}
+
+export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
+  const { day, minute, activeCall, projects, sendText, markRead, wait } = useGame();
+  const now = toGameTime(day, minute);
+  const [quoting, setQuoting] = useState(false);
+  const bottom = useRef<HTMLDivElement>(null);
+  const messages = visibleMessages(deal, now);
+  const status = dealStatus(deal, now);
+  const first = biz.ownerName.split(' ')[0];
+  const mood = vibe(deal.warmth);
+  const onCall = !!activeCall && activeCall.phase !== 'ended';
+  const tooLate = minute + 3 > DAY_HARD_END;
+  const project = projects.find((p) => p.dealId === deal.id);
+
+  useEffect(() => {
+    markRead(deal.id);
+    bottom.current?.parentElement?.scrollTo({ top: bottom.current.offsetTop, behavior: 'smooth' });
+  }, [messages.length, deal.id, markRead]);
+
+  let lastDay = 0;
+
+  return (
+    <div className="card chat">
+      <div className="call-head">
+        <div className="avatar">{biz.name[0]}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2>{biz.name}</h2>
+          <p className="small muted">Texting {first}</p>
+        </div>
+        {(status === 'your_turn' || status === 'waiting') && (
+          <div className="vibe" title="How keen they are">
+            <span className="small muted">{mood.label}</span>
+            <div className="vibe-bar">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <i key={i} className={i <= mood.step ? 'on' : ''} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="transcript">
+        {messages.map((m) => {
+          const msgDay = fromGameTime(m.t).day;
+          const sep = msgDay !== lastDay;
+          lastDay = msgDay;
+          return (
+            <div key={m.id} style={{ display: 'contents' }}>
+              {sep && <div className="day-sep">Day {msgDay}</div>}
+              <Bubble m={m} />
+            </div>
+          );
+        })}
+        <div ref={bottom} />
+      </div>
+
+      <AnimatePresence mode="wait">
+        {status === 'your_turn' && (
+          <motion.div key={`choices-${messages.length}`} className="choices" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring}>
+            <span className="small faint">
+              {onCall ? 'Finish your call first.' : tooLate ? 'It’s too late to text. End the day.' : deal.stage === 'negotiating' ? 'They want a lower price. What do you do?' : 'What do you text?'}
+            </span>
+            {textChoices(deal, biz).map((c, i) => (
+              <motion.button
+                key={c.id}
+                className="choice"
+                disabled={onCall || tooLate}
+                onClick={() => (c.id === OPEN_QUOTE ? setQuoting(true) : sendText(deal.id, c.id))}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...spring, delay: i * 0.04 }}
+                whileTap={{ scale: 0.985 }}
+                style={c.id === OPEN_QUOTE ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : undefined}
+              >
+                {c.label}
+                {c.hint && <span className="hint">{c.hint}</span>}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+        {status === 'waiting' && (
+          <motion.div key="waiting" className="choices" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className="waiting">
+              <span className="muted">
+                Waiting for {first} to reply&hellip;
+                <span className="small faint" style={{ display: 'block' }}>Replies arrive as time passes. Make some calls meanwhile.</span>
+              </span>
+              <div className="row">
+                <Button size="sm" disabled={onCall || minute >= DAY_HARD_END} onClick={() => wait(30)}>Wait 30 min</Button>
+                <Button size="sm" disabled={onCall || minute >= DAY_HARD_END} onClick={() => wait(60)}>Wait 1 hr</Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        {status === 'won' && (
+          <motion.div key="won" className="choices" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <span className="badge good">Contract signed &middot; {money(deal.agreedPrice ?? 0)}</span>
+              {project && project.depositPaid > 0 && <span className="small muted">{money(project.depositPaid)} deposit paid</span>}
+            </div>
+            <span className="small faint">Due on day {project?.dueDay}. You&rsquo;ll build it in the Projects tab (part 3).</span>
+          </motion.div>
+        )}
+        {status === 'lost' && (
+          <motion.div key="lost" className="choices" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
+            <span className="badge bad" style={{ alignSelf: 'flex-start' }}>Deal lost</span>
+            <span className="small faint">You can try calling them again in about a month.</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <QuoteBuilder open={quoting} deal={deal} biz={biz} onClose={() => setQuoting(false)} />
+    </div>
+  );
+}

@@ -8,6 +8,8 @@ import { Dashboard } from './ui/screens/Dashboard';
 import { PhoneScreen } from './ui/phone/PhoneScreen';
 import { SkillsScreen } from './ui/screens/SkillsScreen';
 import { ComingSoon } from './ui/screens/ComingSoon';
+import { MessagesScreen } from './ui/messages/MessagesScreen';
+import { ProjectsScreen } from './ui/screens/ProjectsScreen';
 import { DaySummary } from './ui/screens/DaySummary';
 import { fadeUp } from './ui/motion';
 
@@ -27,7 +29,9 @@ export default function App() {
             {screen === 'dashboard' && <Dashboard onNavigate={setScreen} />}
             {screen === 'phone' && <PhoneScreen />}
             {screen === 'skills' && <SkillsScreen />}
-            {(screen === 'messages' || screen === 'projects' || screen === 'team' || screen === 'office') && <ComingSoon screen={screen} />}
+            {screen === 'messages' && <MessagesScreen />}
+            {screen === 'projects' && <ProjectsScreen />}
+            {(screen === 'team' || screen === 'office') && <ComingSoon screen={screen} />}
           </motion.div>
         </AnimatePresence>
       </main>

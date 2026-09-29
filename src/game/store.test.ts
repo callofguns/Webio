@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { callBlocker, useGame } from './store';
 import { DAILY_LIVING_COST, RESEARCH_MINUTES, START_MONEY, WORKDAY_START } from './balance';
+import { createDeal, toGameTime } from './deals';
 
 describe('game store', () => {
   beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
@@ -51,5 +52,54 @@ describe('game store', () => {
   it('nobody picks up on Sunday', () => {
     const biz = useGame.getState().businesses[0];
     expect(callBlocker(biz, 7, 10 * 60)).toBe('Businesses are closed');
+  });
+});
+
+describe('texting clients', () => {
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  /** Puts a warm deal into the game, as if a call just went well. */
+  function addWarmDeal() {
+    const s = useGame.getState();
+    const biz = { ...s.businesses[0], status: 'interested' as const, temperament: 'friendly' as const };
+    const deal = { ...createDeal(biz, 95, toGameTime(s.day, s.minute)), stage: 'discovery' as const };
+    useGame.setState({ businesses: [biz, ...s.businesses.slice(1)], deals: [deal] });
+    return { biz, deal };
+  }
+
+  it('a signed deal pays the deposit and creates a project once their reply arrives', () => {
+    const { biz, deal } = addWarmDeal();
+    const price = Math.round((biz.budget * 0.5) / 50) * 50;
+    useGame.getState().sendQuote(deal.id, {
+      pages: deal.needs.pages,
+      features: deal.needs.features,
+      price,
+      days: 5,
+      depositPct: 50,
+    });
+    expect(useGame.getState().deals[0].stage).toBe('won');
+    // Nothing is paid until their "yes" actually arrives.
+    expect(useGame.getState().money).toBe(START_MONEY);
+
+    for (let i = 0; i < 30 && !useGame.getState().deals[0].settled; i++) {
+      if (useGame.getState().minute >= 21 * 60) useGame.getState().endDay();
+      else useGame.getState().wait(60);
+    }
+    const s = useGame.getState();
+    expect(s.deals[0].settled).toBe(true);
+    expect(s.projects).toHaveLength(1);
+    expect(s.projects[0].price).toBe(price);
+    expect(s.businesses[0].status).toBe('client');
+    const expenses = (s.day - 1) * DAILY_LIVING_COST;
+    expect(s.money).toBe(START_MONEY + Math.round(price / 2) - expenses);
+  });
+
+  it('texting takes a few minutes and waiting passes time', () => {
+    const { deal } = addWarmDeal();
+    const start = useGame.getState().minute;
+    useGame.getState().sendText(deal.id, 'q_features');
+    expect(useGame.getState().minute).toBe(start + 3);
+    useGame.getState().wait(60);
+    expect(useGame.getState().minute).toBe(start + 63);
   });
 });

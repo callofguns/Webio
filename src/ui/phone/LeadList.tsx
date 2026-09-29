@@ -33,7 +33,7 @@ export function LeadList(props: {
         case 'callbacks':
           return b.status === 'callback';
         case 'interested':
-          return b.status === 'interested';
+          return b.status === 'interested' || b.status === 'client';
         default:
           return true;
       }
@@ -50,7 +50,7 @@ export function LeadList(props: {
           options={[
             { value: 'todo', label: 'To call' },
             { value: 'callbacks', label: 'Callbacks' },
-            { value: 'interested', label: 'Interested' },
+            { value: 'interested', label: 'Won' },
             { value: 'all', label: 'All' },
           ]}
         />

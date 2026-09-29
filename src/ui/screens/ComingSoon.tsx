@@ -25,7 +25,6 @@ const INFO: Record<string, { title: string; text: string; part: number }> = {
 
 export function ComingSoon({ screen }: { screen: string }) {
   const info = INFO[screen];
-  const interested = screen === 'messages';
   return (
     <div className="screen">
       <div className="screen-head">
@@ -39,11 +38,6 @@ export function ComingSoon({ screen }: { screen: string }) {
           <Icon name="lock" size={28} />
         </div>
         <p className="muted" style={{ maxWidth: 420, margin: '0 auto' }}>{info.text}</p>
-        {interested && (
-          <p className="small faint" style={{ marginTop: 12 }}>
-            Businesses that say yes on the phone are saved and will be waiting here.
-          </p>
-        )}
       </div>
     </div>
   );
