@@ -159,7 +159,13 @@ export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
               <span className="badge good">Contract signed &middot; {money(deal.agreedPrice ?? 0)}</span>
               {project && project.depositPaid > 0 && <span className="small muted">{money(project.depositPaid)} deposit paid</span>}
             </div>
-            <span className="small faint">Due on day {project?.dueDay}. You&rsquo;ll build it in the Projects tab (part 3).</span>
+            <span className="small faint">
+              {project?.status === 'delivered'
+                ? `Site delivered. They rated it ${project.stars} out of 5.`
+                : project?.status === 'review'
+                  ? 'They\u2019re looking at the site you sent.'
+                  : `Due on day ${project?.dueDay}. Build it in the Projects tab.`}
+            </span>
           </motion.div>
         )}
         {status === 'lost' && (

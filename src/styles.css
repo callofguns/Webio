@@ -383,3 +383,64 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   .feature-grid { grid-template-columns: 1fr; }
   .chat .transcript { max-height: 420px; }
 }
+
+/* ---------- Projects / website builder ---------- */
+.project-layout { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 16px; align-items: start; }
+.project-layout > * { min-width: 0; }
+.preview-sticky { position: sticky; top: 0; }
+
+.steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.step { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-3); }
+.step .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-size: 11px; }
+.step.on { color: var(--accent); }
+.step.on .n { background: var(--accent); color: white; }
+.step.done { color: var(--good); }
+.step.done .n { background: var(--good-soft); color: var(--good); }
+.step-line { width: 18px; height: 2px; background: var(--border); align-self: center; border-radius: 1px; }
+
+.option-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.option {
+  position: relative; text-align: left; padding: 9px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); cursor: pointer; font-size: 13px;
+}
+.option:hover:not(:disabled) { border-color: var(--accent); }
+.option.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
+.option:disabled { opacity: 0.5; cursor: not-allowed; }
+.option .o-name { font-weight: 600; display: block; }
+.option .o-sub { display: block; font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.swatches { display: flex; gap: 3px; margin-bottom: 6px; }
+.swatches i { width: 16px; height: 16px; border-radius: 4px; display: block; border: 1px solid rgba(0, 0, 0, 0.08); }
+.vibe-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+.vibe-tags span { font-size: 10px; font-weight: 600; padding: 0 6px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); }
+.option.on .vibe-tags span { background: var(--surface); }
+.field-label { font-weight: 600; margin: 14px 0 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.field-label:first-child { margin-top: 0; }
+
+.task { padding: 9px 0; border-bottom: 1px solid var(--border); }
+.task:last-child { border-bottom: 0; }
+.task-head { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 6px; }
+.task.done .task-head { color: var(--text-3); }
+.progress.dev > div { background: var(--good); }
+.meter-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 6px 0; }
+
+.event-card { border: 1px solid var(--warn); background: var(--warn-soft); border-radius: var(--radius); padding: 14px; }
+.event-card h3 { color: var(--warn); }
+.banner { border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; background: var(--bad-soft); color: var(--bad); }
+.banner.info { background: var(--accent-soft); color: var(--accent); }
+
+.site-frame { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+.site-chrome { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+.site-chrome > span { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+.site-url { flex: 1; margin-left: 10px; background: var(--surface); border-radius: 6px; font-size: 11px; color: var(--text-3); padding: 3px 10px; }
+.site-viewport { max-height: calc(100vh - 200px); overflow-y: auto; overflow-x: hidden; }
+
+.project-card { cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.project-card:hover { border-color: var(--accent); }
+.stars { color: #e0a100; letter-spacing: 1px; }
+
+@media (max-width: 1100px) {
+  .project-layout { grid-template-columns: minmax(0, 1fr); }
+  .preview-sticky { position: static; }
+  .site-viewport { max-height: 420px; }
+}

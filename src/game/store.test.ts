@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { callBlocker, useGame } from './store';
 import { DAILY_LIVING_COST, RESEARCH_MINUTES, START_MONEY, WORKDAY_START } from './balance';
 import { createDeal, toGameTime } from './deals';
+import { allTasksDone, createProject } from './projects';
 
 describe('game store', () => {
   beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
@@ -101,5 +102,54 @@ describe('texting clients', () => {
     expect(useGame.getState().minute).toBe(start + 3);
     useGame.getState().wait(60);
     expect(useGame.getState().minute).toBe(start + 63);
+  });
+});
+
+describe('building a site', () => {
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  it('build, submit and get paid (or asked for changes) once the review arrives', () => {
+    const s = useGame.getState();
+    const biz = { ...s.businesses[0], status: 'client' as const };
+    const deal = {
+      ...createDeal(biz, 80, toGameTime(1, 600)),
+      stage: 'won' as const,
+      settled: true,
+      agreedPrice: 1200,
+      quote: { pages: 3, features: [], price: 1200, days: 14, depositPct: 0 },
+    };
+    const project = createProject(deal, biz, 1);
+    useGame.setState({ businesses: [biz, ...s.businesses.slice(1)], deals: [deal], projects: [project] });
+
+    useGame.getState().startProject(project.id);
+    for (let i = 0; i < 60 && !allTasksDone(useGame.getState().projects[0]); i++) {
+      const p = useGame.getState().projects[0];
+      if (p.pendingEvent) useGame.getState().resolveProjectEvent(p.id, 'skip');
+      if (useGame.getState().projects[0].pendingEvent) {
+        // Pick the first choice for any other event.
+        const id = { blurry_photos: 'use', tricky_bug: 'note', tutorial: 'skip', extra_section: 'no' }[useGame.getState().projects[0].pendingEvent!];
+        useGame.getState().resolveProjectEvent(p.id, id);
+      }
+      if (useGame.getState().minute >= 17 * 60) useGame.getState().endDay();
+      else useGame.getState().workOnProject(p.id, 8);
+    }
+    expect(allTasksDone(useGame.getState().projects[0])).toBe(true);
+    expect(useGame.getState().skills.design.xp + useGame.getState().skills.design.level).toBeGreaterThan(1);
+
+    const moneyBefore = useGame.getState().money;
+    useGame.getState().submitProject(project.id);
+    expect(useGame.getState().projects[0].status).toBe('review');
+    for (let i = 0; i < 20 && useGame.getState().projects[0].status === 'review'; i++) {
+      if (useGame.getState().minute >= 21 * 60) useGame.getState().endDay();
+      else useGame.getState().wait(60);
+    }
+    const after = useGame.getState().projects[0];
+    expect(['delivered', 'in_progress']).toContain(after.status);
+    if (after.status === 'delivered') {
+      expect(after.stars).toBeGreaterThanOrEqual(1);
+      expect(useGame.getState().money).toBeGreaterThan(moneyBefore);
+    } else {
+      expect(after.revisions).toBe(1);
+    }
   });
 });

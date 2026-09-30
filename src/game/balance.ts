@@ -9,6 +9,10 @@ export const DAILY_LIVING_COST = 42;
 
 export const WORKDAY_START = 9 * 60; // 9:00
 export const WORKDAY_END = 18 * 60; // 18:00
+/** After this time you're too tired to keep working. */
+export const DAY_HARD_END = 22 * 60;
+/** Work after this time is sloppier. */
+export const LATE_NIGHT = 20 * 60;
 
 export const RESEARCH_MINUTES = 15;
 export const DIRECTORY_SEARCH_MINUTES = 40;

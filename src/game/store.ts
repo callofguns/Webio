@@ -3,9 +3,10 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Business, DayStats, Deal, GameState, LogEntry, Project, Quote, SkillId } from './types';
+import type { Business, DayStats, Deal, GameState, LogEntry, Project, Quote, SkillId, TextMessage } from './types';
 import {
   DAILY_LIVING_COST,
+  DAY_HARD_END,
   DIRECTORY_SEARCH_MINUTES,
   DIRECTORY_SEARCH_RESULTS,
   LEAD_LIST_COST,
@@ -25,17 +26,35 @@ import {
   DAY_MINUTES,
   endOfDayDeal,
   QUOTE_MINUTES,
+  replyTime,
   sendQuote as sendQuoteToClient,
   sendText as sendTextToClient,
+  textMessage,
   toGameTime,
   type TextContext,
 } from './deals';
-import { chance, pick, uid } from './rng';
+import {
+  allTasksDone,
+  applyRevision,
+  builderFields,
+  changeDesign,
+  createProject,
+  evaluateSite,
+  fixBugs,
+  MAX_POLISH,
+  polishSite,
+  REPUTATION_FOR_STARS,
+  resolveEvent,
+  reviewReply,
+  testSite,
+  work,
+} from './projects';
+import { FONTS, LAYOUTS, PALETTES, TASTE_HINTS, type Design } from './design';
+import { chance, pick, randInt, uid } from './rng';
 import { formatHour, isBusinessHours } from './time';
 
-export const SAVE_VERSION = 2;
-/** After this time you're too tired to keep working. */
-export const DAY_HARD_END = 22 * 60;
+export const SAVE_VERSION = 3;
+export { DAY_HARD_END };
 
 function emptyStats(): DayStats {
   return { dials: 0, conversations: 0, leadsWon: 0, moneyIn: 0, moneyOut: 0 };
@@ -87,6 +106,16 @@ interface Store extends GameState {
   markRead: (dealId: string) => void;
   /** Let time pass, e.g. while waiting for a reply. */
   wait: (minutes: number) => void;
+  // Projects (part 3)
+  startProject: (projectId: string) => void;
+  setDesign: (projectId: string, design: Design) => void;
+  askStyle: (projectId: string) => void;
+  workOnProject: (projectId: string, hours: number) => void;
+  testProject: (projectId: string) => void;
+  fixProjectBugs: (projectId: string) => void;
+  polishProject: (projectId: string) => void;
+  resolveProjectEvent: (projectId: string, choiceId: string) => void;
+  submitProject: (projectId: string) => void;
   endDay: () => void;
   dismissSummary: () => void;
 }
@@ -142,20 +171,8 @@ export const useGame = create<Store>()(
         for (const deal of ready) {
           const biz = get().businesses.find((b) => b.id === deal.businessId)!;
           if (deal.stage === 'won' && deal.quote && deal.agreedPrice !== null) {
-            const deposit = Math.round((deal.agreedPrice * deal.quote.depositPct) / 100);
-            const project: Project = {
-              id: uid('proj'),
-              businessId: biz.id,
-              dealId: deal.id,
-              pages: deal.quote.pages,
-              features: deal.quote.features,
-              price: deal.agreedPrice,
-              depositPaid: deposit,
-              signedDay: get().day,
-              dueDay: get().day + deal.quote.days,
-              hasContent: deal.needs.hasContent,
-              status: 'not_started',
-            };
+            const project = createProject(deal, biz, get().day);
+            const deposit = project.depositPaid;
             const s = get();
             set({
               money: s.money + deposit,
@@ -176,9 +193,48 @@ export const useGame = create<Store>()(
         }
       };
 
+      const updateProject = (id: string, fn: (p: Project) => Project) => {
+        set({ projects: get().projects.map((p) => (p.id === id ? fn(p) : p)) });
+      };
+
+      /** Adds texts to the conversation with a client. */
+      const postToThread = (dealId: string, ...messages: TextMessage[]) => {
+        set({ deals: get().deals.map((d) => (d.id === dealId ? { ...d, messages: [...d.messages, ...messages] } : d)) });
+      };
+
+      /** Applies client reviews that have arrived: final payment and stars, or a revision. */
+      const settleProjects = () => {
+        const t = now();
+        for (const p of get().projects) {
+          if (p.status !== 'review' || !p.review || p.review.at > t) continue;
+          const biz = get().businesses.find((b) => b.id === p.businessId)!;
+          if (p.review.approved) {
+            const owed = p.price - p.depositPaid;
+            const s = get();
+            set({
+              money: s.money + owed,
+              reputation: Math.max(0, s.reputation + REPUTATION_FOR_STARS[p.review.stars]),
+              today: { ...s.today, moneyIn: s.today.moneyIn + owed },
+            });
+            updateProject(p.id, (x) => ({ ...x, status: 'delivered', stars: x.review!.stars, deliveredDay: get().day }));
+            log(`${biz.name} approved their site (${'\u2605'.repeat(p.review.stars)}) and paid $${owed.toLocaleString()}.`, p.review.stars >= 3 ? 'good' : 'bad');
+          } else {
+            updateProject(p.id, applyRevision);
+            log(`${biz.name} asked for changes to their site.`, 'bad');
+          }
+        }
+      };
+
       const spendTime = (minutes: number) => {
         set({ minute: Math.min(get().minute + minutes, 24 * 60 - 1) });
         settleDeals();
+        settleProjects();
+      };
+
+      /** True when you can't do anything else (on a call, or too late). */
+      const busy = (minutesNeeded: number) => {
+        const s = get();
+        return (!!s.activeCall && s.activeCall.phase !== 'ended') || s.minute + minutesNeeded > DAY_HARD_END;
       };
 
       const textContext = (): TextContext => {
@@ -368,6 +424,105 @@ export const useGame = create<Store>()(
           spendTime(Math.min(minutes, DAY_HARD_END - s.minute));
         },
 
+        startProject: (projectId) => {
+          updateProject(projectId, (p) => (p.status === 'not_started' ? { ...p, status: 'in_progress' } : p));
+        },
+
+        setDesign: (projectId, design) => {
+          const { skills } = get();
+          const d = skills.design.level;
+          if (LAYOUTS[design.layout].level > d || PALETTES[design.palette].level > d || FONTS[design.font].level > d) return;
+          updateProject(projectId, (p) => changeDesign(p, design));
+        },
+
+        askStyle: (projectId) => {
+          const p = get().projects.find((x) => x.id === projectId);
+          if (!p || p.tasteAt !== null || busy(3)) return;
+          const biz = get().businesses.find((b) => b.id === p.businessId)!;
+          const t = now();
+          const at = replyTime(t, biz.temperament, Math.random);
+          postToThread(
+            p.dealId,
+            textMessage('you', 'Quick question for the design: what kind of style do you like? Any websites you love?', t),
+            textMessage('them', TASTE_HINTS[p.taste], at),
+          );
+          updateProject(projectId, (x) => ({ ...x, tasteAt: at }));
+          spendTime(3);
+        },
+
+        workOnProject: (projectId, hours) => {
+          const s = get();
+          const p = s.projects.find((x) => x.id === projectId);
+          if (!p || busy(60)) return;
+          const res = work(p, hours, { minute: s.minute, designLevel: s.skills.design.level, devLevel: s.skills.development.level });
+          if (res.minutes === 0) return;
+          updateProject(projectId, () => res.project);
+          if (res.xp.design) addXp('design', res.xp.design);
+          if (res.xp.development) addXp('development', res.xp.development);
+          spendTime(res.minutes);
+        },
+
+        testProject: (projectId) => {
+          const p = get().projects.find((x) => x.id === projectId);
+          if (!p || p.status !== 'in_progress' || busy(60)) return;
+          const res = testSite(p, get().skills.development.level);
+          updateProject(projectId, () => res.project);
+          addXp('development', 5);
+          spendTime(60);
+          const biz = get().businesses.find((b) => b.id === p.businessId)!;
+          log(res.found ? `Testing ${biz.name}\u2019s site found ${res.found} bug${res.found > 1 ? 's' : ''}.` : `Testing ${biz.name}\u2019s site found no bugs.`);
+        },
+
+        fixProjectBugs: (projectId) => {
+          const s = get();
+          const p = s.projects.find((x) => x.id === projectId);
+          if (!p || p.status !== 'in_progress' || busy(30)) return;
+          const res = fixBugs(p, DAY_HARD_END - s.minute);
+          updateProject(projectId, () => res.project);
+          addXp('development', res.minutes / 6);
+          spendTime(res.minutes);
+        },
+
+        polishProject: (projectId) => {
+          const p = get().projects.find((x) => x.id === projectId);
+          if (!p || p.status !== 'in_progress' || !allTasksDone(p) || p.polish >= MAX_POLISH || busy(60)) return;
+          updateProject(projectId, polishSite);
+          addXp('design', 8);
+          spendTime(60);
+        },
+
+        resolveProjectEvent: (projectId, choiceId) => {
+          const p = get().projects.find((x) => x.id === projectId);
+          if (!p || !p.pendingEvent) return;
+          const res = resolveEvent(p, choiceId);
+          updateProject(projectId, () => res.project);
+          if (res.money) {
+            const s = get();
+            set({ money: s.money + res.money, today: { ...s.today, moneyOut: s.today.moneyOut - Math.min(0, res.money) } });
+          }
+          if (res.xp.design) addXp('design', res.xp.design);
+          if (res.xp.development) addXp('development', res.xp.development);
+          if (res.note) log(res.note);
+          if (res.minutes) spendTime(Math.min(res.minutes, Math.max(0, DAY_HARD_END - get().minute)));
+        },
+
+        submitProject: (projectId) => {
+          const s = get();
+          const p = s.projects.find((x) => x.id === projectId);
+          if (!p || p.status !== 'in_progress' || !allTasksDone(p) || p.pendingEvent || busy(10)) return;
+          const biz = s.businesses.find((b) => b.id === p.businessId)!;
+          const t = now();
+          const review = { ...evaluateSite(p, biz, s.day), at: replyTime(t, biz.temperament, Math.random, 60, 240) };
+          const first = biz.ownerName.split(' ')[0];
+          postToThread(
+            p.dealId,
+            textMessage('you', `Hi ${first}! Your new website is ready. Have a look and let me know what you think \ud83d\ude42`, t),
+            textMessage('them', reviewReply(review, p, biz, TASTE_HINTS[p.taste]), review.at),
+          );
+          updateProject(projectId, (x) => ({ ...x, status: 'review', review }));
+          spendTime(10);
+        },
+
         endDay: () => {
           const s = get();
           if (s.activeCall && s.activeCall.phase !== 'ended') return;
@@ -392,7 +547,16 @@ export const useGame = create<Store>()(
           // Clients you left waiting cool off.
           const dayEnd = toGameTime(s.day, DAY_MINUTES - 1);
           const nextStart = toGameTime(nextDay, WORKDAY_START);
-          const deals = s.deals.map((d) => endOfDayDeal(d, businesses.find((b) => b.id === d.businessId)!, dayEnd, nextStart));
+          let deals = s.deals.map((d) => endOfDayDeal(d, businesses.find((b) => b.id === d.businessId)!, dayEnd, nextStart));
+
+          // Clients chase you when their site is late.
+          const projects = s.projects.map((p) => {
+            const late = (p.status === 'not_started' || p.status === 'in_progress') && nextDay > p.dueDay;
+            if (!late || (p.lastNudgeDay !== null && nextDay - p.lastNudgeDay < 2)) return p;
+            const nudge = textMessage('them', 'Hey, how\u2019s the website coming along? It was supposed to be ready by now.', nextStart + randInt(30, 180));
+            deals = deals.map((d) => (d.id === p.dealId ? { ...d, messages: [...d.messages, nudge] } : d));
+            return { ...p, goodwill: p.goodwill - 3, lastNudgeDay: nextDay };
+          });
 
           // Businesses whose "no" has cooled off can be called again.
           businesses = businesses.map((b) =>
@@ -407,6 +571,7 @@ export const useGame = create<Store>()(
             money: s.money - expenses,
             businesses,
             deals,
+            projects,
             activeCall: null,
             voicemailsToday: [],
             lifetime: {
@@ -421,6 +586,7 @@ export const useGame = create<Store>()(
           });
           log(`Paid $${expenses} in living costs.`, 'bad');
           settleDeals();
+          settleProjects();
           for (const id of returned) {
             const b = get().businesses.find((x) => x.id === id)!;
             log(`${b.name} returned your voicemail! Call back today around ${formatHour(b.callback!.hour)}.`, 'good');
@@ -440,6 +606,13 @@ export const useGame = create<Store>()(
           const t = toGameTime(state.day, state.minute);
           state.deals = state.businesses.filter((b) => b.status === 'interested').map((b) => createDeal(b, b.warmth, t));
           state.projects = [];
+        }
+        if (version < 3) {
+          // Part 3 added the website builder. Give old projects the new fields.
+          state.projects = state.projects.map((p) => {
+            const biz = state.businesses.find((b) => b.id === p.businessId)!;
+            return { ...builderFields(p.pages, p.features, biz), ...p };
+          });
         }
         return state;
       },

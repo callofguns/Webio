@@ -11,7 +11,7 @@ and growing is hard.
 
 1. **Cold call** local businesses from the Phone screen *(done — part 1)*
 2. **Text** the interested ones, work out what they need, and agree on a price *(done — part 2)*
-3. **Build** their website by choosing layouts, features and content *(part 3)*
+3. **Build** their website by choosing layouts, features and content *(done — part 3)*
 4. Get paid, grow your reputation, and repeat
 
 Later on: **hire** employees to automate the work *(part 4)*, **upgrade your office**
@@ -48,6 +48,23 @@ Later on: **hire** employees to automate the work *(part 4)*, **upgrade your off
 - Ignore a client for a day and they cool off. Keep ignoring them and they ghost you
 - Signed deals pay the deposit right away and show up in **Projects**
 
+## What's in part 3
+
+- **Projects:** every signed deal becomes a project with a due date
+- **Plan:** pick a layout, color palette, fonts and home page sections, with a
+  **live preview** of the client's site. Text the client to ask what style they like
+- **Build:** work 1 hr, 3 hrs or until 6 PM. Tasks fill in the preview as you go.
+  Late-night work is sloppier
+- Coding creates hidden **bugs**. Test the site to find them, then fix them
+- **Polish** to raise the quality, and handle surprise events (blurry photos,
+  tricky bugs, extra requests)
+- **Review:** the client rates the site on design fit, quality, bugs and
+  lateness. They approve it and pay the rest, or ask for changes (up to 2 rounds)
+- Star ratings change your **reputation**, which makes future calls and quotes easier
+- Building gives **Design** and **Development** XP, which unlocks better layouts,
+  colors, fonts, online booking, listings and online stores
+- Late projects make clients chase you, and they like you less
+
 ## Running it on your computer
 
 You need [Node.js](https://nodejs.org) 20 or newer.
@@ -81,13 +98,16 @@ src/
     businesses.ts  Generates random local businesses
     calls.ts       The cold call engine (who picks up, replies, outcomes)
     deals.ts       The texting engine (questions, quotes, haggling, ghosting)
+    design.ts      Layouts, colors, fonts and sections for the website builder
+    projects.ts    The building engine (tasks, bugs, events, client reviews)
     store.ts       The game state and every action that changes it, plus saving
     time.ts        Clock and calendar helpers
   ui/            Everything you see
     components/    Buttons, popups, tabs, icons
     phone/         The Phone screen and the live call view
     messages/      The Messages screen, chat and quote builder
-    screens/       Dashboard, Projects, Skills, start screen, end-of-day summary
+    projects/      The Projects screen, builder panels and live site preview
+    screens/       Dashboard, Skills, start screen, end-of-day summary
     motion.ts      Shared spring animation settings
 ```
 

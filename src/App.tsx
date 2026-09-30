@@ -9,7 +9,7 @@ import { PhoneScreen } from './ui/phone/PhoneScreen';
 import { SkillsScreen } from './ui/screens/SkillsScreen';
 import { ComingSoon } from './ui/screens/ComingSoon';
 import { MessagesScreen } from './ui/messages/MessagesScreen';
-import { ProjectsScreen } from './ui/screens/ProjectsScreen';
+import { ProjectsScreen } from './ui/projects/ProjectsScreen';
 import { DaySummary } from './ui/screens/DaySummary';
 import { fadeUp } from './ui/motion';
 

@@ -89,7 +89,7 @@ export function fromGameTime(t: GameTime): { day: number; minute: number } {
 const REPLY_SPEED: Record<Temperament, number> = { friendly: 1, busy: 3, skeptical: 1.5, grumpy: 2 };
 
 /** When the client will reply. People don't text back late at night. */
-function replyTime(now: GameTime, t: Temperament, rand: Rand, min = 10, max = 60): GameTime {
+export function replyTime(now: GameTime, t: Temperament, rand: Rand, min = 10, max = 60): GameTime {
   let at = now + Math.round(randInt(min, max, rand) * REPLY_SPEED[t]);
   const { day, minute } = fromGameTime(at);
   if (minute >= 21 * 60 || minute < 8 * 60) {
@@ -106,7 +106,7 @@ function firstName(full: string): string {
   return full.split(' ')[0];
 }
 
-function msg(from: TextMessage['from'], text: string, t: GameTime, quote?: Quote): TextMessage {
+export function textMessage(from: TextMessage['from'], text: string, t: GameTime, quote?: Quote): TextMessage {
   return { id: uid('msg'), from, text, t, ...(quote ? { quote } : {}) };
 }
 
@@ -124,7 +124,7 @@ export function createDeal(biz: Business, warmth: number, now: GameTime, rand: R
     id: uid('deal'),
     businessId: biz.id,
     stage: 'intro',
-    messages: [msg('system', `You spoke on the phone. ${firstName(biz.ownerName)} said to text them.`, now)],
+    messages: [textMessage('system', `You spoke on the phone. ${firstName(biz.ownerName)} said to text them.`, now)],
     needs: rollNeeds(biz, rand),
     known: { features: false, budget: false, deadline: false, content: false },
     budgetHint: null,
@@ -287,13 +287,13 @@ export function sendText(deal: Deal, biz: Business, choiceId: string, ctx: TextC
   // --- Negotiation ---
   if (deal.stage === 'negotiating') return negotiate(d, biz, choiceId, ctx, rand);
 
-  const mine = msg('you', youText(choiceId, deal, biz, ctx), ctx.now);
+  const mine = textMessage('you', youText(choiceId, deal, biz, ctx), ctx.now);
 
   // --- First text ---
   if (deal.stage === 'intro') {
     const delta = INTRO_EFFECT[choiceId][t];
     d = { ...d, stage: 'discovery', warmth: clamp(d.warmth + delta, 0, 100) };
-    return { ...d, messages: [...d.messages, mine, msg('them', introReply(choiceId, delta, biz, rand), at)] };
+    return { ...d, messages: [...d.messages, mine, textMessage('them', introReply(choiceId, delta, biz, rand), at)] };
   }
 
   // --- Discovery questions ---
@@ -351,7 +351,7 @@ export function sendText(deal: Deal, biz: Business, choiceId: string, ctx: TextC
     budgetHint,
     patience: d.patience - 1,
     warmth: clamp(d.warmth + warmthDelta, 0, 100),
-    messages: [...d.messages, mine, msg('them', reply, at)],
+    messages: [...d.messages, mine, textMessage('them', reply, at)],
   };
 }
 
@@ -410,7 +410,7 @@ export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextCont
   const sentAt = ctx.now;
   const at = replyTime(sentAt, biz.temperament, rand, 45, 200);
   const verdict = evaluateQuote(deal, biz, quote, ctx.reputation, rand);
-  const mine = msg('you', 'Here’s my quote. Let me know what you think!', sentAt, quote);
+  const mine = textMessage('you', 'Here’s my quote. Let me know what you think!', sentAt, quote);
   let d: Deal = { ...deal, quote, idleDays: 0 };
 
   switch (verdict.kind) {
@@ -420,21 +420,21 @@ export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextCont
         stage: 'won',
         agreedPrice: quote.price,
         closedAt: at,
-        messages: [...d.messages, mine, msg('them', `This looks great. Let’s do it!${quote.depositPct ? ' I’ll send the deposit today.' : ''}`, at)],
+        messages: [...d.messages, mine, textMessage('them', `This looks great. Let’s do it!${quote.depositPct ? ' I’ll send the deposit today.' : ''}`, at)],
       };
     case 'counter':
       return {
         ...d,
         stage: 'negotiating',
         counter: verdict.counter,
-        messages: [...d.messages, mine, msg('them', `Looks good, but it’s more than we wanted to spend. Could you do $${verdict.counter.toLocaleString()}?`, at)],
+        messages: [...d.messages, mine, textMessage('them', `Looks good, but it’s more than we wanted to spend. Could you do $${verdict.counter.toLocaleString()}?`, at)],
       };
     case 'revise': {
       const names = verdict.missing.map((f) => FEATURES[f].label.toLowerCase()).join(' and ');
       d = { ...d, warmth: clamp(d.warmth - 4, 0, 100), known: { ...d.known, features: true } };
       return {
         ...d,
-        messages: [...d.messages, mine, msg('them', `Hmm, I was hoping it would include ${names}. Could you send an updated quote?`, at)],
+        messages: [...d.messages, mine, textMessage('them', `Hmm, I was hoping it would include ${names}. Could you send an updated quote?`, at)],
       };
     }
     case 'reject':
@@ -445,7 +445,7 @@ export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextCont
         messages: [
           ...d.messages,
           mine,
-          msg('them', verdict.reason === 'price' ? 'Sorry, that’s way more than we can spend right now. Thanks though.' : 'Thanks, but this isn’t really what we need. We’ll pass.', at),
+          textMessage('them', verdict.reason === 'price' ? 'Sorry, that’s way more than we can spend right now. Thanks though.' : 'Thanks, but this isn’t really what we need. We’ll pass.', at),
         ],
       };
   }
@@ -464,18 +464,18 @@ function negotiate(deal: Deal, biz: Business, choiceId: string, ctx: TextContext
     agreedPrice: agreed,
     warmth: clamp(deal.warmth + warmthDelta, 0, 100),
     closedAt: at,
-    messages: [...deal.messages, msg('you', you, ctx.now), msg('them', them, at)],
+    messages: [...deal.messages, textMessage('you', you, ctx.now), textMessage('them', them, at)],
   });
   const lost = (you: string, them: string): Deal => ({
     ...deal,
     stage: 'lost',
     closedAt: at,
-    messages: [...deal.messages, msg('you', you, ctx.now), msg('them', them, at)],
+    messages: [...deal.messages, textMessage('you', you, ctx.now), textMessage('them', them, at)],
   });
   const final = (you: string, them: string): Deal => ({
     ...deal,
     finalOffer: true,
-    messages: [...deal.messages, msg('you', you, ctx.now), msg('them', them, at)],
+    messages: [...deal.messages, textMessage('you', you, ctx.now), textMessage('them', them, at)],
   });
 
   switch (choiceId) {
@@ -531,13 +531,13 @@ export function endOfDayDeal(deal: Deal, biz: Business, dayEnd: GameTime, nextDa
       idleDays,
       stage: 'lost',
       closedAt: at,
-      messages: [...deal.messages, msg('them', 'Hey, we’ve decided to hold off on the website for now. Thanks anyway.', at)],
+      messages: [...deal.messages, textMessage('them', 'Hey, we’ve decided to hold off on the website for now. Thanks anyway.', at)],
     };
   }
   if (idleDays === 1) {
     const at = nextDayStart + randInt(30, 150, rand);
     const text = biz.temperament === 'friendly' ? 'Hey! Just checking in, are we still doing this? 🙂' : 'Still interested?';
-    return { ...deal, warmth, idleDays, messages: [...deal.messages, msg('them', text, at)] };
+    return { ...deal, warmth, idleDays, messages: [...deal.messages, textMessage('them', text, at)] };
   }
   return { ...deal, warmth, idleDays };
 }

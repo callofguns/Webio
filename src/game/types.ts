@@ -1,3 +1,5 @@
+import type { Design, Vibe } from './design';
+
 // Core data shapes for the whole game. Everything saved to the player's
 // browser is built out of these types.
 
@@ -162,7 +164,33 @@ export interface Deal {
   idleDays: number;
 }
 
-export type ProjectStatus = 'not_started' | 'in_progress' | 'delivered';
+export type ProjectStatus = 'not_started' | 'in_progress' | 'review' | 'delivered';
+
+export interface BuildTask {
+  id: string;
+  label: string;
+  skill: 'design' | 'development';
+  /** Hours of work at skill level 1. */
+  hours: number;
+  /** Hours of progress so far. */
+  done: number;
+  /** 0-100 once finished. */
+  quality: number | null;
+  /** Quality lost from sloppy late-night work on this task. */
+  penalty: number;
+  feature?: Feature;
+}
+
+export type ProjectEventId = 'blurry_photos' | 'tricky_bug' | 'tutorial' | 'extra_section';
+
+export interface ProjectReview {
+  /** When the client's reply arrives. */
+  at: GameTime;
+  approved: boolean;
+  stars: number;
+  satisfaction: number;
+  feedback: 'bugs' | 'design' | 'sections' | 'quality' | 'content' | null;
+}
 
 export interface Project {
   id: string;
@@ -176,6 +204,34 @@ export interface Project {
   dueDay: number;
   hasContent: boolean;
   status: ProjectStatus;
+
+  // --- Part 3: building ---
+  design: Design;
+  /** The style the client secretly likes. */
+  taste: Vibe;
+  /** When their answer about style arrives (null = not asked yet). */
+  tasteAt: GameTime | null;
+  tasks: BuildTask[];
+  /** Bugs nobody has found yet. The client will. */
+  hiddenBugs: number;
+  /** Bugs you found by testing, waiting to be fixed. */
+  foundBugs: number;
+  /** Times you polished (each adds a little quality). */
+  polish: number;
+  /** Extra client happiness from how you handled things. */
+  goodwill: number;
+  /** Quality gained or lost from choices during the build. */
+  qualityMod: number;
+  /** How many surprise events have happened on this project. */
+  eventsSeen: number;
+  revisions: number;
+  pendingEvent: ProjectEventId | null;
+  review: ProjectReview | null;
+  /** What the client complained about last time they asked for changes. */
+  lastFeedback: ProjectReview['feedback'];
+  stars: number | null;
+  deliveredDay: number | null;
+  lastNudgeDay: number | null;
 }
 
 export interface GameState {

@@ -33,7 +33,11 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
     { label: 'Bank balance', value: <AnimatedNumber value={s.money} format={money} />, sub: `${runway} days of runway` },
     { label: 'Open deals', value: <AnimatedNumber value={openDeals.length} />, sub: yourTurn ? `${yourTurn} waiting on your reply` : `${s.projects.length} signed so far` },
     { label: 'Earned', value: <AnimatedNumber value={earned} format={money} />, sub: `${s.today.dials} calls today` },
-    { label: 'Sales skill', value: `Lv ${s.skills.sales.level}`, sub: `${s.lifetime.dials + s.today.dials} calls all-time` },
+    {
+      label: 'Reputation',
+      value: <AnimatedNumber value={s.reputation} />,
+      sub: `${s.projects.filter((p) => p.status === 'delivered').length} sites delivered`,
+    },
   ];
 
   return (
