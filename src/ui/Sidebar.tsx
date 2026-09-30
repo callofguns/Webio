@@ -11,7 +11,7 @@ const ITEMS: { id: ScreenId; label: string; icon: IconName; soon?: boolean }[] =
   { id: 'phone', label: 'Phone', icon: 'phone' },
   { id: 'messages', label: 'Messages', icon: 'chat' },
   { id: 'projects', label: 'Projects', icon: 'layout' },
-  { id: 'team', label: 'Team', icon: 'users', soon: true },
+  { id: 'team', label: 'Team', icon: 'users' },
   { id: 'office', label: 'Office', icon: 'building', soon: true },
   { id: 'skills', label: 'Skills', icon: 'star' },
 ];
@@ -20,6 +20,8 @@ export function Sidebar({ current, onChange }: { current: ScreenId; onChange: (s
   const agency = useGame((s) => s.profile?.agencyName);
   // Conversations where the client is waiting on you.
   const yourTurn = useGame((s) => s.deals.filter((d) => dealStatus(d, toGameTime(s.day, s.minute)) === 'your_turn').length);
+  const applicants = useGame((s) => s.applicants.length);
+  const counts: Partial<Record<ScreenId, number>> = { messages: yourTurn, team: applicants };
 
   return (
     <nav className="sidebar">
@@ -35,8 +37,8 @@ export function Sidebar({ current, onChange }: { current: ScreenId; onChange: (s
           {current === item.id && <motion.div layoutId="nav-pill" className="nav-bg" transition={spring} />}
           <Icon name={item.icon} />
           <span>{item.label}</span>
-          {item.id === 'messages' && yourTurn > 0 ? (
-            <span className="count">{yourTurn}</span>
+          {counts[item.id] ? (
+            <span className="count">{counts[item.id]}</span>
           ) : (
             item.soon && <span className="soon">Soon</span>
           )}

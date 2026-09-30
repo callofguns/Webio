@@ -25,6 +25,11 @@ export const NOT_INTERESTED_COOLDOWN = 21;
 /** Chance a voicemail gets returned the next day. */
 export const VOICEMAIL_RETURN_CHANCE = 0.06;
 
+/** Most employees you can have while working from your bedroom (remote staff). */
+export const MAX_TEAM = 2;
+/** What you pay someone to do a small test task. */
+export const TEST_TASK_COST = 25;
+
 export function xpForLevel(level: number): number {
   return Math.round(100 * Math.pow(level, 1.5));
 }

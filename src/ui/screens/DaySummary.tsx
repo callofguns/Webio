@@ -1,5 +1,5 @@
 import { useGame } from '../../game/store';
-import { DAILY_LIVING_COST } from '../../game/balance';
+import { dailyBurn } from '../../game/team';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { money } from '../components/AnimatedNumber';
@@ -8,14 +8,23 @@ export function DaySummary() {
   const summary = useGame((s) => s.lastDaySummary);
   const cash = useGame((s) => s.money);
   const dismiss = useGame((s) => s.dismissSummary);
-  const runway = Math.floor(cash / DAILY_LIVING_COST);
+  const employees = useGame((s) => s.employees);
+  const burn = dailyBurn(employees);
+  const runway = Math.floor(cash / burn);
 
   const rows: [string, string][] = summary
     ? [
         ['Calls made', String(summary.dials)],
         ['Real conversations', String(summary.conversations)],
         ['Interested businesses', String(summary.leadsWon)],
+        ...(summary.team
+          ? ([
+              ['Team calls', `${summary.team.dials} calls, ${summary.team.leads} lead${summary.team.leads === 1 ? '' : 's'}`],
+              ['Team building', `${summary.team.buildHours} hrs`],
+            ] as [string, string][])
+          : []),
         ['Money earned', money(summary.moneyIn)],
+        ...(summary.payroll ? ([['Wages paid', money(summary.payroll)]] as [string, string][]) : []),
         ['Money spent', money(summary.moneyOut)],
       ]
     : [];
@@ -26,7 +35,7 @@ export function DaySummary() {
         <>
           <p className="small faint">End of day {summary.day}</p>
           <h2 style={{ fontSize: 20, marginTop: 2 }}>
-            {summary.moneyIn > 0 ? 'Payday!' : summary.leadsWon > 0 ? 'Good day.' : summary.dials === 0 ? 'A quiet day.' : 'Tough day.'}
+            {summary.payroll > 0 ? 'Payday for your team.' : summary.moneyIn > 0 ? 'Money came in!' : summary.leadsWon > 0 ? 'Good day.' : summary.dials === 0 ? 'A quiet day.' : 'Tough day.'}
           </h2>
           <div className="stack" style={{ marginTop: 16, gap: 0 }}>
             {rows.map(([k, v]) => (
@@ -39,7 +48,7 @@ export function DaySummary() {
           <p className="small muted" style={{ marginTop: 14 }}>
             {cash < 0
               ? 'You’re in debt. Find a client soon.'
-              : `At ${money(DAILY_LIVING_COST)}/day you can last about ${runway} more days without income.`}
+              : `You spend about ${money(burn)}/day${employees.length ? ' including wages' : ''}. That lasts about ${runway} more days without income.`}
           </p>
           <Button variant="primary" block style={{ marginTop: 18 }} onClick={dismiss}>
             Start next day

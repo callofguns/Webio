@@ -10,6 +10,7 @@ import { SkillsScreen } from './ui/screens/SkillsScreen';
 import { ComingSoon } from './ui/screens/ComingSoon';
 import { MessagesScreen } from './ui/messages/MessagesScreen';
 import { ProjectsScreen } from './ui/projects/ProjectsScreen';
+import { TeamScreen } from './ui/team/TeamScreen';
 import { DaySummary } from './ui/screens/DaySummary';
 import { fadeUp } from './ui/motion';
 
@@ -31,7 +32,8 @@ export default function App() {
             {screen === 'skills' && <SkillsScreen />}
             {screen === 'messages' && <MessagesScreen />}
             {screen === 'projects' && <ProjectsScreen />}
-            {(screen === 'team' || screen === 'office') && <ComingSoon screen={screen} />}
+            {screen === 'team' && <TeamScreen />}
+            {screen === 'office' && <ComingSoon screen={screen} />}
           </motion.div>
         </AnimatePresence>
       </main>

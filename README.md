@@ -14,7 +14,7 @@ and growing is hard.
 3. **Build** their website by choosing layouts, features and content *(done — part 3)*
 4. Get paid, grow your reputation, and repeat
 
-Later on: **hire** employees to automate the work *(part 4)*, **upgrade your office**
+Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade your office**
 *(part 5)*, and **train** yourself and your team to unlock better skills *(part 6)*.
 
 ## What's in part 1
@@ -65,6 +65,27 @@ Later on: **hire** employees to automate the work *(part 4)*, **upgrade your off
   colors, fonts, online booking, listings and online stores
 - Late projects make clients chase you, and they like you less
 
+## What's in part 4
+
+- **Team screen:** post jobs for sales callers, designers and developers
+- Pick where to post: a **free job board** (few, weak applicants), a **paid job site**
+  ($90/week, more and better people) or **your network** (needs 12 reputation,
+  the best people)
+- The pay you offer changes how many people apply and how good they are
+- Applicants arrive overnight and take other jobs after a few days, so move fast
+- **Interview** (1 hr) to learn a personality trait. **Test task** (30 min, $25) to see
+  their real skill, because résumés can be exaggerated
+- **Make an offer:** lowball them and they'll ask for more, or walk away.
+  Great people don't want to work for an agency nobody's heard of
+- Employees work on their own from 9 to 6 on weekdays:
+  - **Sales callers** phone your business list and send you leads in Messages
+  - **Designers** and **developers** work on the project you assign them
+- Traits matter: reliable, fast learner, perfectionist, people person, lazy, sloppy
+- **Morale** depends on pay. Unhappy people slow down and quit. Bonuses help
+- **Payday is Friday.** Can't cover payroll and your team gets upset
+- Employees slowly level up as they work
+- While you work from your bedroom you can only have 2 remote employees
+
 ## Running it on your computer
 
 You need [Node.js](https://nodejs.org) 20 or newer.
@@ -100,6 +121,7 @@ src/
     deals.ts       The texting engine (questions, quotes, haggling, ghosting)
     design.ts      Layouts, colors, fonts and sections for the website builder
     projects.ts    The building engine (tasks, bugs, events, client reviews)
+    team.ts        Hiring, applicants, employee work, morale and pay
     store.ts       The game state and every action that changes it, plus saving
     time.ts        Clock and calendar helpers
   ui/            Everything you see
@@ -107,6 +129,7 @@ src/
     phone/         The Phone screen and the live call view
     messages/      The Messages screen, chat and quote builder
     projects/      The Projects screen, builder panels and live site preview
+    team/          The Team screen, employee cards and hiring
     screens/       Dashboard, Skills, start screen, end-of-day summary
     motion.ts      Shared spring animation settings
 ```

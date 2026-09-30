@@ -81,6 +81,13 @@ export interface LogEntry {
   tone: 'neutral' | 'good' | 'bad';
 }
 
+/** What your employees got done in a day. */
+export interface TeamDay {
+  dials: number;
+  leads: number;
+  buildHours: number;
+}
+
 export interface DayStats {
   dials: number;
   conversations: number;
@@ -234,6 +241,71 @@ export interface Project {
   lastNudgeDay: number | null;
 }
 
+// ---------------------------------------------------------------------------
+// Part 4: hiring
+
+export type Role = 'sales' | 'designer' | 'developer';
+
+export type Trait = 'reliable' | 'lazy' | 'fast_learner' | 'perfectionist' | 'sloppy' | 'people_person';
+
+export type JobBoard = 'free' | 'paid' | 'referral';
+
+export interface JobPost {
+  id: string;
+  role: Role;
+  board: JobBoard;
+  /** Daily pay offered in the ad. */
+  pay: number;
+  postedDay: number;
+  endsDay: number;
+}
+
+export interface Applicant {
+  id: string;
+  name: string;
+  role: Role;
+  /** Real skill, 1-5. Hidden until you give them a test task. */
+  level: number;
+  /** What their résumé says. Some people exaggerate. */
+  claimedLevel: number;
+  years: number;
+  traits: Trait[];
+  /** Traits you've found out about in an interview. */
+  knownTraits: Trait[];
+  askingPay: number;
+  /** Lowest daily pay they'd take. Hidden. */
+  minPay: number;
+  interviewed: boolean;
+  tested: boolean;
+  appliedDay: number;
+  /** After this day they take another job. */
+  leavesDay: number;
+  /** Their answer to your last offer, if they turned it down. */
+  counter: number | null;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  role: Role;
+  level: number;
+  xp: number;
+  /** Daily pay. */
+  pay: number;
+  traits: Trait[];
+  knownTraits: Trait[];
+  /** 0-100. Low morale means slow work, then quitting. */
+  morale: number;
+  hiredDay: number;
+  /** Designers and developers work on this project. */
+  assignedProjectId: string | null;
+  /** Work time that hasn't added up to a full hour yet. */
+  carryMinutes: number;
+  lowMoraleDays: number;
+  /** What they did today, for the Team screen. */
+  today: { dials: number; leads: number; hours: number; note: string };
+}
+
 export interface GameState {
   version: number;
   /** Day 1 is a Monday. */
@@ -246,9 +318,14 @@ export interface GameState {
   businesses: Business[];
   deals: Deal[];
   projects: Project[];
+  employees: Employee[];
+  jobPosts: JobPost[];
+  applicants: Applicant[];
+  /** Wages earned this week, paid on Friday. */
+  payrollDue: number;
   log: LogEntry[];
   today: DayStats;
   lifetime: DayStats;
   /** Summary of the day that just ended, shown in a popup. */
-  lastDaySummary: (DayStats & { day: number; expenses: number }) | null;
+  lastDaySummary: (DayStats & { day: number; expenses: number; payroll: number; team: TeamDay | null }) | null;
 }

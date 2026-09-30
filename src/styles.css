@@ -444,3 +444,15 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   .preview-sticky { position: static; }
   .site-viewport { max-height: 420px; }
 }
+
+/* ---------- Team ---------- */
+.team-hiring { display: grid; grid-template-columns: 420px minmax(0, 1fr); gap: 16px; align-items: start; }
+.team-hiring > * { min-width: 0; }
+.level-dots { display: inline-flex; align-items: center; gap: 3px; }
+.level-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--border); display: block; }
+.level-dots i.on { background: var(--accent); }
+.level-dots .small { margin-left: 6px; }
+select.input { appearance: auto; }
+@media (max-width: 1000px) {
+  .team-hiring { grid-template-columns: minmax(0, 1fr); }
+}

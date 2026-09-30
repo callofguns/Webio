@@ -119,12 +119,14 @@ export function rollNeeds(biz: Business, rand: Rand = defaultRand): ClientNeeds 
   return { features, pages, deadlineDays: randInt(10, 35, rand), hasContent };
 }
 
-export function createDeal(biz: Business, warmth: number, now: GameTime, rand: Rand = defaultRand): Deal {
+export function createDeal(biz: Business, warmth: number, now: GameTime, rand: Rand = defaultRand, caller?: string): Deal {
   return {
     id: uid('deal'),
     businessId: biz.id,
     stage: 'intro',
-    messages: [textMessage('system', `You spoke on the phone. ${firstName(biz.ownerName)} said to text them.`, now)],
+    messages: [
+      textMessage('system', `${caller ? `${caller} (your sales caller)` : 'You'} spoke on the phone. ${firstName(biz.ownerName)} said to text them.`, now),
+    ],
     needs: rollNeeds(biz, rand),
     known: { features: false, budget: false, deadline: false, content: false },
     budgetHint: null,

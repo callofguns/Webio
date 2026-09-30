@@ -188,6 +188,16 @@ export interface WorkContext {
   minute: number;
   designLevel: number;
   devLevel: number;
+  /** Employees only do their own kind of task. */
+  only?: BuildTask['skill'];
+  /** Employees don't stop for surprise events (default true for you). */
+  events?: boolean;
+  /** Multiplies work speed (morale, traits, onboarding). */
+  speedMult?: number;
+  /** Added to the quality of finished tasks (traits). */
+  qualityBonus?: number;
+  /** Multiplies the chance of creating bugs (traits). */
+  bugMult?: number;
 }
 
 export interface WorkResult {
@@ -215,7 +225,9 @@ function possibleEvents(p: Project, current: BuildTask): ProjectEventId[] {
 /** Works on the next unfinished tasks for up to `hours`. Stops early for surprises or bedtime. */
 export function work(p: Project, hours: number, ctx: WorkContext, rand: Rand = defaultRand): WorkResult {
   const xp = { design: 0, development: 0 };
-  if (p.status !== 'in_progress' || p.pendingEvent) return { project: p, minutes: 0, xp };
+  const events = ctx.events ?? true;
+  // A surprise waiting for you blocks your own work, but not your employees'.
+  if (p.status !== 'in_progress' || (events && p.pendingEvent)) return { project: p, minutes: 0, xp };
 
   const tasks = p.tasks.map((t) => ({ ...t }));
   let hiddenBugs = p.hiddenBugs;
@@ -226,29 +238,29 @@ export function work(p: Project, hours: number, ctx: WorkContext, rand: Rand = d
 
   for (let h = 0; h < hours; h++) {
     if (minute + 60 > DAY_HARD_END) break;
-    const t = tasks.find((x) => x.done < x.hours);
+    const t = tasks.find((x) => x.done < x.hours && (!ctx.only || x.skill === ctx.only));
     if (!t) break;
     const level = t.skill === 'design' ? ctx.designLevel : ctx.devLevel;
     const late = minute >= LATE_NIGHT;
 
-    t.done = Math.min(t.hours, t.done + speed(level));
+    t.done = Math.min(t.hours, t.done + speed(level) * (ctx.speedMult ?? 1));
     if (late) t.penalty += 6;
     xp[t.skill] += 10;
-    if (t.skill === 'development' && chance(bugChance(t, ctx.devLevel, late), rand)) hiddenBugs++;
+    if (t.skill === 'development' && chance(bugChance(t, ctx.devLevel, late) * (ctx.bugMult ?? 1), rand)) hiddenBugs++;
     if (t.done >= t.hours) {
-      t.quality = clamp(45 + 8 * level + randInt(-8, 8, rand) - t.penalty, 10, 95);
+      t.quality = clamp(45 + 8 * level + randInt(-8, 8, rand) - t.penalty + (ctx.qualityBonus ?? 0), 10, 95);
     }
     minute += 60;
     minutes += 60;
 
-    if (eventsSeen < MAX_EVENTS && tasks.some((x) => x.done < x.hours) && chance(EVENT_CHANCE_PER_HOUR, rand)) {
+    if (events && eventsSeen < MAX_EVENTS && tasks.some((x) => x.done < x.hours) && chance(EVENT_CHANCE_PER_HOUR, rand)) {
       pendingEvent = pick(possibleEvents(p, t), rand);
       eventsSeen++;
       break;
     }
   }
 
-  return { project: { ...p, tasks, hiddenBugs, pendingEvent, eventsSeen }, minutes, xp };
+  return { project: { ...p, tasks, hiddenBugs, pendingEvent: pendingEvent ?? p.pendingEvent, eventsSeen }, minutes, xp };
 }
 
 /** Test the site for an hour. Each hidden bug has a chance to be found. */

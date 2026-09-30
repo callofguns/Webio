@@ -3,10 +3,13 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Business, DayStats, Deal, GameState, LogEntry, Project, Quote, SkillId, TextMessage } from './types';
+import type { Business, DayStats, Deal, Employee, GameState, JobBoard, LogEntry, Project, Quote, Role, SkillId, TeamDay, TextMessage } from './types';
 import {
   DAILY_LIVING_COST,
   DAY_HARD_END,
+  MAX_TEAM,
+  TEST_TASK_COST,
+  WORKDAY_END,
   DIRECTORY_SEARCH_MINUTES,
   DIRECTORY_SEARCH_RESULTS,
   LEAD_LIST_COST,
@@ -50,10 +53,31 @@ import {
   work,
 } from './projects';
 import { FONTS, LAYOUTS, PALETTES, TASTE_HINTS, type Design } from './design';
+import {
+  addEmployeeXp,
+  BOARDS,
+  BONUS_AMOUNT,
+  bugMult,
+  dailyApplicants,
+  endOfDayMorale,
+  hire,
+  interview,
+  INTERVIEW_MINUTES,
+  offerResult,
+  POST_DAYS,
+  productivity,
+  qualityBonus,
+  ROLES,
+  salesHour,
+  TEST_MINUTES,
+  testTask,
+  workMinutesBetween,
+  type OfferResult,
+} from './team';
 import { chance, pick, randInt, uid } from './rng';
 import { formatHour, isBusinessHours } from './time';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export { DAY_HARD_END };
 
 function emptyStats(): DayStats {
@@ -75,6 +99,10 @@ function newGameState(): GameState {
     businesses: generateBusinesses(START_BUSINESSES),
     deals: [],
     projects: [],
+    employees: [],
+    jobPosts: [],
+    applicants: [],
+    payrollDue: 0,
     log: [],
     today: emptyStats(),
     lifetime: emptyStats(),
@@ -116,6 +144,16 @@ interface Store extends GameState {
   polishProject: (projectId: string) => void;
   resolveProjectEvent: (projectId: string, choiceId: string) => void;
   submitProject: (projectId: string) => void;
+  // Team (part 4)
+  postJob: (role: Role, board: JobBoard, pay: number) => void;
+  closeJobPost: (postId: string) => void;
+  interviewApplicant: (applicantId: string) => void;
+  testApplicant: (applicantId: string) => void;
+  makeOffer: (applicantId: string, pay: number) => OfferResult | null;
+  rejectApplicant: (applicantId: string) => void;
+  assignEmployee: (employeeId: string, projectId: string | null) => void;
+  giveBonus: (employeeId: string) => void;
+  fireEmployee: (employeeId: string) => void;
   endDay: () => void;
   dismissSummary: () => void;
 }
@@ -217,6 +255,7 @@ export const useGame = create<Store>()(
               today: { ...s.today, moneyIn: s.today.moneyIn + owed },
             });
             updateProject(p.id, (x) => ({ ...x, status: 'delivered', stars: x.review!.stars, deliveredDay: get().day }));
+            set({ employees: get().employees.map((e) => (e.assignedProjectId === p.id ? { ...e, assignedProjectId: null } : e)) });
             log(`${biz.name} approved their site (${'\u2605'.repeat(p.review.stars)}) and paid $${owed.toLocaleString()}.`, p.review.stars >= 3 ? 'good' : 'bad');
           } else {
             updateProject(p.id, applyRevision);
@@ -225,10 +264,140 @@ export const useGame = create<Store>()(
         }
       };
 
+      /** Your employees work in the background while the clock moves through work hours. */
+      const runTeam = (from: number, to: number) => {
+        const s = get();
+        const minutes = workMinutesBetween(s.day, from, to);
+        if (!minutes || !s.employees.length) return;
+        const at = toGameTime(s.day, Math.min(to, WORKDAY_END));
+        let businesses = s.businesses;
+        let projects = s.projects;
+        const newDeals: Deal[] = [];
+        const messages: [string, LogEntry['tone']][] = [];
+
+        const employees = s.employees.map((original) => {
+          let e: Employee = { ...original, today: { ...original.today }, carryMinutes: original.carryMinutes + minutes };
+          const gainXp = (amount: number) => {
+            const r = addEmployeeXp(e, amount);
+            e = { ...r.employee, today: e.today, carryMinutes: e.carryMinutes };
+            if (r.leveled) messages.push([`${e.name} got better at their job (level ${e.level}).`, 'good']);
+          };
+          while (e.carryMinutes >= 60) {
+            e.carryMinutes -= 60;
+            if (e.role === 'sales') {
+              const r = salesHour(e, businesses, s.day, s.reputation);
+              businesses = r.businesses;
+              e.today.dials += r.dials;
+              e.today.note = 'Calling businesses';
+              if (r.dials === 0) {
+                // Nobody left to call, so they look for more businesses.
+                businesses = [...businesses, ...generateBusinesses(2)];
+                e.today.note = 'Ran out of businesses to call, so searched the directory';
+              }
+              for (const lead of r.leads) {
+                newDeals.push(createDeal(lead.biz, lead.warmth, at, Math.random, e.name.split(' ')[0]));
+                e.today.leads++;
+                messages.push([`${e.name} got ${lead.biz.name} interested! Text them in Messages.`, 'good']);
+              }
+              gainXp(5);
+            } else {
+              const project = projects.find((p) => p.id === e.assignedProjectId);
+              if (!project) {
+                e.today.note = 'Nothing to do. Assign them a project.';
+                continue;
+              }
+              if (project.status !== 'in_progress') {
+                e.today.note = project.status === 'not_started' ? 'Waiting for you to plan and start the project' : 'Waiting while the client reviews it';
+                continue;
+              }
+              const res = work(project, 1, {
+                minute: 12 * 60,
+                designLevel: e.level,
+                devLevel: e.level,
+                only: e.role === 'designer' ? 'design' : 'development',
+                events: false,
+                speedMult: productivity(e, s.day),
+                qualityBonus: qualityBonus(e),
+                bugMult: bugMult(e),
+              });
+              const biz = businesses.find((b) => b.id === project.businessId);
+              if (res.minutes === 0) {
+                e.today.note = `No ${e.role === 'designer' ? 'design' : 'coding'} work left on ${biz?.name ?? 'this project'}`;
+                continue;
+              }
+              projects = projects.map((p) => (p.id === project.id ? res.project : p));
+              e.today.hours += 1;
+              e.today.note = `Working on ${biz?.name ?? 'a project'}`;
+              gainXp(10);
+            }
+          }
+          return e;
+        });
+
+        set({ employees, businesses, projects, deals: [...get().deals, ...newDeals] });
+        for (const [text, tone] of messages) log(text, tone);
+      };
+
       const spendTime = (minutes: number) => {
-        set({ minute: Math.min(get().minute + minutes, 24 * 60 - 1) });
+        const from = get().minute;
+        const to = Math.min(from + minutes, 24 * 60 - 1);
+        runTeam(from, to);
+        set({ minute: to });
         settleDeals();
         settleProjects();
+      };
+
+      /** End of day for the team: morale, quitting, wages, and job applicants. */
+      const closeTeamDay = (): { payroll: number; team: TeamDay | null } => {
+        const s = get();
+        const nextDay = s.day + 1;
+        const workday = (s.day - 1) % 7 < 5;
+        const team: TeamDay = {
+          dials: s.employees.reduce((n, e) => n + e.today.dials, 0),
+          leads: s.employees.reduce((n, e) => n + e.today.leads, 0),
+          buildHours: s.employees.reduce((n, e) => n + e.today.hours, 0),
+        };
+        const hadTeam = s.employees.length > 0;
+        let payrollDue = s.payrollDue;
+        let employees = s.employees;
+        const quitters: Employee[] = [];
+        if (workday) {
+          payrollDue += employees.reduce((n, e) => n + e.pay, 0);
+          employees = employees.flatMap((e) => {
+            const r = endOfDayMorale(e);
+            if (r.quit) {
+              quitters.push(e);
+              return [];
+            }
+            return [r.employee];
+          });
+        }
+        // Payday is Friday.
+        let payroll = 0;
+        if ((s.day - 1) % 7 === 4 && payrollDue > 0) {
+          payroll = payrollDue;
+          payrollDue = 0;
+          if (s.money - payroll - DAILY_LIVING_COST < 0) {
+            // Nobody likes a bounced paycheck.
+            employees = employees.map((e) => ({ ...e, morale: Math.max(0, e.morale - 25) }));
+          }
+        }
+        employees = employees.map((e) => ({ ...e, carryMinutes: 0, today: { dials: 0, leads: 0, hours: 0, note: '' } }));
+
+        const jobPosts = s.jobPosts.filter((p) => p.endsDay >= nextDay);
+        const expiredPosts = s.jobPosts.length - jobPosts.length;
+        const staying = s.applicants.filter((a) => a.leavesDay >= nextDay);
+        const gone = s.applicants.length - staying.length;
+        const fresh = jobPosts.flatMap((p) => dailyApplicants(p, nextDay));
+
+        set({ employees, payrollDue, jobPosts, applicants: [...staying, ...fresh] });
+        for (const q of quitters) log(`${q.name} quit. They weren\u2019t happy here.`, 'bad');
+        if (payroll) log(`Payday: paid your team $${payroll.toLocaleString()}.`, 'bad');
+        if (payroll && s.money - payroll - DAILY_LIVING_COST < 0) log('You couldn\u2019t cover payroll. Your team is upset.', 'bad');
+        if (expiredPosts) log(`${expiredPosts} job post${expiredPosts > 1 ? 's' : ''} ended.`);
+        if (gone) log(`${gone} applicant${gone > 1 ? 's' : ''} took another job.`, 'bad');
+        if (fresh.length) log(`${fresh.length} new job applicant${fresh.length > 1 ? 's' : ''}. Check the Team screen.`, 'good');
+        return { payroll, team: hadTeam ? team : null };
       };
 
       /** True when you can't do anything else (on a call, or too late). */
@@ -523,12 +692,94 @@ export const useGame = create<Store>()(
           spendTime(10);
         },
 
-        endDay: () => {
+        postJob: (role, board, pay) => {
           const s = get();
-          if (s.activeCall && s.activeCall.phase !== 'ended') return;
-          const expenses = DAILY_LIVING_COST;
+          const info = BOARDS[board];
+          if (s.reputation < info.reputation || s.money < info.cost) return;
+          if (s.jobPosts.some((p) => p.role === role && p.board === board)) return;
+          set({
+            money: s.money - info.cost,
+            today: { ...s.today, moneyOut: s.today.moneyOut + info.cost },
+            jobPosts: [...s.jobPosts, { id: uid('post'), role, board, pay, postedDay: s.day, endsDay: s.day + POST_DAYS }],
+          });
+          log(`Posted a ${ROLES[role].label.toLowerCase()} job on the ${info.label.toLowerCase()}. Applicants will come in over the next few days.`);
+        },
+
+        closeJobPost: (postId) => set({ jobPosts: get().jobPosts.filter((p) => p.id !== postId) }),
+
+        interviewApplicant: (applicantId) => {
+          const a = get().applicants.find((x) => x.id === applicantId);
+          if (!a || a.interviewed || busy(INTERVIEW_MINUTES)) return;
+          set({ applicants: get().applicants.map((x) => (x.id === applicantId ? interview(x) : x)) });
+          spendTime(INTERVIEW_MINUTES);
+        },
+
+        testApplicant: (applicantId) => {
+          const s = get();
+          const a = s.applicants.find((x) => x.id === applicantId);
+          if (!a || a.tested || s.money < TEST_TASK_COST || busy(TEST_MINUTES)) return;
+          set({
+            money: s.money - TEST_TASK_COST,
+            today: { ...s.today, moneyOut: s.today.moneyOut + TEST_TASK_COST },
+            applicants: s.applicants.map((x) => (x.id === applicantId ? testTask(x) : x)),
+          });
+          spendTime(TEST_MINUTES);
+        },
+
+        makeOffer: (applicantId, pay) => {
+          const s = get();
+          const a = s.applicants.find((x) => x.id === applicantId);
+          if (!a || s.employees.length >= MAX_TEAM) return null;
+          const result = offerResult(a, pay, s.reputation);
+          if (result.kind === 'accept') {
+            set({ employees: [...s.employees, hire(a, pay, s.day)], applicants: s.applicants.filter((x) => x.id !== applicantId) });
+            log(`${a.name} joined your team as a ${ROLES[a.role].label.toLowerCase()}!`, 'good');
+          } else if (result.kind === 'counter') {
+            set({ applicants: s.applicants.map((x) => (x.id === applicantId ? { ...x, counter: result.pay } : x)) });
+          } else {
+            set({ applicants: s.applicants.filter((x) => x.id !== applicantId) });
+            log(`${a.name} turned down your offer.`, 'bad');
+          }
+          return result;
+        },
+
+        rejectApplicant: (applicantId) => set({ applicants: get().applicants.filter((x) => x.id !== applicantId) }),
+
+        assignEmployee: (employeeId, projectId) => {
+          set({ employees: get().employees.map((e) => (e.id === employeeId ? { ...e, assignedProjectId: projectId } : e)) });
+        },
+
+        giveBonus: (employeeId) => {
+          const s = get();
+          if (s.money < BONUS_AMOUNT) return;
+          set({
+            money: s.money - BONUS_AMOUNT,
+            today: { ...s.today, moneyOut: s.today.moneyOut + BONUS_AMOUNT },
+            employees: s.employees.map((e) => (e.id === employeeId ? { ...e, morale: Math.min(100, e.morale + 15), lowMoraleDays: 0 } : e)),
+          });
+        },
+
+        fireEmployee: (employeeId) => {
+          const e = get().employees.find((x) => x.id === employeeId);
+          if (!e) return;
+          // Everyone else gets a little nervous.
+          set({
+            employees: get()
+              .employees.filter((x) => x.id !== employeeId)
+              .map((x) => ({ ...x, morale: Math.max(0, x.morale - 5) })),
+          });
+          log(`You let ${e.name} go.`, 'bad');
+        },
+
+        endDay: () => {
+          if (get().activeCall && get().activeCall!.phase !== 'ended') return;
+          // Your team finishes their workday, even if you stop early.
+          runTeam(get().minute, WORKDAY_END);
+          const teamDay = closeTeamDay();
+          const s = get();
+          const expenses = DAILY_LIVING_COST + teamDay.payroll;
           const nextDay = s.day + 1;
-          const summary = { ...s.today, moneyOut: s.today.moneyOut + expenses, day: s.day, expenses };
+          const summary = { ...s.today, moneyOut: s.today.moneyOut + expenses, day: s.day, expenses, payroll: teamDay.payroll, team: teamDay.team };
 
           // Some voicemails get returned overnight.
           let businesses = s.businesses;
@@ -584,7 +835,7 @@ export const useGame = create<Store>()(
             today: emptyStats(),
             lastDaySummary: summary,
           });
-          log(`Paid $${expenses} in living costs.`, 'bad');
+          log(`Paid $${DAILY_LIVING_COST} in living costs.`, 'bad');
           settleDeals();
           settleProjects();
           for (const id of returned) {
@@ -613,6 +864,13 @@ export const useGame = create<Store>()(
             const biz = state.businesses.find((b) => b.id === p.businessId)!;
             return { ...builderFields(p.pages, p.features, biz), ...p };
           });
+        }
+        if (version < 4) {
+          // Part 4 added hiring.
+          state.employees = [];
+          state.jobPosts = [];
+          state.applicants = [];
+          state.payrollDue = 0;
         }
         return state;
       },
