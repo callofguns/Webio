@@ -37,9 +37,9 @@ export const TRAITS: Record<Trait, { label: string; good: boolean; text: string 
 
 export const MAX_LEVEL = 5;
 
-/** Average money going out per day: living costs plus wages (paid 5 days a week). */
-export function dailyBurn(employees: Employee[]): number {
-  return DAILY_LIVING_COST + (employees.reduce((n, e) => n + e.pay, 0) * 5) / 7;
+/** Average money going out per day: living costs, rent, and wages (paid 5 days a week). */
+export function dailyBurn(employees: Employee[], rent = 0): number {
+  return DAILY_LIVING_COST + rent + (employees.reduce((n, e) => n + e.pay, 0) * 5) / 7;
 }
 
 // ---------------------------------------------------------------------------
@@ -266,8 +266,16 @@ export interface SalesHour {
 }
 
 /** One hour of a sales caller dialing through your list of businesses. */
-export function salesHour(e: Employee, businesses: Business[], day: number, reputation: number, rand: Rand = defaultRand): SalesHour {
-  const dialsWanted = Math.round((3 + e.level) * productivity(e, day));
+export function salesHour(
+  e: Employee,
+  businesses: Business[],
+  day: number,
+  reputation: number,
+  rand: Rand = defaultRand,
+  /** Office bonuses (headsets, a nicer office). */
+  dialMult = 1,
+): SalesHour {
+  const dialsWanted = Math.round((3 + e.level) * productivity(e, day) * dialMult);
   const pLead = (0.012 + 0.006 * e.level + Math.min(0.01, reputation * 0.0005)) * (e.traits.includes('people_person') ? 1.3 : 1);
   const list = businesses.map((b) => ({ ...b }));
   const callable = shuffle(
@@ -295,18 +303,18 @@ export function salesHour(e: Employee, businesses: Business[], day: number, repu
 // ---------------------------------------------------------------------------
 // Morale
 
-/** Where their morale drifts to, based on pay and personality. */
-export function moraleTarget(e: Employee): number {
+/** Where their morale drifts to, based on pay, personality and the office. */
+export function moraleTarget(e: Employee, officeBonus = 0): number {
   const payRatio = e.pay / marketPay(e.role, e.level);
-  return clamp(60 + (payRatio - 1) * 120 + (e.traits.includes('reliable') ? 15 : 0), 0, 100);
+  return clamp(60 + (payRatio - 1) * 120 + (e.traits.includes('reliable') ? 15 : 0) + officeBonus, 0, 100);
 }
 
 export const QUIT_AFTER_DAYS = 3;
 export const BONUS_AMOUNT = 100;
 
 /** End-of-workday morale change. Returns quit = true if they've had enough. */
-export function endOfDayMorale(e: Employee, rand: Rand = defaultRand): { employee: Employee; quit: boolean } {
-  const target = moraleTarget(e);
+export function endOfDayMorale(e: Employee, rand: Rand = defaultRand, officeBonus = 0): { employee: Employee; quit: boolean } {
+  const target = moraleTarget(e, officeBonus);
   const morale = clamp(Math.round(e.morale + (target - e.morale) * 0.2 + randInt(-3, 3, rand)), 0, 100);
   const lowMoraleDays = morale < 30 ? e.lowMoraleDays + 1 : 0;
   const quit = lowMoraleDays >= (e.traits.includes('reliable') ? QUIT_AFTER_DAYS + 2 : QUIT_AFTER_DAYS);

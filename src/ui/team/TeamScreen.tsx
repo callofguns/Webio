@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGame } from '../../game/store';
-import { MAX_TEAM } from '../../game/balance';
+import { OFFICES } from '../../game/office';
 import { Tabs } from '../components/Tabs';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
@@ -9,7 +9,7 @@ import { EmployeeCard } from './EmployeeCard';
 import { HiringPanel } from './HiringPanel';
 
 export function TeamScreen() {
-  const { employees, applicants, payrollDue, day } = useGame();
+  const { employees, applicants, payrollDue, day, office } = useGame();
   const [tab, setTab] = useState<'team' | 'hiring'>(employees.length ? 'team' : 'hiring');
   const weekly = employees.reduce((n, e) => n + e.pay, 0) * 5;
   // Day 1 is a Monday, so Friday is index 4 in the week.
@@ -21,7 +21,7 @@ export function TeamScreen() {
         <div>
           <h1>Team</h1>
           <p className="muted">
-            {employees.length}/{MAX_TEAM} people
+            {employees.length}/{OFFICES[office].capacity} people
             {employees.length > 0 && (
               <>
                 {' '}

@@ -198,6 +198,8 @@ export interface WorkContext {
   qualityBonus?: number;
   /** Multiplies the chance of creating bugs (traits). */
   bugMult?: number;
+  /** Quality lost per late-night hour (less with a coffee machine). */
+  latePenalty?: number;
 }
 
 export interface WorkResult {
@@ -244,7 +246,7 @@ export function work(p: Project, hours: number, ctx: WorkContext, rand: Rand = d
     const late = minute >= LATE_NIGHT;
 
     t.done = Math.min(t.hours, t.done + speed(level) * (ctx.speedMult ?? 1));
-    if (late) t.penalty += 6;
+    if (late) t.penalty += ctx.latePenalty ?? 6;
     xp[t.skill] += 10;
     if (t.skill === 'development' && chance(bugChance(t, ctx.devLevel, late) * (ctx.bugMult ?? 1), rand)) hiddenBugs++;
     if (t.done >= t.hours) {

@@ -1,4 +1,5 @@
 import type { Design, Vibe } from './design';
+import type { FurnitureId, OfficeId } from './office';
 
 // Core data shapes for the whole game. Everything saved to the player's
 // browser is built out of these types.
@@ -323,9 +324,13 @@ export interface GameState {
   applicants: Applicant[];
   /** Wages earned this week, paid on Friday. */
   payrollDue: number;
+  /** Where you work (part 5). */
+  office: OfficeId;
+  /** Equipment you've bought. */
+  furniture: FurnitureId[];
   log: LogEntry[];
   today: DayStats;
   lifetime: DayStats;
   /** Summary of the day that just ended, shown in a popup. */
-  lastDaySummary: (DayStats & { day: number; expenses: number; payroll: number; team: TeamDay | null }) | null;
+  lastDaySummary: (DayStats & { day: number; expenses: number; payroll: number; rent: number; team: TeamDay | null }) | null;
 }

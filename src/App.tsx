@@ -7,7 +7,7 @@ import { StartScreen } from './ui/screens/StartScreen';
 import { Dashboard } from './ui/screens/Dashboard';
 import { PhoneScreen } from './ui/phone/PhoneScreen';
 import { SkillsScreen } from './ui/screens/SkillsScreen';
-import { ComingSoon } from './ui/screens/ComingSoon';
+import { OfficeScreen } from './ui/office/OfficeScreen';
 import { MessagesScreen } from './ui/messages/MessagesScreen';
 import { ProjectsScreen } from './ui/projects/ProjectsScreen';
 import { TeamScreen } from './ui/team/TeamScreen';
@@ -40,7 +40,7 @@ export default function App() {
             {screen === 'messages' && <MessagesScreen />}
             {screen === 'projects' && <ProjectsScreen />}
             {screen === 'team' && <TeamScreen />}
-            {screen === 'office' && <ComingSoon screen={screen} />}
+            {screen === 'office' && <OfficeScreen />}
           </motion.div>
         </AnimatePresence>
       </main>

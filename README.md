@@ -15,7 +15,7 @@ and growing is hard.
 4. Get paid, grow your reputation, and repeat
 
 Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade your office**
-*(part 5)*, and **train** yourself and your team to unlock better skills *(part 6)*.
+*(done — part 5)*, and **train** yourself and your team to unlock better skills *(part 6)*.
 
 ## What's in part 1
 
@@ -89,6 +89,19 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 - Employees slowly level up as they work
 - While you work from your bedroom you can only have 2 remote employees
 
+## What's in part 5
+
+- **Office screen** with a top-down **floor plan**: your team sits at their desks,
+  equipment you buy appears in the room, and the lights go off after work
+- Four places to work: **your bedroom** (free, remote staff only) → **co-working desks**
+  → **small office** → **studio loft**
+- Bigger offices fit more people, make the team happier and faster, make owners
+  friendlier on cold calls (a real address!), and help convince great applicants
+- They cost a move-in fee and **rent every day**, and need a minimum reputation
+- **Equipment:** faster laptop, second monitor, coffee machine, plants, phone headsets,
+  good chairs, whiteboard wall and a client lounge, each with its own bonus. Some
+  only fit in a real office
+
 ## Look and feel
 
 The game is styled like a web designer's tool:
@@ -155,6 +168,7 @@ src/
     design.ts      Layouts, colors, fonts and sections for the website builder
     projects.ts    The building engine (tasks, bugs, events, client reviews)
     team.ts        Hiring, applicants, employee work, morale and pay
+    office.ts      Offices, equipment and their bonuses
     store.ts       The game state and every action that changes it, plus saving
     time.ts        Clock and calendar helpers
   ui/            Everything you see
@@ -163,6 +177,7 @@ src/
     messages/      The Messages screen, chat and quote builder
     projects/      The Projects screen, builder panels and live site preview
     team/          The Team screen, employee cards and hiring
+    office/        The Office screen and its floor plan
     screens/       Dashboard, Skills, start screen, end-of-day summary
     motion.ts      Shared spring animation settings
     useIsMobile.ts Tells components when they're on a phone-sized screen

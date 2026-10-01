@@ -802,3 +802,76 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
 .step.on .n { box-shadow: 0 2px 0 var(--accent-deep); }
 .banner.info { background: color-mix(in srgb, var(--hi) 28%, var(--surface)); color: var(--text); border: 1px solid color-mix(in srgb, var(--hi) 60%, transparent); }
 .toast { background: var(--grain), var(--surface); }
+
+/* ---------- Office ---------- */
+.office-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.office-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.office-card { position: relative; }
+.perk-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.perk-list li { display: flex; gap: 8px; align-items: baseline; }
+.perk-list li::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--hue); transform: rotate(45deg); flex-shrink: 0; }
+.equip-card.owned { background: color-mix(in srgb, var(--good) 6%, var(--surface)); }
+.equip-icon {
+  width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 22px;
+  background: color-mix(in srgb, var(--hue) 12%, var(--surface)); flex-shrink: 0;
+}
+
+/* The floor plan: a top-down room drawing. */
+.floorplan {
+  position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden;
+  border: 6px solid color-mix(in srgb, var(--text) 78%, var(--surface));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+  --floor: #d9b98c; --floor-2: #ceac7d;
+  background: repeating-linear-gradient(90deg, var(--floor) 0 38px, var(--floor-2) 38px 40px);
+}
+.fp-coworking { --floor: #d7dae2; background: var(--grain), radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1.5px) 0 0 / 10px 10px, var(--floor); }
+.fp-small { --floor: #b9c3d9; background: var(--grain), repeating-linear-gradient(45deg, #b4bed5 0 6px, #bdc7dd 6px 12px); }
+.fp-loft { --floor: #b98d63; --floor-2: #a97d55; background: repeating-linear-gradient(0deg, var(--floor) 0 26px, var(--floor-2) 26px 28px); }
+.fp-brick {
+  position: absolute; left: 0; right: 0; top: 0; height: 12%;
+  background: repeating-linear-gradient(0deg, #9c4a33 0 9px, #7d3826 9px 11px), #9c4a33;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+}
+.fp-thing {
+  position: absolute; border-radius: 8px; display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; font-variation-settings: 'MONO' 1; color: rgba(0, 0, 0, 0.45);
+}
+.fp-window { background: linear-gradient(#bfe3ff, #e8f5ff); border: 3px solid #f7f9fc; border-radius: 0 0 4px 4px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1); }
+.fp-bed { background: #f2f4fa; border: 3px solid #8aa1d6; box-shadow: inset 0 22% 0 #c9d6f5, 0 3px 0 rgba(0, 0, 0, 0.15); }
+.fp-bed::before { content: ''; position: absolute; left: 10%; right: 10%; top: 8%; height: 20%; background: #fff; border-radius: 6px; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1); }
+.fp-rug { position: absolute; border-radius: 50%; background: repeating-radial-gradient(circle, #e4826b 0 6px, #f0a58f 6px 12px); opacity: 0.8; }
+.fp-table { background: #8a6a4d; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2); color: rgba(255, 255, 255, 0.65); }
+.fp-sofa { background: #4f6fbf; border-radius: 14px; box-shadow: inset 0 0 0 6px #3e5aa3, 0 3px 0 rgba(0, 0, 0, 0.2); color: rgba(255, 255, 255, 0.7); }
+.fp-stranger { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: rgba(25, 27, 51, 0.25); transform: translate(-50%, -50%); }
+.fp-desk { position: absolute; transform: translate(-50%, -50%); width: 64px; height: 40px; }
+.fp-desk-top {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 22px; border-radius: 5px;
+  background: #f4efe6; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18);
+}
+.fp-desk-top i { position: absolute; left: 50%; top: 4px; width: 26px; height: 5px; border-radius: 2px; background: #2b2f45; transform: translateX(-50%); }
+.fp-person { position: absolute; left: 50%; top: -6px; margin-left: -14px; }
+.fp-person .avatar { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18); font-size: 11px; }
+.fp-item { position: absolute; transform: translate(-50%, -50%); font-size: 24px; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.2)); }
+.fp-calls {
+  position: absolute; left: 3%; bottom: 5%; background: var(--surface); border-radius: 10px; padding: 6px 8px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15); display: grid; gap: 4px;
+}
+.fp-calls-label { font-size: 10px; font-weight: 700; font-variation-settings: 'MONO' 1; color: var(--text-3); }
+.fp-off { filter: saturate(0.6); }
+.fp-night {
+  position: absolute; inset: 0; display: grid; place-items: end center; padding-bottom: 10px;
+  background: radial-gradient(circle at 30% 60%, rgba(255, 210, 120, 0.12), rgba(10, 12, 30, 0.55) 60%);
+  color: #fff; font-size: 12px; font-weight: 700; font-variation-settings: 'MONO' 1; pointer-events: none;
+}
+
+@media (max-width: 1000px) {
+  .office-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .floorplan { aspect-ratio: 4 / 3; }
+  .fp-desk { width: 36px; height: 30px; }
+  .fp-desk-top { height: 16px; }
+  .fp-desk-top i { width: 18px; }
+  .fp-item { font-size: 18px; }
+  .fp-thing { font-size: 9px; }
+}

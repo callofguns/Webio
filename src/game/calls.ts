@@ -49,6 +49,8 @@ export interface CallContext {
   agencyName: string;
   salesLevel: number;
   reputation: number;
+  /** Extra interest from having a real office address. */
+  presence?: number;
 }
 
 export interface CallState {
@@ -125,7 +127,7 @@ function baseInterest(biz: Business, ctx: CallContext, rand: Rand): number {
   const fromRep = Math.min(15, ctx.reputation * 0.5);
   // Most people aren't looking to buy anything today.
   const mood = randInt(-25, 5, rand);
-  return clamp(fromWebsite + fromTemper + fromRep + ctx.salesLevel * 2 + mood, 0, 100);
+  return clamp(fromWebsite + fromTemper + fromRep + ctx.salesLevel * 2 + (ctx.presence ?? 0) + mood, 0, 100);
 }
 
 function basePatience(t: Temperament): number {

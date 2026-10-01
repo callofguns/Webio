@@ -25,7 +25,7 @@ const ITEMS: { id: ScreenId; label: string; short?: string; icon: IconName; soon
   { id: 'messages', label: 'Messages', short: 'Texts', icon: 'chat' },
   { id: 'projects', label: 'Projects', icon: 'layout' },
   { id: 'team', label: 'Team', icon: 'users' },
-  { id: 'office', label: 'Office', icon: 'building', soon: true },
+  { id: 'office', label: 'Office', icon: 'building' },
   { id: 'skills', label: 'Skills', icon: 'star' },
 ];
 

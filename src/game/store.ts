@@ -3,11 +3,11 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { buyBlocker, FURNITURE, moveBlocker, OFFICES, officeEffects, type FurnitureId, type OfficeId } from './office';
 import type { Business, DayStats, Deal, Employee, GameState, JobBoard, LogEntry, Project, Quote, Role, SkillId, TeamDay, TextMessage } from './types';
 import {
   DAILY_LIVING_COST,
   DAY_HARD_END,
-  MAX_TEAM,
   TEST_TASK_COST,
   WORKDAY_END,
   DIRECTORY_SEARCH_MINUTES,
@@ -77,7 +77,7 @@ import {
 import { chance, pick, randInt, uid } from './rng';
 import { formatHour, isBusinessHours } from './time';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export { DAY_HARD_END };
 
 function emptyStats(): DayStats {
@@ -103,6 +103,8 @@ function newGameState(): GameState {
     jobPosts: [],
     applicants: [],
     payrollDue: 0,
+    office: 'bedroom',
+    furniture: [],
     log: [],
     today: emptyStats(),
     lifetime: emptyStats(),
@@ -156,6 +158,9 @@ interface Store extends GameState {
   assignEmployee: (employeeId: string, projectId: string | null) => void;
   giveBonus: (employeeId: string) => void;
   fireEmployee: (employeeId: string) => void;
+  // Office (part 5)
+  moveOffice: (to: OfficeId) => void;
+  buyFurniture: (item: FurnitureId) => void;
   endDay: () => void;
   dismissSummary: () => void;
 }
@@ -272,6 +277,7 @@ export const useGame = create<Store>()(
         const minutes = workMinutesBetween(s.day, from, to);
         if (!minutes || !s.employees.length) return;
         const at = toGameTime(s.day, Math.min(to, WORKDAY_END));
+        const fx = officeEffects(s.office, s.furniture);
         let businesses = s.businesses;
         let projects = s.projects;
         const newDeals: Deal[] = [];
@@ -287,7 +293,7 @@ export const useGame = create<Store>()(
           while (e.carryMinutes >= 60) {
             e.carryMinutes -= 60;
             if (e.role === 'sales') {
-              const r = salesHour(e, businesses, s.day, s.reputation);
+              const r = salesHour(e, businesses, s.day, s.reputation, Math.random, fx.dialMult * fx.teamSpeed);
               businesses = r.businesses;
               e.today.dials += r.dials;
               e.today.note = 'Calling businesses';
@@ -297,7 +303,7 @@ export const useGame = create<Store>()(
                 e.today.note = 'Ran out of businesses to call, so searched the directory';
               }
               for (const lead of r.leads) {
-                newDeals.push(createDeal(lead.biz, lead.warmth, at, Math.random, e.name.split(' ')[0]));
+                newDeals.push(createDeal(lead.biz, lead.warmth + fx.leadWarmth, at, Math.random, e.name.split(' ')[0]));
                 e.today.leads++;
                 messages.push([`${e.name} got ${lead.biz.name} interested! Text them in Messages.`, 'good']);
               }
@@ -318,7 +324,7 @@ export const useGame = create<Store>()(
                 devLevel: e.level,
                 only: e.role === 'designer' ? 'design' : 'development',
                 events: false,
-                speedMult: productivity(e, s.day),
+                speedMult: productivity(e, s.day) * fx.teamSpeed * (e.role === 'designer' ? fx.designSpeed : 1),
                 qualityBonus: qualityBonus(e),
                 bugMult: bugMult(e),
               });
@@ -366,7 +372,7 @@ export const useGame = create<Store>()(
         if (workday) {
           payrollDue += employees.reduce((n, e) => n + e.pay, 0);
           employees = employees.flatMap((e) => {
-            const r = endOfDayMorale(e);
+            const r = endOfDayMorale(e, Math.random, officeEffects(s.office, s.furniture).morale);
             if (r.quit) {
               quitters.push(e);
               return [];
@@ -379,7 +385,7 @@ export const useGame = create<Store>()(
         if ((s.day - 1) % 7 === 4 && payrollDue > 0) {
           payroll = payrollDue;
           payrollDue = 0;
-          if (s.money - payroll - DAILY_LIVING_COST < 0) {
+          if (s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent < 0) {
             // Nobody likes a bounced paycheck.
             employees = employees.map((e) => ({ ...e, morale: Math.max(0, e.morale - 25) }));
           }
@@ -395,7 +401,7 @@ export const useGame = create<Store>()(
         set({ employees, payrollDue, jobPosts, applicants: [...staying, ...fresh] });
         for (const q of quitters) log(`${q.name} quit. They weren\u2019t happy here.`, 'bad');
         if (payroll) log(`Payday: paid your team $${payroll.toLocaleString()}.`, 'bad');
-        if (payroll && s.money - payroll - DAILY_LIVING_COST < 0) log('You couldn\u2019t cover payroll. Your team is upset.', 'bad');
+        if (payroll && s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent < 0) log('You couldn\u2019t cover payroll. Your team is upset.', 'bad');
         if (expiredPosts) log(`${expiredPosts} job post${expiredPosts > 1 ? 's' : ''} ended.`);
         if (gone) log(`${gone} applicant${gone > 1 ? 's' : ''} took another job.`, 'bad');
         if (fresh.length) log(`${fresh.length} new job applicant${fresh.length > 1 ? 's' : ''}. Check the Team screen.`, 'good');
@@ -434,6 +440,7 @@ export const useGame = create<Store>()(
           playerName: s.profile?.playerName ?? 'Alex',
           agencyName: s.profile?.agencyName ?? 'my agency',
           salesLevel: s.skills.sales.level,
+          presence: officeEffects(s.office, s.furniture).presence,
           reputation: s.reputation,
         };
       };
@@ -465,7 +472,7 @@ export const useGame = create<Store>()(
         switch (call.outcome) {
           case 'interested':
             updateBiz(biz.id, { ...base, status: 'interested', warmth: call.interest, callback: null });
-            set({ deals: [...get().deals, createDeal(biz, call.interest, now())] });
+            set({ deals: [...get().deals, createDeal(biz, call.interest + officeEffects(s.office, s.furniture).leadWarmth, now())] });
             log(`${biz.name} is interested! Text them from Messages.`, 'good');
             break;
           case 'callback':
@@ -636,7 +643,14 @@ export const useGame = create<Store>()(
           const s = get();
           const p = s.projects.find((x) => x.id === projectId);
           if (!p || busy(60)) return;
-          const res = work(p, hours, { minute: s.minute, designLevel: s.skills.design.level, devLevel: s.skills.development.level });
+          const fx = officeEffects(s.office, s.furniture);
+          const res = work(p, hours, {
+            minute: s.minute,
+            designLevel: s.skills.design.level,
+            devLevel: s.skills.development.level,
+            speedMult: fx.playerSpeed,
+            latePenalty: fx.latePenalty,
+          });
           if (res.minutes === 0) return;
           updateProject(projectId, () => res.project);
           if (res.xp.design) addXp('design', res.xp.design);
@@ -742,8 +756,10 @@ export const useGame = create<Store>()(
         makeOffer: (applicantId, pay) => {
           const s = get();
           const a = s.applicants.find((x) => x.id === applicantId);
-          if (!a || s.employees.length >= MAX_TEAM) return null;
-          const result = offerResult(a, pay, s.reputation);
+          const fx = officeEffects(s.office, s.furniture);
+          if (!a || s.employees.length >= fx.capacity) return null;
+          // A nicer office helps convince great people to join.
+          const result = offerResult(a, pay, s.reputation + fx.prestige);
           if (result.kind === 'accept') {
             set({ employees: [...s.employees, hire(a, pay, s.day)], applicants: s.applicants.filter((x) => x.id !== applicantId) });
             log(`${a.name} joined your team as a ${ROLES[a.role].label.toLowerCase()}!`, 'good');
@@ -772,6 +788,23 @@ export const useGame = create<Store>()(
           });
         },
 
+        moveOffice: (to) => {
+          const s = get();
+          if (s.activeCall && s.activeCall.phase !== 'ended') return;
+          if (moveBlocker(to, s.office, s.money, s.reputation, s.employees.length)) return;
+          const cost = OFFICES[to].moveIn;
+          set({ office: to, money: s.money - cost, today: { ...s.today, moneyOut: s.today.moneyOut + cost } });
+          log(`Moved into ${OFFICES[to].name.toLowerCase()}. Rent is $${OFFICES[to].rent}/day.`, 'good');
+        },
+
+        buyFurniture: (item) => {
+          const s = get();
+          if (buyBlocker(item, s.office, s.furniture, s.money)) return;
+          const cost = FURNITURE[item].price;
+          set({ furniture: [...s.furniture, item], money: s.money - cost, today: { ...s.today, moneyOut: s.today.moneyOut + cost } });
+          log(`Bought ${FURNITURE[item].name.toLowerCase()}.`);
+        },
+
         fireEmployee: (employeeId) => {
           const e = get().employees.find((x) => x.id === employeeId);
           if (!e) return;
@@ -790,9 +823,10 @@ export const useGame = create<Store>()(
           runTeam(get().minute, WORKDAY_END);
           const teamDay = closeTeamDay();
           const s = get();
-          const expenses = DAILY_LIVING_COST + teamDay.payroll;
+          const rent = OFFICES[s.office].rent;
+          const expenses = DAILY_LIVING_COST + rent + teamDay.payroll;
           const nextDay = s.day + 1;
-          const summary = { ...s.today, moneyOut: s.today.moneyOut + expenses, day: s.day, expenses, payroll: teamDay.payroll, team: teamDay.team };
+          const summary = { ...s.today, moneyOut: s.today.moneyOut + expenses, day: s.day, expenses, payroll: teamDay.payroll, rent, team: teamDay.team };
 
           // Some voicemails get returned overnight.
           let businesses = s.businesses;
@@ -848,7 +882,7 @@ export const useGame = create<Store>()(
             today: emptyStats(),
             lastDaySummary: summary,
           });
-          log(`Paid $${DAILY_LIVING_COST} in living costs.`, 'bad');
+          log(rent ? `Paid $${DAILY_LIVING_COST} in living costs and $${rent} rent.` : `Paid $${DAILY_LIVING_COST} in living costs.`, 'bad');
           settleDeals();
           settleProjects();
           for (const id of returned) {
@@ -884,6 +918,11 @@ export const useGame = create<Store>()(
           state.jobPosts = [];
           state.applicants = [];
           state.payrollDue = 0;
+        }
+        if (version < 5) {
+          // Part 5 added offices. Everyone starts in their bedroom.
+          state.office = 'bedroom';
+          state.furniture = [];
         }
         return state;
       },

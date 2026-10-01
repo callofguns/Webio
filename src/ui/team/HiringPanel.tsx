@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { DAY_HARD_END, useGame } from '../../game/store';
-import { MAX_TEAM, TEST_TASK_COST } from '../../game/balance';
+import { TEST_TASK_COST } from '../../game/balance';
+import { OFFICES } from '../../game/office';
 import { BOARDS, INTERVIEW_MINUTES, marketPay, POST_DAYS, ROLES, TEST_MINUTES, type OfferResult } from '../../game/team';
 import type { Applicant, JobBoard, Role } from '../../game/types';
 import { Button } from '../components/Button';
@@ -135,7 +136,8 @@ function ApplicantCard({ a, onOffer }: { a: Applicant; onOffer: () => void }) {
   const { day, minute, money: cash, employees, activeCall, interviewApplicant, testApplicant, rejectApplicant } = useGame();
   const onCall = !!activeCall && activeCall.phase !== 'ended';
   const leavesIn = a.leavesDay - day;
-  const full = employees.length >= MAX_TEAM;
+  const capacity = useGame((s) => OFFICES[s.office].capacity);
+  const full = employees.length >= capacity;
 
   return (
     <motion.div layout className="card stack" style={{ gap: 10 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} transition={spring}>
@@ -184,7 +186,7 @@ function ApplicantCard({ a, onOffer }: { a: Applicant; onOffer: () => void }) {
 }
 
 export function HiringPanel() {
-  const { applicants, jobPosts, employees, day, closeJobPost } = useGame();
+  const { applicants, jobPosts, employees, day, office, closeJobPost } = useGame();
   const [offerId, setOfferId] = useState<string | null>(null);
   const offering = applicants.find((a) => a.id === offerId) ?? null;
   // Keep showing the modal's result even after the applicant is removed.
@@ -193,9 +195,10 @@ export function HiringPanel() {
 
   return (
     <div className="stack" style={{ gap: 16 }}>
-      {employees.length >= MAX_TEAM && (
+      {employees.length >= OFFICES[office].capacity && (
         <div className="banner info">
-          Your bedroom only fits {MAX_TEAM} remote workers. Moving into an office (coming in part 5) will make room for more.
+          {OFFICES[office].name} only fits {OFFICES[office].capacity} employee{OFFICES[office].capacity === 1 ? '' : 's'}. Move somewhere bigger on the Office
+          screen to make room.
         </div>
       )}
       <div className="team-hiring">
