@@ -5,7 +5,7 @@ import { DIRECTORY_SEARCH_MINUTES, LEAD_LIST_COST, LEAD_LIST_SIZE } from '../../
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { fadeUp } from '../motion';
-import { LeadList, type LeadFilter } from './LeadList';
+import { LeadList, visibleLeads, type LeadFilter } from './LeadList';
 import { LeadDetail } from './LeadDetail';
 import { CallView } from './CallView';
 import { useIsMobile } from '../useIsMobile';
@@ -24,6 +24,23 @@ export function PhoneScreen() {
   const showDetail = !mobile || !!selected;
   const showList = !mobile || !selected;
   const midCall = !!activeCall && activeCall.phase !== 'ended';
+
+  // After a call, jump straight to the next business you can call: first in
+  // this list, then in the "To call" list if this one has nobody left.
+  const nextUp = (() => {
+    if (!activeCall || activeCall.phase !== 'ended') return null;
+    const notThis = (b: (typeof businesses)[number]) => b.id !== activeCall.businessId && !callBlocker(b, day, minute);
+    const here = visibleLeads(businesses, filter, day).find(notThis);
+    if (here) return { biz: here, filter };
+    const todo = visibleLeads(businesses, 'todo', day).find(notThis);
+    return todo ? { biz: todo, filter: 'todo' as const } : null;
+  })();
+  const finishCall = () => {
+    useGame.getState().closeCall();
+    if (!nextUp) return;
+    setFilter(nextUp.filter);
+    setSelectedId(nextUp.biz.id);
+  };
 
   return (
     <div className="screen">
@@ -61,7 +78,7 @@ export function PhoneScreen() {
         {showDetail && <AnimatePresence mode="wait">
           {activeCall && selected ? (
             <motion.div key={activeCall.id} {...fadeUp}>
-              <CallView call={activeCall} biz={selected} />
+              <CallView call={activeCall} biz={selected} onDone={finishCall} nextName={nextUp?.biz.name} />
             </motion.div>
           ) : selected ? (
             <motion.div key={selected.id} {...fadeUp}>

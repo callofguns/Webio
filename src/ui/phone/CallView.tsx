@@ -33,7 +33,7 @@ function Typing() {
   );
 }
 
-export function CallView({ call, biz }: { call: CallState; biz: Business }) {
+export function CallView({ call, biz, onDone, nextName }: { call: CallState; biz: Business; onDone?: () => void; nextName?: string }) {
   const { choose, closeCall } = useGame();
   // Reveal lines one at a time. After a page reload, only replay the last couple.
   const [shown, setShown] = useState(() => Math.max(0, call.lines.length - 2));
@@ -129,8 +129,8 @@ export function CallView({ call, biz }: { call: CallState; biz: Business }) {
               <span className={`badge ${outcomeInfo(call).tone}`}>{outcomeInfo(call).text}</span>
               <span className="small faint num">+{call.xp} sales XP</span>
             </div>
-            <Button variant="primary" onClick={closeCall}>
-              Done
+            <Button variant="primary" onClick={onDone ?? closeCall}>
+              {nextName ? `Next: ${nextName} \u2192` : 'Done'}
             </Button>
           </motion.div>
         )}

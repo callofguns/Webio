@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { INDUSTRIES, WEBSITE_LABELS } from '../../game/businesses';
@@ -17,17 +18,11 @@ function sortScore(b: Business, day: number): number {
   return 5;
 }
 
-export function LeadList(props: {
-  filter: LeadFilter;
-  onFilter: (f: LeadFilter) => void;
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-  locked: boolean;
-}) {
-  const { businesses, day } = useGame();
-  const shown = businesses
+/** The businesses shown for a filter, in list order. Also used to pick the next one to call. */
+export function visibleLeads(businesses: Business[], filter: LeadFilter, day: number): Business[] {
+  return businesses
     .filter((b) => {
-      switch (props.filter) {
+      switch (filter) {
         case 'todo':
           return b.status === 'new' || b.status === 'contacted' || b.status === 'callback';
         case 'callbacks':
@@ -39,6 +34,24 @@ export function LeadList(props: {
       }
     })
     .sort((a, b) => sortScore(a, day) - sortScore(b, day));
+}
+
+export function LeadList(props: {
+  filter: LeadFilter;
+  onFilter: (f: LeadFilter) => void;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  locked: boolean;
+}) {
+  const { businesses, day } = useGame();
+  const shown = visibleLeads(businesses, props.filter, day);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Keep the selected business in view, e.g. when the next one opens after a call.
+  useEffect(() => {
+    if (!props.selectedId) return;
+    listRef.current?.querySelector(`[data-id="${props.selectedId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [props.selectedId]);
 
   return (
     <div className="card" style={{ padding: 12 }}>
@@ -55,7 +68,7 @@ export function LeadList(props: {
           ]}
         />
       </div>
-      <div className="lead-list">
+      <div className="lead-list" ref={listRef}>
         {shown.length === 0 && <div className="empty">Nothing here. Search the directory to find more businesses.</div>}
         <AnimatePresence initial={false}>
           {shown.map((b) => {
@@ -64,6 +77,7 @@ export function LeadList(props: {
             return (
               <motion.button
                 key={b.id}
+                data-id={b.id}
                 layout="position"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
