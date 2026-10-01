@@ -5,6 +5,7 @@ import { callTimeQuality, formatClock, isBusinessHours, weekday } from '../game/
 import { AnimatedNumber, money } from './components/AnimatedNumber';
 import { Button } from './components/Button';
 import { Modal } from './components/Modal';
+import { MoneyDelta } from './components/MoneyDelta';
 
 export function TopBar() {
   const { day, minute, money: cash, activeCall, endDay, wait } = useGame();
@@ -34,8 +35,9 @@ export function TopBar() {
       </div>
       {callBadge}
       <div className="spacer" />
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontWeight: 600, fontSize: 15, color: cash < 0 ? 'var(--bad)' : undefined }}>
+      <div className="money-wrap">
+        <MoneyDelta value={cash} />
+        <div style={{ fontWeight: 700, fontSize: 16, color: cash < 0 ? 'var(--bad)' : undefined }}>
           <AnimatedNumber value={cash} format={money} />
         </div>
         <div className="small faint hide-sm">Bank balance</div>

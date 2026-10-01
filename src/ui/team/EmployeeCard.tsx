@@ -5,6 +5,7 @@ import { BONUS_AMOUNT, marketPay, ROLES } from '../../game/team';
 import type { Employee } from '../../game/types';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { Avatar } from '../components/Avatar';
 import { money } from '../components/AnimatedNumber';
 import { softSpring } from '../motion';
 import { initials, LevelDots, TraitBadges } from './common';
@@ -30,7 +31,7 @@ export function EmployeeCard({ e }: { e: Employee }) {
   return (
     <div className="card stack" style={{ gap: 12 }}>
       <div className="row" style={{ gap: 12 }}>
-        <div className="avatar">{initials(e.name)}</div>
+        <Avatar name={e.name} text={initials(e.name)} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2>{e.name}</h2>
           <p className="small muted">{ROLES[e.role].label}</p>

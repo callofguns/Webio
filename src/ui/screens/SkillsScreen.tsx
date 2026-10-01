@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { xpForLevel } from '../../game/balance';
@@ -17,6 +18,8 @@ function unlocks(skill: SkillId): { level: number; names: string[] }[] {
   return [...byLevel.entries()].sort((a, b) => a[0] - b[0]).map(([level, names]) => ({ level, names }));
 }
 import { softSpring } from '../motion';
+
+const SKILL_HUE: Record<SkillId, string> = { sales: 'var(--c-phone)', design: 'var(--c-skills)', development: 'var(--c-projects)' };
 
 const SKILLS: { id: SkillId; name: string; text: string }[] = [
   { id: 'sales', name: 'Sales', text: 'Grows with every call and deal. Higher levels make owners warm up to you faster.' },
@@ -39,7 +42,7 @@ export function SkillsScreen() {
           const { level, xp } = skills[sk.id];
           const need = xpForLevel(level);
           return (
-            <div key={sk.id} className="card stack" style={{ gap: 10 }}>
+            <div key={sk.id} className="card stack skill-card" style={{ gap: 10, '--hue': SKILL_HUE[sk.id] } as CSSProperties}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <h2>{sk.name}</h2>
                 <span className="badge accent">Level {level}</span>

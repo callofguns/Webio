@@ -87,10 +87,10 @@ export interface FontOption extends Option {
 }
 
 export const FONTS: Record<FontId, FontOption> = {
-  sans: { name: 'Modern sans', description: 'Neutral and easy to read', vibes: ['corporate', 'minimal'], level: 1, heading: "Inter, system-ui, sans-serif", body: "Inter, system-ui, sans-serif" },
+  sans: { name: 'Modern sans', description: 'Neutral and easy to read', vibes: ['corporate', 'minimal'], level: 1, heading: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif", body: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
   rounded: { name: 'Friendly rounded', description: 'Soft and approachable', vibes: ['playful', 'natural'], level: 1, heading: "Nunito, 'Arial Rounded MT Bold', system-ui, sans-serif", body: "Nunito, system-ui, sans-serif" },
   serif: { name: 'Classic serif', description: 'Traditional and trustworthy', vibes: ['rustic', 'corporate'], level: 2, heading: "Georgia, 'Times New Roman', serif", body: "Georgia, serif" },
-  display: { name: 'Elegant display', description: 'Fancy headings, fashion style', vibes: ['luxury', 'bold'], level: 3, heading: "'Playfair Display', Georgia, serif", body: "Inter, system-ui, sans-serif" },
+  display: { name: 'Elegant display', description: 'Fancy headings, fashion style', vibes: ['luxury', 'bold'], level: 3, heading: "'Playfair Display', Georgia, serif", body: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
 };
 
 export const SECTIONS: Record<SectionId, { name: string }> = {

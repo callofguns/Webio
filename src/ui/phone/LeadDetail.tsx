@@ -5,6 +5,7 @@ import type { Business } from '../../game/types';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { statusBadge } from './labels';
+import { Avatar } from '../components/Avatar';
 
 const Unknown = () => <span className="unknown">Research to find out</span>;
 
@@ -18,7 +19,7 @@ export function LeadDetail({ biz }: { biz: Business }) {
     <div className="card">
       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div className="row" style={{ gap: 12 }}>
-          <div className="avatar">{biz.name[0]}</div>
+          <Avatar name={biz.name} />
           <div>
             <h2>{biz.name}</h2>
             <p className="small muted num">

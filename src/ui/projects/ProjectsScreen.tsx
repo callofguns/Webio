@@ -106,7 +106,7 @@ export function ProjectsScreen() {
                       </div>
                     ) : (
                       <>
-                        <div className="progress">
+                        <div className={`progress ${p.status === 'in_progress' ? 'live' : ''}`}>
                           <motion.div initial={false} animate={{ width: `${progress(p) * 100}%` }} transition={softSpring} />
                         </div>
                         <div className="row" style={{ justifyContent: 'space-between' }}>

@@ -1,0 +1,27 @@
+/* Fonts are bundled with the game (no Google Fonts), so they work offline.
+   All three are open source (SIL Open Font License, see assets/fonts). */
+
+/* Recursive: the game's only UI font. Its axes give us three voices:
+   CASL 1 = hand-lettered headings, CASL 0 = body text, MONO 1 = numbers.
+   Trimmed to the Latin letters and the wght / CASL / MONO axes. */
+@font-face {
+  font-family: 'Recursive';
+  src: url('./assets/fonts/recursive-latin.woff2') format('woff2-variations');
+  font-weight: 300 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Used only inside the client website previews. */
+@font-face {
+  font-family: 'Nunito';
+  src: url('./assets/fonts/nunito-latin.woff2') format('woff2-variations');
+  font-weight: 200 1000;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('./assets/fonts/playfair-latin.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-display: swap;
+}

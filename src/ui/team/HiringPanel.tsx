@@ -6,6 +6,7 @@ import { BOARDS, INTERVIEW_MINUTES, marketPay, POST_DAYS, ROLES, TEST_MINUTES, t
 import type { Applicant, JobBoard, Role } from '../../game/types';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { Avatar } from '../components/Avatar';
 import { Tabs } from '../components/Tabs';
 import { money } from '../components/AnimatedNumber';
 import { spring } from '../motion';
@@ -139,7 +140,7 @@ function ApplicantCard({ a, onOffer }: { a: Applicant; onOffer: () => void }) {
   return (
     <motion.div layout className="card stack" style={{ gap: 10 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }} transition={spring}>
       <div className="row" style={{ gap: 12 }}>
-        <div className="avatar">{initials(a.name)}</div>
+        <Avatar name={a.name} text={initials(a.name)} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2>{a.name}</h2>
           <p className="small muted">

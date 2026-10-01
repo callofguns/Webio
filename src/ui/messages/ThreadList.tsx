@@ -3,9 +3,10 @@ import { useGame } from '../../game/store';
 import { dealStatus, toGameTime, unreadCount, visibleMessages, type DealStatus } from '../../game/deals';
 import type { Deal } from '../../game/types';
 import { spring } from '../motion';
+import { Avatar } from '../components/Avatar';
 
 export const STATUS_BADGE: Record<DealStatus, { text: string; tone: string }> = {
-  your_turn: { text: 'Your turn', tone: 'accent' },
+  your_turn: { text: 'Your turn', tone: 'hi' },
   waiting: { text: 'Waiting', tone: '' },
   won: { text: 'Signed', tone: 'good' },
   lost: { text: 'Lost', tone: 'bad' },
@@ -26,8 +27,8 @@ export function ThreadList({ deals, selectedId, onSelect }: { deals: Deal[]; sel
           const selected = d.id === selectedId;
           return (
             <motion.button key={d.id} layout="position" transition={spring} className="thread-row" onClick={() => onSelect(d.id)}>
-              {selected && <motion.div layoutId="thread-sel" className="sel-bg" transition={spring} />}
-              <div className="avatar" style={{ width: 36, height: 36 }}>{biz.name[0]}</div>
+              {selected && <motion.div layoutId="thread-sel" className="sel-bg frame-sel" transition={spring} />}
+              <Avatar name={biz.name} size={36} />
               <div className="thread-main">
                 <div className="row" style={{ justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: unread ? 700 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{biz.name}</span>

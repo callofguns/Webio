@@ -73,7 +73,7 @@ export function BuildPanel({ project }: { project: Project }) {
                 </span>
                 <span className="faint">{t.skill === 'design' ? 'Design' : 'Dev'}</span>
               </div>
-              <div className={`progress ${t.skill === 'development' ? 'dev' : ''}`}>
+              <div className={`progress ${t.skill === 'development' ? 'dev' : ''} ${pct > 0 && pct < 1 ? 'live' : ''}`}>
                 <motion.div initial={false} animate={{ width: `${pct * 100}%` }} transition={softSpring} />
               </div>
             </div>

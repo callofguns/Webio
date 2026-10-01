@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { MotionConfig } from 'motion/react';
 import App from './App';
 import { listenForInstallPrompt } from './pwa/install';
+import './fonts.css';
 import './styles.css';
 
 listenForInstallPrompt();

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { formatClock } from '../../game/time';
@@ -31,11 +31,18 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
   const tip = TIPS[(s.day - 1) % TIPS.length];
 
   const stats = [
-    { label: 'Bank balance', value: <AnimatedNumber value={s.money} format={money} />, sub: `${runway} days of runway` },
-    { label: 'Open deals', value: <AnimatedNumber value={openDeals.length} />, sub: yourTurn ? `${yourTurn} waiting on your reply` : `${s.projects.length} signed so far` },
-    { label: 'Earned', value: <AnimatedNumber value={earned} format={money} />, sub: `${s.today.dials} calls today` },
+    // Each stat wears the color of the part of the game it comes from.
+    { label: 'Bank balance', hue: 'var(--good)', value: <AnimatedNumber value={s.money} format={money} />, sub: `${runway} days of runway` },
+    {
+      label: 'Open deals',
+      hue: 'var(--c-texts)',
+      value: <AnimatedNumber value={openDeals.length} />,
+      sub: yourTurn ? `${yourTurn} waiting on your reply` : `${s.projects.length} signed so far`,
+    },
+    { label: 'Earned', hue: 'var(--c-projects)', value: <AnimatedNumber value={earned} format={money} />, sub: `${s.today.dials} calls today` },
     {
       label: 'Reputation',
+      hue: 'var(--c-team)',
       value: <AnimatedNumber value={s.reputation} />,
       sub: `${s.projects.filter((p) => p.status === 'delivered').length} sites delivered`,
     },
@@ -64,7 +71,14 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
 
       <div className="grid grid-4">
         {stats.map((st, i) => (
-          <motion.div key={st.label} className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...spring, delay: i * 0.04 }}>
+          <motion.div
+            key={st.label}
+            className="card stat-card"
+            style={{ '--hue': st.hue } as CSSProperties}
+            initial={{ opacity: 0, y: 14, rotate: i % 2 ? 1 : -1 }}
+            animate={{ opacity: 1, y: 0, rotate: 0 }}
+            transition={{ ...spring, delay: i * 0.05 }}
+          >
             <div className="stat-label">{st.label}</div>
             <div className="stat-value">{st.value}</div>
             <div className="stat-sub">{st.sub}</div>

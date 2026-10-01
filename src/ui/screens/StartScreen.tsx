@@ -4,6 +4,7 @@ import { useGame } from '../../game/store';
 import { START_MONEY } from '../../game/balance';
 import { Button } from '../components/Button';
 import { softSpring } from '../motion';
+import { Logo } from '../components/Logo';
 
 export function StartScreen() {
   const newGame = useGame((s) => s.newGame);
@@ -14,7 +15,7 @@ export function StartScreen() {
   return (
     <div className="start">
       <motion.form
-        className="card start-card stack"
+        className="card start-card frame-sel stack"
         style={{ gap: 18, padding: 28 }}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -24,9 +25,15 @@ export function StartScreen() {
           if (ready) newGame({ playerName: playerName.trim(), agencyName: agencyName.trim() });
         }}
       >
-        <div className="brand-mark" style={{ width: 40, height: 40, fontSize: 18 }}>W</div>
+        {/* Like a frame's name in a design tool. It updates as you type. */}
+        <span className="frame-tag" aria-hidden>
+          {agencyName.trim() || 'Untitled agency'}
+        </span>
+        <Logo size={44} />
         <div>
-          <h1>Start your agency</h1>
+          <h1 className="start-title">
+            Start your <em>agency</em>
+          </h1>
           <p className="muted" style={{ marginTop: 6 }}>
             You just quit your job to build websites for local businesses. You have ${START_MONEY.toLocaleString()} saved, a laptop and
             a phone. Nobody knows who you are yet.

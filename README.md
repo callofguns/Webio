@@ -89,6 +89,22 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 - Employees slowly level up as they work
 - While you work from your bedroom you can only have 2 remote employees
 
+## Look and feel
+
+The game is styled like a web designer's tool:
+
+- The background is a **dot-grid canvas**, like a design app
+- Whatever you've selected gets a **selection frame with corner handles**
+- Each part of the game has its own color: Phone (coral), Texts (mint),
+  Projects (blue), Team (gold), Office (violet), Skills (pink)
+- **Highlighter yellow** marks things that need you right now
+- One font, [Recursive](https://www.recursive.design/), in three styles: hand-lettered
+  headings, clean body text, and code-style numbers
+- Press **1–4** to answer calls and texts (keycaps show on the buttons)
+
+Fonts are bundled with the game, so they work offline. Recursive, Nunito and Playfair
+Display are used under the SIL Open Font License (see `src/assets/fonts`).
+
 ## Play on your phone (install it like an app)
 
 Webio is a PWA (Progressive Web App), so it can be installed and played offline.

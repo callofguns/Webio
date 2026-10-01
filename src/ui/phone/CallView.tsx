@@ -8,6 +8,9 @@ import { Button } from '../components/Button';
 import { spring } from '../motion';
 import { AnswerTimer } from './AnswerTimer';
 import { CALL_CHOICE_SECONDS } from '../../game/balance';
+import { useNumberKeys } from '../useNumberKeys';
+import { Burst, stamp } from '../components/Burst';
+import { Avatar } from '../components/Avatar';
 
 /** How long to wait before showing each kind of line, so the call feels live. */
 const DELAY = { system: 450, them: 1000, you: 120 };
@@ -58,11 +61,23 @@ export function CallView({ call, biz, onDone, nextName }: { call: CallState; biz
   const v = vibe(call.interest);
   const ringing = !caughtUp && shown === 1;
   const ended = call.phase === 'ended' && caughtUp;
+  const answering = caughtUp && !ended && call.choices.length > 0;
+
+  // Press 1-4 to answer, Enter to move on when the call is over.
+  useNumberKeys(call.choices.length, (i) => !call.choices[i].disabled && choose(call.choices[i].id), answering);
+  useEffect(() => {
+    if (!ended) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !document.querySelector('.overlay') && (e.target as HTMLElement)?.tagName !== 'BUTTON') (onDone ?? closeCall)();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ended, onDone, closeCall]);
 
   return (
     <div className="card call">
       <div className="call-head">
-        <div className="avatar">{biz.name[0]}</div>
+        <Avatar name={biz.name} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2>{biz.name}</h2>
           <p className="small muted num">
@@ -123,8 +138,11 @@ export function CallView({ call, biz, onDone, nextName }: { call: CallState; biz
                 transition={{ ...spring, delay: i * 0.04 }}
                 whileTap={c.disabled ? undefined : { scale: 0.985 }}
               >
-                {c.label}
-                {c.hint && <span className="hint">{c.hint}</span>}
+                <span className="key">{i + 1}</span>
+                <span className="choice-text">
+                  {c.label}
+                  {c.hint && <span className="hint">{c.hint}</span>}
+                </span>
               </motion.button>
             ))}
           </motion.div>
@@ -132,7 +150,17 @@ export function CallView({ call, biz, onDone, nextName }: { call: CallState; biz
         {ended && (
           <motion.div key="end" className="choices" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
             <div className="row" style={{ justifyContent: 'space-between' }}>
-              <span className={`badge ${outcomeInfo(call).tone}`}>{outcomeInfo(call).text}</span>
+              {call.outcome === 'interested' ? (
+                <Burst>
+                  <motion.span className="badge good outcome-stamp" {...stamp}>
+                    {outcomeInfo(call).text}
+                  </motion.span>
+                </Burst>
+              ) : (
+                <motion.span className={`badge ${outcomeInfo(call).tone} outcome-stamp`} {...stamp}>
+                  {outcomeInfo(call).text}
+                </motion.span>
+              )}
               <span className="small faint num">+{call.xp} sales XP</span>
             </div>
             <Button variant="primary" onClick={onDone ?? closeCall}>

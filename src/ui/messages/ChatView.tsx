@@ -9,6 +9,9 @@ import { Button } from '../components/Button';
 import { money } from '../components/AnimatedNumber';
 import { spring } from '../motion';
 import { QuoteBuilder } from './QuoteBuilder';
+import { useNumberKeys } from '../useNumberKeys';
+import { Burst, stamp } from '../components/Burst';
+import { Avatar } from '../components/Avatar';
 
 function QuoteCard({ quote }: { quote: Quote }) {
   return (
@@ -71,6 +74,10 @@ export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
   const mood = vibe(deal.warmth);
   const onCall = !!activeCall && activeCall.phase !== 'ended';
   const tooLate = minute + 3 > DAY_HARD_END;
+  const choices = textChoices(deal, biz);
+  const pickText = (id: string) => (id === OPEN_QUOTE ? setQuoting(true) : sendText(deal.id, id));
+  // Press 1-5 to pick a text.
+  useNumberKeys(choices.length, (i) => pickText(choices[i].id), status === 'your_turn' && !onCall && !tooLate);
   const project = projects.find((p) => p.dealId === deal.id);
 
   useEffect(() => {
@@ -83,7 +90,7 @@ export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
   return (
     <div className="card chat">
       <div className="call-head">
-        <div className="avatar">{biz.name[0]}</div>
+        <Avatar name={biz.name} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2>{biz.name}</h2>
           <p className="small muted">Texting {first}</p>
@@ -121,20 +128,23 @@ export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
             <span className="small faint">
               {onCall ? 'Finish your call first.' : tooLate ? 'It’s too late to text. End the day.' : deal.stage === 'negotiating' ? 'They want a lower price. What do you do?' : 'What do you text?'}
             </span>
-            {textChoices(deal, biz).map((c, i) => (
+            {choices.map((c, i) => (
               <motion.button
                 key={c.id}
                 className="choice"
                 disabled={onCall || tooLate}
-                onClick={() => (c.id === OPEN_QUOTE ? setQuoting(true) : sendText(deal.id, c.id))}
+                onClick={() => pickText(c.id)}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...spring, delay: i * 0.04 }}
                 whileTap={{ scale: 0.985 }}
-                style={c.id === OPEN_QUOTE ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 } : undefined}
+                style={c.id === OPEN_QUOTE ? { borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 650 } : undefined}
               >
-                {c.label}
-                {c.hint && <span className="hint">{c.hint}</span>}
+                <span className="key">{i + 1}</span>
+                <span className="choice-text">
+                  {c.label}
+                  {c.hint && <span className="hint">{c.hint}</span>}
+                </span>
               </motion.button>
             ))}
           </motion.div>
@@ -156,7 +166,15 @@ export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
         {status === 'won' && (
           <motion.div key="won" className="choices" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
             <div className="row" style={{ justifyContent: 'space-between' }}>
-              <span className="badge good">Contract signed &middot; {money(deal.agreedPrice ?? 0)}</span>
+              {(() => {
+                const signed = (
+                  <motion.span className="badge good outcome-stamp" {...stamp}>
+                    Contract signed &middot; {money(deal.agreedPrice ?? 0)}
+                  </motion.span>
+                );
+                // Confetti only for a fresh win, not every time you reopen the chat.
+                return now - (deal.closedAt ?? 0) < 24 * 60 ? <Burst>{signed}</Burst> : signed;
+              })()}
               {project && project.depositPaid > 0 && <span className="small muted">{money(project.depositPaid)} deposit paid</span>}
             </div>
             <span className="small faint">

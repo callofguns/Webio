@@ -86,7 +86,7 @@ export function LeadList(props: {
                 className={`lead-row ${props.locked && !selected ? 'dim' : ''}`}
                 onClick={() => props.onSelect(b.id)}
               >
-                {selected && <motion.div layoutId="lead-sel" className="sel-bg" transition={spring} />}
+                {selected && <motion.div layoutId="lead-sel" className="sel-bg frame-sel" transition={spring} />}
                 <div className="row" style={{ justifyContent: 'space-between' }}>
                   <span className="name">{b.name}</span>
                   <span className={`badge ${badge.tone}`}>{badge.text}</span>

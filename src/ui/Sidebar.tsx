@@ -1,10 +1,23 @@
+import type { CSSProperties } from 'react';
 import { motion } from 'motion/react';
 import { useGame } from '../game/store';
 import { dealStatus, toGameTime } from '../game/deals';
 import { Icon, type IconName } from './components/Icon';
+import { Logo } from './components/Logo';
 import { spring } from './motion';
 
 export type ScreenId = 'dashboard' | 'phone' | 'messages' | 'projects' | 'team' | 'office' | 'skills';
+
+/** Each part of the game has its own color (see the --c-* tokens in styles.css). */
+export const SECTION_COLOR: Record<ScreenId, string> = {
+  dashboard: 'var(--c-home)',
+  phone: 'var(--c-phone)',
+  messages: 'var(--c-texts)',
+  projects: 'var(--c-projects)',
+  team: 'var(--c-team)',
+  office: 'var(--c-office)',
+  skills: 'var(--c-skills)',
+};
 
 const ITEMS: { id: ScreenId; label: string; short?: string; icon: IconName; soon?: boolean }[] = [
   { id: 'dashboard', label: 'Dashboard', short: 'Home', icon: 'home' },
@@ -26,29 +39,39 @@ export function Sidebar({ current, onChange }: { current: ScreenId; onChange: (s
   return (
     <nav className="sidebar">
       <div className="brand">
-        <div className="brand-mark">W</div>
+        <Logo />
         <div>
           {agency}
-          <small>Web design agency</small>
+          <small>web design studio</small>
         </div>
       </div>
       {ITEMS.map((item) => (
-        <button
+        <motion.button
           key={item.id}
           className={`nav-item ${current === item.id ? 'active' : ''}`}
+          style={{ '--hue-item': SECTION_COLOR[item.id] } as CSSProperties}
           onClick={() => onChange(item.id)}
           aria-current={current === item.id ? 'page' : undefined}
+          whileHover="wiggle"
+          whileTap={{ scale: 0.96 }}
         >
-          {current === item.id && <motion.div layoutId="nav-pill" className="nav-bg" transition={spring} />}
-          <Icon name={item.icon} />
+          {current === item.id && <motion.div layoutId="nav-pill" className="nav-bg frame-sel" transition={spring} />}
+          <motion.span
+            className="nav-icon"
+            variants={{ wiggle: { rotate: [0, -12, 9, -4, 0], transition: { duration: 0.5 } } }}
+          >
+            <Icon name={item.icon} />
+          </motion.span>
           <span className="nav-label">{item.label}</span>
           <span className="nav-short">{item.short ?? item.label}</span>
           {counts[item.id] ? (
-            <span className="count">{counts[item.id]}</span>
+            <motion.span key={counts[item.id]} className="count" initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 600, damping: 14 }}>
+              {counts[item.id]}
+            </motion.span>
           ) : (
             item.soon && <span className="soon">Soon</span>
           )}
-        </button>
+        </motion.button>
       ))}
     </nav>
   );

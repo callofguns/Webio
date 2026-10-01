@@ -33,7 +33,7 @@ export default function App() {
       <TopBar />
       <main className="main">
         <AnimatePresence mode="wait">
-          <motion.div key={screen} {...fadeUp}>
+          <motion.div key={screen} data-section={screen} {...fadeUp}>
             {screen === 'dashboard' && <Dashboard onNavigate={setScreen} />}
             {screen === 'phone' && <PhoneScreen />}
             {screen === 'skills' && <SkillsScreen />}
