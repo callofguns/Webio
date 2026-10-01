@@ -7,6 +7,10 @@ import { fadeUp } from '../motion';
 import { ThreadList } from './ThreadList';
 import { ChatView } from './ChatView';
 import { ClientNotes } from './ClientNotes';
+import { useIsMobile } from '../useIsMobile';
+import { BackButton } from '../components/BackButton';
+import { Modal } from '../components/Modal';
+import { Button } from '../components/Button';
 
 const ORDER: Record<DealStatus, number> = { your_turn: 0, waiting: 1, won: 2, lost: 3 };
 
@@ -14,14 +18,37 @@ export function MessagesScreen() {
   const { deals, businesses, day, minute } = useGame();
   const now = toGameTime(day, minute);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const mobile = useIsMobile();
 
   const sorted = [...deals].sort((a, b) => {
     const byStatus = ORDER[dealStatus(a, now)] - ORDER[dealStatus(b, now)];
     return byStatus || unreadCount(b, now) - unreadCount(a, now);
   });
-  const selected = deals.find((d) => d.id === selectedId) ?? sorted[0] ?? null;
+  // On a big screen, open the top conversation. On a phone, start on the list.
+  const selected = deals.find((d) => d.id === selectedId) ?? (mobile ? null : sorted[0]) ?? null;
   const biz = selected ? businesses.find((b) => b.id === selected.businessId)! : null;
   const yourTurn = deals.filter((d) => dealStatus(d, now) === 'your_turn').length;
+
+  if (mobile && selected && biz) {
+    return (
+      <div className="screen">
+        <div className="row" style={{ justifyContent: 'space-between' }}>
+          <BackButton label="All messages" onClick={() => setSelectedId(null)} />
+          <Button size="sm" onClick={() => setNotesOpen(true)}>
+            Client notes
+          </Button>
+        </div>
+        <ChatView deal={selected} biz={biz} />
+        <Modal open={notesOpen}>
+          <ClientNotes deal={selected} biz={biz} />
+          <Button block style={{ marginTop: 12 }} onClick={() => setNotesOpen(false)}>
+            Close
+          </Button>
+        </Modal>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">
@@ -47,13 +74,13 @@ export function MessagesScreen() {
         <div className="messages-layout">
           <ThreadList deals={sorted} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
           <AnimatePresence mode="wait">
-            {selected && biz && (
+            {!mobile && selected && biz && (
               <motion.div key={selected.id} {...fadeUp}>
                 <ChatView deal={selected} biz={biz} />
               </motion.div>
             )}
           </AnimatePresence>
-          {selected && biz && <ClientNotes deal={selected} biz={biz} />}
+          {!mobile && selected && biz && <ClientNotes deal={selected} biz={biz} />}
         </div>
       )}
     </div>

@@ -9,6 +9,7 @@ import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { spring } from '../motion';
 import type { ScreenId } from '../Sidebar';
+import { InstallCard } from '../../pwa/InstallCard';
 
 const TIPS = [
   'Mornings (10–12) are the best time to call. Lunch and late afternoon are rough.',
@@ -95,6 +96,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
         </div>
 
         <div className="stack" style={{ gap: 16 }}>
+          <InstallCard />
           <div className="card">
             <div className="card-title">
               <h2>Tip of the day</h2>

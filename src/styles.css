@@ -456,3 +456,124 @@ select.input { appearance: auto; }
 @media (max-width: 1000px) {
   .team-hiring { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------- PWA bits ---------- */
+.toast {
+  position: fixed; z-index: 60;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 10px 10px 10px 16px; font-size: 14px;
+  width: max-content; max-width: calc(100vw - 32px);
+}
+.show-sm { display: none; }
+.nav-short { display: none; }
+.sheet-handle { display: none; }
+.modal .card { border: 0; box-shadow: none; padding: 0; }
+
+/* ---------- Touch screens ---------- */
+button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+@media (pointer: coarse) {
+  .btn { min-height: 42px; }
+  .btn-sm { min-height: 36px; }
+  .tab { padding: 8px 12px; }
+}
+/* Hover colors "stick" after a tap on touch screens, so only use them with a mouse. */
+@media (hover: none) {
+  .btn:hover:not(:disabled) { background: var(--surface); }
+  .btn-primary:hover:not(:disabled) { background: var(--accent); filter: none; }
+  .btn-ghost:hover:not(:disabled) { background: transparent; }
+  .choice:hover:not(:disabled) { border-color: var(--border); background: var(--surface); }
+  .option:hover:not(:disabled) { border-color: var(--border); }
+  .option.on:hover:not(:disabled) { border-color: var(--accent); }
+  .lead-row:hover, .thread-row:hover { background: none; }
+  .project-card:hover { border-color: var(--border); }
+  .nav-item:hover { color: var(--text-2); }
+  .nav-item.active:hover { color: var(--accent); }
+  .choice:active:not(:disabled), .option:active:not(:disabled) { background: var(--accent-soft); }
+}
+
+/* ---------- Phones ---------- */
+.app { height: 100vh; height: 100dvh; }
+.main { overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 900px) {
+  .hide-sm { display: none !important; }
+  .show-sm { display: inline; }
+
+  /* Top bar: respect the notch / status bar. */
+  .topbar {
+    gap: 8px;
+    padding: max(10px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
+  }
+  .topbar .clock { font-size: 14px; }
+  .wait-btn { padding: 0 10px; }
+
+  /* Bottom tab bar: 7 even tabs, clear of the home indicator. */
+  .sidebar {
+    justify-content: stretch; gap: 0; overflow: visible;
+    padding: 4px max(4px, env(safe-area-inset-left)) max(6px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-right));
+  }
+  .nav-item { flex: 1 1 0; min-width: 0; padding: 6px 2px; font-size: 10px; align-items: center; }
+  .nav-item .nav-label { display: none; }
+  .nav-item .nav-short { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-item .count {
+    display: block; position: absolute; top: 2px; left: calc(50% + 6px); z-index: 2;
+    font-size: 10px; padding: 0 5px; line-height: 16px; min-width: 16px; text-align: center;
+  }
+
+  .main { padding: 16px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
+  .screen { gap: 14px; }
+  .screen-head h1 { font-size: 20px; }
+  .back-btn { align-self: flex-start; padding: 0; color: var(--text-2); }
+
+  /* Segmented tabs scroll sideways instead of squashing. */
+  .tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { white-space: nowrap; }
+
+  /* iPhones zoom in on inputs smaller than 16px. */
+  .input, select.input { font-size: 16px; }
+
+  /* Popups become bottom sheets. */
+  .overlay { place-items: end center; padding: 0; }
+  .modal, .modal.wide {
+    max-width: 100%; width: 100%;
+    border-radius: 20px 20px 0 0; border-bottom: 0;
+    max-height: 92dvh; overflow-y: auto;
+    padding: 12px 20px max(20px, env(safe-area-inset-bottom));
+  }
+  .sheet-handle { display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--border); margin: 0 auto 12px; }
+
+  /* Lists take the whole page on phones (detail opens on its own page). */
+  .lead-list, .thread-list { max-height: none; overflow: visible; }
+  .call { min-height: 0; }
+  .chat { min-height: 0; }
+  .chat .transcript, .call .transcript { max-height: 48dvh; overflow-y: auto; }
+  .bubble { max-width: 88%; }
+
+  .detail-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+
+  /* Activity log: time above the text. */
+  .log-item { flex-direction: column; gap: 0; }
+  .log-time { width: auto; font-size: 11px; }
+
+  /* Project page: preview on top, shorter. */
+  .project-layout .preview-sticky { order: -1; }
+  .site-viewport { max-height: 260px; }
+  .steps { gap: 2px; }
+  .step-line { width: 8px; }
+
+  .form-row { flex-wrap: wrap; }
+  /* Show who applied before the job-post form. */
+  .team-hiring > :last-child { order: -1; }
+  .toast { bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 380px) {
+  .grid-4 { grid-template-columns: minmax(0, 1fr); }
+  .option-grid { grid-template-columns: minmax(0, 1fr); }
+}

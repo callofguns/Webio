@@ -8,6 +8,8 @@ import { fadeUp } from '../motion';
 import { LeadList, type LeadFilter } from './LeadList';
 import { LeadDetail } from './LeadDetail';
 import { CallView } from './CallView';
+import { useIsMobile } from '../useIsMobile';
+import { BackButton } from '../components/BackButton';
 
 export function PhoneScreen() {
   const { businesses, activeCall, day, minute, money, searchDirectory, buyLeadList } = useGame();
@@ -17,10 +19,25 @@ export function PhoneScreen() {
   const callable = businesses.filter((b) => !callBlocker(b, day, minute)).length;
   const selected = businesses.find((b) => b.id === (activeCall?.businessId ?? selectedId)) ?? null;
   const busy = !!activeCall;
+  const mobile = useIsMobile();
+  // On phones, show either the list or the selected business, not both.
+  const showDetail = !mobile || !!selected;
+  const showList = !mobile || !selected;
+  const midCall = !!activeCall && activeCall.phase !== 'ended';
 
   return (
     <div className="screen">
-      <div className="screen-head">
+      {mobile && selected && (
+        <BackButton
+          label="All businesses"
+          disabled={midCall}
+          onClick={() => {
+            if (activeCall) useGame.getState().closeCall();
+            setSelectedId(null);
+          }}
+        />
+      )}
+      {showList && <div className="screen-head">
         <div>
           <h1>Phone</h1>
           <p className="muted">
@@ -35,11 +52,13 @@ export function PhoneScreen() {
             <Icon name="list" size={16} /> Buy {LEAD_LIST_SIZE} leads &middot; ${LEAD_LIST_COST}
           </Button>
         </div>
-      </div>
+      </div>}
 
       <div className="phone-layout">
-        <LeadList filter={filter} onFilter={setFilter} selectedId={selected?.id ?? null} onSelect={(id) => !busy && setSelectedId(id)} locked={busy} />
-        <AnimatePresence mode="wait">
+        {showList && (
+          <LeadList filter={filter} onFilter={setFilter} selectedId={selected?.id ?? null} onSelect={(id) => !busy && setSelectedId(id)} locked={busy} />
+        )}
+        {showDetail && <AnimatePresence mode="wait">
           {activeCall && selected ? (
             <motion.div key={activeCall.id} {...fadeUp}>
               <CallView call={activeCall} biz={selected} />
@@ -54,7 +73,7 @@ export function PhoneScreen() {
               <p style={{ marginTop: 10 }}>Pick a business from the list to see its details and call it.</p>
             </motion.div>
           )}
-        </AnimatePresence>
+        </AnimatePresence>}
       </div>
     </div>
   );

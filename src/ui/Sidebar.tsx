@@ -6,10 +6,10 @@ import { spring } from './motion';
 
 export type ScreenId = 'dashboard' | 'phone' | 'messages' | 'projects' | 'team' | 'office' | 'skills';
 
-const ITEMS: { id: ScreenId; label: string; icon: IconName; soon?: boolean }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'home' },
+const ITEMS: { id: ScreenId; label: string; short?: string; icon: IconName; soon?: boolean }[] = [
+  { id: 'dashboard', label: 'Dashboard', short: 'Home', icon: 'home' },
   { id: 'phone', label: 'Phone', icon: 'phone' },
-  { id: 'messages', label: 'Messages', icon: 'chat' },
+  { id: 'messages', label: 'Messages', short: 'Texts', icon: 'chat' },
   { id: 'projects', label: 'Projects', icon: 'layout' },
   { id: 'team', label: 'Team', icon: 'users' },
   { id: 'office', label: 'Office', icon: 'building', soon: true },
@@ -33,10 +33,16 @@ export function Sidebar({ current, onChange }: { current: ScreenId; onChange: (s
         </div>
       </div>
       {ITEMS.map((item) => (
-        <button key={item.id} className={`nav-item ${current === item.id ? 'active' : ''}`} onClick={() => onChange(item.id)}>
+        <button
+          key={item.id}
+          className={`nav-item ${current === item.id ? 'active' : ''}`}
+          onClick={() => onChange(item.id)}
+          aria-current={current === item.id ? 'page' : undefined}
+        >
           {current === item.id && <motion.div layoutId="nav-pill" className="nav-bg" transition={spring} />}
           <Icon name={item.icon} />
-          <span>{item.label}</span>
+          <span className="nav-label">{item.label}</span>
+          <span className="nav-short">{item.short ?? item.label}</span>
           {counts[item.id] ? (
             <span className="count">{counts[item.id]}</span>
           ) : (

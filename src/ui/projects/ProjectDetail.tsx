@@ -9,6 +9,7 @@ import { DesignPanel } from './DesignPanel';
 import { BuildPanel } from './BuildPanel';
 import { SitePreview } from './SitePreview';
 import { Stars } from './ProjectsScreen';
+import { useIsMobile } from '../useIsMobile';
 
 const STEPS: { status: Project['status']; label: string }[] = [
   { status: 'not_started', label: 'Plan' },
@@ -42,6 +43,9 @@ export function ProjectDetail({ project, onBack }: { project: Project; onBack: (
   const first = biz.ownerName.split(' ')[0];
   const onCall = !!activeCall && activeCall.phase !== 'ended';
   const showTab = project.pendingEvent ? 'build' : tab;
+  const mobile = useIsMobile();
+  // On phones the preview sits on top and can be hidden to save space.
+  const [previewOpen, setPreviewOpen] = useState(true);
 
   return (
     <div className="screen">
@@ -128,19 +132,26 @@ export function ProjectDetail({ project, onBack }: { project: Project; onBack: (
         </div>
 
         <div className="preview-sticky">
-          <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+          <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
             <span className="small muted" style={{ fontWeight: 600 }}>
               {project.status === 'not_started' ? 'Mockup' : project.status === 'in_progress' ? `Live preview · ${Math.round(progress(project) * 100)}% built` : 'Live site'}
             </span>
-            {contentMissing(project) && <span className="badge warn">Placeholder text</span>}
+            <span className="row" style={{ gap: 6 }}>
+              {contentMissing(project) && <span className="badge warn">Placeholder text</span>}
+              {mobile && (
+                <Button size="sm" variant="ghost" onClick={() => setPreviewOpen((o) => !o)}>
+                  {previewOpen ? 'Hide' : 'Show'}
+                </Button>
+              )}
+            </span>
           </div>
-          <SitePreview
+          {(!mobile || previewOpen) && <SitePreview
             biz={biz}
             design={project.design}
             features={project.features}
             built={project.status === 'not_started' ? 1 : progress(project)}
             placeholderContent={contentMissing(project)}
-          />
+          />}
         </div>
       </div>
     </div>

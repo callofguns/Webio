@@ -13,12 +13,19 @@ import { ProjectsScreen } from './ui/projects/ProjectsScreen';
 import { TeamScreen } from './ui/team/TeamScreen';
 import { DaySummary } from './ui/screens/DaySummary';
 import { fadeUp } from './ui/motion';
+import { UpdatePrompt } from './pwa/UpdatePrompt';
 
 export default function App() {
   const profile = useGame((s) => s.profile);
   const [screen, setScreen] = useState<ScreenId>('dashboard');
 
-  if (!profile) return <StartScreen />;
+  if (!profile)
+    return (
+      <>
+        <StartScreen />
+        <UpdatePrompt />
+      </>
+    );
 
   return (
     <div className="app">
@@ -38,6 +45,7 @@ export default function App() {
         </AnimatePresence>
       </main>
       <DaySummary />
+      <UpdatePrompt />
     </div>
   );
 }

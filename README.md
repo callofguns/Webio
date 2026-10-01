@@ -86,6 +86,20 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 - Employees slowly level up as they work
 - While you work from your bedroom you can only have 2 remote employees
 
+## Play on your phone (install it like an app)
+
+Webio is a PWA (Progressive Web App), so it can be installed and played offline.
+
+- **Android / Chrome / Edge:** open the game and tap **Install app** on the
+  dashboard (or *Install* in the browser menu)
+- **iPhone / iPad:** open it in Safari, tap **Share**, then **Add to Home Screen**
+
+After the first visit the whole game is saved on the device, so it works without
+internet. When a new version comes out, a small message asks you to reload.
+
+On phones the layout changes: a bottom tab bar, lists that open into full pages
+with a back button, and popups that slide up from the bottom.
+
 ## Running it on your computer
 
 You need [Node.js](https://nodejs.org) 20 or newer.
@@ -132,6 +146,9 @@ src/
     team/          The Team screen, employee cards and hiring
     screens/       Dashboard, Skills, start screen, end-of-day summary
     motion.ts      Shared spring animation settings
+    useIsMobile.ts Tells components when they're on a phone-sized screen
+  pwa/           Install button, update message (the offline setup is in vite.config.ts)
 ```
 
-Built with React, TypeScript, Vite, Zustand (game state) and Motion (spring animations).
+Built with React, TypeScript, Vite, Zustand (game state), Motion (spring animations)
+and vite-plugin-pwa (installable + offline).

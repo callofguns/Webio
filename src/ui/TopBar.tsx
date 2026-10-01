@@ -40,8 +40,9 @@ export function TopBar() {
         </div>
         <div className="small faint hide-sm">Bank balance</div>
       </div>
-      <Button className="hide-sm" disabled={midCall || minute >= DAY_HARD_END} onClick={() => wait(60)} title="Let an hour pass">
-        Wait 1 hr
+      <Button className="wait-btn" disabled={midCall || minute >= DAY_HARD_END} onClick={() => wait(60)} title="Let an hour pass">
+        <span className="hide-sm">Wait 1 hr</span>
+        <span className="show-sm">+1h</span>
       </Button>
       <Button variant="primary" disabled={midCall} onClick={() => (open ? setConfirming(true) : endDay())}>
         End day
