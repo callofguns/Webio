@@ -29,6 +29,9 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
   - Owners have hidden personalities (friendly, busy, skeptical, grumpy). Listen to how they answer
   - Pick your opener, handle objections, and ask for a meeting, a text, or a callback
   - A "vibe" meter shows how warm they're getting
+  - You get **30 seconds** to pick each answer. Go quiet and they lose interest,
+    or hang up
+  - After a call, the next business on your list opens automatically
   - Callbacks, "not interested" cooldowns, and "never call again"
   - Best and worst times of day to call
 - Sales skill that levels up as you make calls

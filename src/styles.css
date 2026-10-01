@@ -577,3 +577,16 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
   .grid-4 { grid-template-columns: minmax(0, 1fr); }
   .option-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------- Call answer timer ---------- */
+.answer-timer { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-2); }
+.answer-timer-bar { width: 120px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.answer-timer-bar > div { height: 100%; width: 100%; background: var(--accent); transform-origin: left center; border-radius: 3px; }
+.answer-timer.warn { color: var(--warn); }
+.answer-timer.warn .answer-timer-bar > div { background: var(--warn); }
+.answer-timer.bad { color: var(--bad); }
+.answer-timer.bad .answer-timer-bar > div { background: var(--bad); }
+.answer-timer .num { min-width: 24px; text-align: right; }
+@media (max-width: 900px) {
+  .answer-timer-bar { width: 80px; }
+}

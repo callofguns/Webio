@@ -13,6 +13,7 @@
 import type { Business, Temperament } from './types';
 import { chance, clamp, pick, randInt, shuffle, uid, type Rand, defaultRand } from './rng';
 import { pickupMultiplier } from './time';
+import { SILENCE_INTEREST_LOSS } from './balance';
 
 export type Speaker = 'you' | 'them' | 'system';
 
@@ -410,6 +411,34 @@ function hangUp(call: CallState, biz: Business): CallState {
     ),
     angry ? 'do_not_call' : 'not_interested',
   );
+}
+
+// ---------------------------------------------------------------------------
+// Taking too long to answer
+
+/**
+ * What happens when the answer timer runs out. Front desks and voicemails
+ * just hang up. Owners get annoyed, and hang up if they run out of patience.
+ */
+export function timeoutCall(call: CallState, biz: Business): CallState {
+  if (call.phase === 'ended') return call;
+  const silent = line('system', 'You go quiet for too long\u2026');
+  if (call.phase === 'voicemail') {
+    return end(withLines(call, silent, line('system', 'The voicemail beeps and cuts off.')), 'no_answer');
+  }
+  if (call.phase === 'gatekeeper') {
+    return end(withLines(call, silent, line('them', 'Hello? \u2026Okay, bye.'), line('system', 'They hung up.')), 'blocked', {
+      minutes: call.minutes + 1,
+    });
+  }
+  const c: CallState = {
+    ...withLines(call, silent),
+    interest: clamp(call.interest - SILENCE_INTEREST_LOSS, 0, 100),
+    patience: call.patience - 1,
+    minutes: call.minutes + 1,
+  };
+  if (c.patience <= 0) return hangUp(c, biz);
+  return withLines(c, line('them', biz.temperament === 'friendly' ? 'Hello? Are you still there?' : 'Hello?? I don\u2019t have all day.'));
 }
 
 // ---------------------------------------------------------------------------

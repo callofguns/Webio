@@ -6,6 +6,8 @@ import type { Business } from '../../game/types';
 import { formatHour } from '../../game/time';
 import { Button } from '../components/Button';
 import { spring } from '../motion';
+import { AnswerTimer } from './AnswerTimer';
+import { CALL_CHOICE_SECONDS } from '../../game/balance';
 
 /** How long to wait before showing each kind of line, so the call feels live. */
 const DELAY = { system: 450, them: 1000, you: 120 };
@@ -34,7 +36,7 @@ function Typing() {
 }
 
 export function CallView({ call, biz, onDone, nextName }: { call: CallState; biz: Business; onDone?: () => void; nextName?: string }) {
-  const { choose, closeCall } = useGame();
+  const { choose, closeCall, callTimedOut } = useGame();
   // Reveal lines one at a time. After a page reload, only replay the last couple.
   const [shown, setShown] = useState(() => Math.max(0, call.lines.length - 2));
   const bottom = useRef<HTMLDivElement>(null);
@@ -105,7 +107,11 @@ export function CallView({ call, biz, onDone, nextName }: { call: CallState; biz
       <AnimatePresence mode="wait">
         {caughtUp && !ended && call.choices.length > 0 && (
           <motion.div key={call.lines.length} className="choices" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring}>
-            <span className="small faint">{call.phase === 'opener' ? 'How do you open?' : call.phase === 'close' ? 'What do you ask for?' : 'What do you say?'}</span>
+            <div className="row" style={{ justifyContent: 'space-between', gap: 12 }}>
+              <span className="small faint">{call.phase === 'opener' ? 'How do you open?' : call.phase === 'close' ? 'What do you ask for?' : 'What do you say?'}</span>
+              {/* A new timer starts for every answer. */}
+              <AnswerTimer key={call.lines.length} seconds={CALL_CHOICE_SECONDS} onExpire={callTimedOut} />
+            </div>
             {call.choices.map((c, i) => (
               <motion.button
                 key={c.id}

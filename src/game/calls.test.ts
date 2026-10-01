@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateBusiness, generateBusinesses } from './businesses';
-import { chooseOption, startCall, type CallContext, type CallState } from './calls';
+import { chooseOption, startCall, timeoutCall, type CallContext, type CallState } from './calls';
 import type { Business } from './types';
 
 const ctx: CallContext = {
@@ -96,5 +96,43 @@ describe('cold calls', () => {
     expect(expert).toBeGreaterThan(random * 1.5);
     expect(expertResearched).toBeGreaterThan(expert);
     expect(expertResearched).toBeLessThan(0.2);
+  });
+});
+
+describe('answer timer', () => {
+  /** Starts calls until one reaches the given phase. */
+  function callIn(phase: CallState['phase'], seed: number, patch: Partial<Business> = {}) {
+    const rand = seeded(seed);
+    for (let i = 0; i < 500; i++) {
+      const biz = { ...generateBusiness(rand), ...patch };
+      const call = startCall(biz, ctx, rand);
+      if (call.phase === phase) return { biz, call };
+    }
+    throw new Error(`never reached ${phase}`);
+  }
+
+  it('a front desk hangs up if you go quiet', () => {
+    const { biz, call } = callIn('gatekeeper', 10, { size: 'medium' });
+    const after = timeoutCall(call, biz);
+    expect(after.phase).toBe('ended');
+    expect(after.outcome).toBe('blocked');
+  });
+
+  it('a voicemail cuts off if you go quiet', () => {
+    const { biz, call } = callIn('voicemail', 11);
+    expect(timeoutCall(call, biz).outcome).toBe('no_answer');
+  });
+
+  it('owners lose interest when you go quiet, then hang up', () => {
+    const { biz, call } = callIn('opener', 12, { size: 'solo', temperament: 'skeptical' });
+    const once = timeoutCall(call, biz);
+    expect(once.phase).toBe('opener');
+    expect(once.interest).toBeLessThanOrEqual(call.interest);
+    expect(once.patience).toBe(call.patience - 1);
+    expect(once.choices).toEqual(call.choices);
+    let c = once;
+    for (let i = 0; i < 5 && c.phase !== 'ended'; i++) c = timeoutCall(c, biz);
+    expect(c.phase).toBe('ended');
+    expect(['not_interested', 'do_not_call']).toContain(c.outcome);
   });
 });

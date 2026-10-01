@@ -23,7 +23,7 @@ import {
   xpForLevel,
 } from './balance';
 import { generateBusinesses } from './businesses';
-import { chooseOption, startCall, type CallContext, type CallState } from './calls';
+import { chooseOption, startCall, timeoutCall, type CallContext, type CallState } from './calls';
 import {
   createDeal,
   DAY_MINUTES,
@@ -128,6 +128,8 @@ interface Store extends GameState {
   buyLeadList: () => void;
   beginCall: (bizId: string) => void;
   choose: (choiceId: string) => void;
+  /** The answer timer ran out on a call. */
+  callTimedOut: () => void;
   closeCall: () => void;
   sendText: (dealId: string, choiceId: string) => void;
   sendQuote: (dealId: string, quote: Quote) => void;
@@ -551,6 +553,17 @@ export const useGame = create<Store>()(
           const biz = s.businesses.find((b) => b.id === call.businessId);
           if (!biz) return;
           const next = chooseOption(call, biz, choiceId, callContext());
+          set({ activeCall: next });
+          if (next.phase === 'ended') settleCall(next);
+        },
+
+        callTimedOut: () => {
+          const s = get();
+          const call = s.activeCall;
+          if (!call || call.phase === 'ended') return;
+          const biz = s.businesses.find((b) => b.id === call.businessId);
+          if (!biz) return;
+          const next = timeoutCall(call, biz);
           set({ activeCall: next });
           if (next.phase === 'ended') settleCall(next);
         },

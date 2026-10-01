@@ -20,6 +20,11 @@ export const DIRECTORY_SEARCH_RESULTS = 6;
 export const LEAD_LIST_COST = 60;
 export const LEAD_LIST_SIZE = 20;
 
+/** Seconds (real time) you get to pick each answer on a call. */
+export const CALL_CHOICE_SECONDS = 30;
+/** Interest lost when you go quiet for too long on a call. */
+export const SILENCE_INTEREST_LOSS = 10;
+
 /** Days a business won't take your call after saying no. */
 export const NOT_INTERESTED_COOLDOWN = 21;
 /** Chance a voicemail gets returned the next day. */
