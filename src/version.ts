@@ -1,0 +1,64 @@
+// The game's version and what's changed in it. The settings menu reads this.
+
+export const VERSION = 'v1-beta';
+
+export interface ChangeEntry {
+  title: string;
+  notes: string[];
+}
+
+/** Newest first. */
+export const UPDATE_LOG: ChangeEntry[] = [
+  {
+    title: 'v1-beta · Settings and update log',
+    notes: ['New settings menu on the home screen.', 'See the version, what changed, and what is coming next.'],
+  },
+  {
+    title: 'Part 5 · Offices and equipment',
+    notes: [
+      'Move from your bedroom to a coworking desk, a small office, or a loft.',
+      'A floor plan that fills up with your team and equipment.',
+      'Buy a coffee machine, plants, chairs and more for team morale and speed.',
+      'Rent is paid every day, so moving up is a real risk.',
+    ],
+  },
+  {
+    title: 'Look and feel',
+    notes: [
+      'A new "studio canvas" design: dot-grid background, selection frames, colour for each section.',
+      'New font, playful animations and number keys as shortcuts.',
+    ],
+  },
+  {
+    title: 'Phone and calls',
+    notes: ['Install Webio on your phone (PWA) and play offline.', 'Mobile layout with a bottom tab bar.', '30 second timer to answer on calls.', 'The next business is pulled up after you hang up.'],
+  },
+  {
+    title: 'Part 4 · Hiring and team',
+    notes: ['Post jobs, interview, and give test tasks to find out who is really good.', 'Hire sales callers, designers and developers.', 'Pay wages every Friday and keep morale up.'],
+  },
+  {
+    title: 'Part 3 · Building websites',
+    notes: ['Pick pages, features and design for each client.', 'Test for bugs, polish, and handle surprises.', 'Clients review your work. Stars change your reputation.', 'Skills unlock as you level up.'],
+  },
+  {
+    title: 'Part 2 · Texting clients',
+    notes: ['A texting screen for every interested business.', 'Ask questions, send quotes, and negotiate the price.'],
+  },
+  {
+    title: 'Part 1 · Cold calling',
+    notes: ['Find local businesses and research them.', 'Call them. Read their mood and pitch the right way.', 'A day clock, a bank balance, and living costs.'],
+  },
+];
+
+/** Ideas for later. Nothing here is promised. */
+export const UPCOMING: ChangeEntry[] = [
+  {
+    title: 'Part 6 · Training',
+    notes: ['Courses for you and your team that unlock skills faster.', 'Pay for training in money and time.'],
+  },
+  {
+    title: 'Later',
+    notes: ['More types of websites and bigger clients.', 'More office upgrades and team roles.', 'Sound effects and more events.'],
+  },
+];

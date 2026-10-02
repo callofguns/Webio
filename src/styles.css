@@ -875,3 +875,17 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
   .fp-item { font-size: 18px; }
   .fp-thing { font-size: 9px; }
 }
+
+/* ---- Settings button and menu ---- */
+.settings-btn {
+  width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: var(--surface); border: 1px solid var(--border-strong, var(--border)); color: var(--text-2);
+  cursor: pointer; transition: transform 0.2s var(--ease, ease), color 0.15s, border-color 0.15s;
+}
+.settings-btn:hover { color: var(--accent); border-color: var(--accent); transform: rotate(60deg); }
+.settings-btn:active { transform: scale(0.92); }
+.changelog-scroll { max-height: min(52vh, 420px); overflow-y: auto; margin: 0 -6px; padding: 0 6px; -webkit-overflow-scrolling: touch; }
+.changelog { display: grid; gap: 16px; }
+.changelog h3 { font-size: 14px; margin-bottom: 6px; }
+.changelog ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--text-2); font-size: 14px; }
+@media (hover: none) { .settings-btn:hover { transform: none; color: var(--text-2); border-color: var(--border); } }

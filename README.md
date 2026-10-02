@@ -102,6 +102,10 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
   good chairs, whiteboard wall and a client lounge, each with its own bonus. Some
   only fit in a real office
 
+## Version and update log
+
+The game is at **v1-beta**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
+
 ## Look and feel
 
 The game is styled like a web designer's tool:

@@ -11,6 +11,8 @@ import { Modal } from '../components/Modal';
 import { spring } from '../motion';
 import type { ScreenId } from '../Sidebar';
 import { InstallCard } from '../../pwa/InstallCard';
+import { Icon } from '../components/Icon';
+import { SettingsMenu } from '../settings/SettingsMenu';
 
 const TIPS = [
   'Mornings (10–12) are the best time to call. Lunch and late afternoon are rough.',
@@ -23,6 +25,7 @@ const TIPS = [
 export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void }) {
   const s = useGame();
   const [confirmReset, setConfirmReset] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const now = toGameTime(s.day, s.minute);
   const openDeals = s.deals.filter((d) => !['won', 'lost'].includes(dealStatus(d, now)));
   const yourTurn = openDeals.filter((d) => dealStatus(d, now) === 'your_turn').length;
@@ -67,6 +70,9 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
           <Button variant="primary" onClick={() => onNavigate('phone')}>
             Open phone
           </Button>
+          <button className="settings-btn" onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings">
+            <Icon name="settings" size={20} />
+          </button>
         </div>
       </div>
 
@@ -135,6 +141,8 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
           </div>
         </div>
       </div>
+
+      <SettingsMenu open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <Modal open={confirmReset}>
         <h2>Restart from day 1?</h2>
