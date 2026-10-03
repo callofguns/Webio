@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useDragControls } from 'motion/react';
 import { spring } from '../motion';
 import { useIsMobile } from '../useIsMobile';
@@ -18,6 +19,13 @@ interface Props {
 export function Modal({ open, wide, onClose, children }: Props) {
   const mobile = useIsMobile();
   const controls = useDragControls();
+  // The popup is drawn straight into <body> so no screen, scroll area or tab
+  // bar can cover it. It borrows the colour of the section it was opened from.
+  const anchor = useRef<HTMLSpanElement>(null);
+  const [section, setSection] = useState<string | undefined>();
+  useEffect(() => {
+    if (open) setSection(anchor.current?.closest<HTMLElement>('[data-section]')?.dataset.section);
+  }, [open]);
   const from = mobile ? { opacity: 1, y: '100%' } : { opacity: 0, scale: 0.94, y: 12 };
   const to = mobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 };
   const exit = mobile ? { opacity: 1, y: '100%' } : { opacity: 0, scale: 0.96 };
@@ -30,11 +38,12 @@ export function Modal({ open, wide, onClose, children }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  return (
+  const popup = (
     <AnimatePresence>
       {open && (
         <motion.div
           className="overlay"
+          data-section={section}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -69,5 +78,12 @@ export function Modal({ open, wide, onClose, children }: Props) {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+
+  return (
+    <>
+      <span ref={anchor} hidden />
+      {createPortal(popup, document.body)}
+    </>
   );
 }
