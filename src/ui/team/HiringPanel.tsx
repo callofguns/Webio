@@ -247,7 +247,7 @@ export function HiringPanel() {
         </div>
       </div>
 
-      <Modal open={offerId !== null}>
+      <Modal open={offerId !== null} onClose={() => setOfferId(null)}>
         {modalApplicant && (
           <OfferModal
             key={modalApplicant.id}

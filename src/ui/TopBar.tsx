@@ -50,7 +50,7 @@ export function TopBar() {
         End day
       </Button>
 
-      <Modal open={confirming}>
+      <Modal open={confirming} onClose={() => setConfirming(false)}>
         <h2>End the day early?</h2>
         <p className="muted" style={{ marginTop: 8 }}>
           Businesses are still open. Every hour you don&rsquo;t use is a missed chance to find clients. You&rsquo;ll pay{' '}

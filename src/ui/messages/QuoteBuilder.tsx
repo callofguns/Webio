@@ -26,7 +26,7 @@ type Props = { deal: Deal; biz: Business; onClose: () => void };
 export function QuoteBuilder({ open, ...props }: Props & { open: boolean }) {
   // The form mounts fresh each time it opens, so it starts from what you know now.
   return (
-    <Modal open={open} wide>
+    <Modal open={open} wide onClose={props.onClose}>
       {open && <QuoteForm {...props} />}
     </Modal>
   );
@@ -81,7 +81,7 @@ function QuoteForm({ deal, biz, onClose }: Props) {
           Writing it up takes {QUOTE_MINUTES} minutes. {deal.known.features ? '' : 'You haven’t asked what they need, so this is a guess.'}
         </p>
 
-        <div style={{ marginTop: 12 }}>
+        <div className="modal-body" style={{ marginTop: 12 }}>
           <div className="form-row">
             <div>
               <div style={{ fontWeight: 500 }}>Pages</div>
@@ -179,7 +179,7 @@ function QuoteForm({ deal, biz, onClose }: Props) {
           </div>
         </div>
 
-        <div className="row" style={{ justifyContent: 'space-between', marginTop: 16 }}>
+        <div className="row modal-foot" style={{ justifyContent: 'space-between' }}>
           <span className="small muted">
             {Number(deposit) > 0 ? `${money((price * Number(deposit)) / 100)} up front if they accept` : 'Paid when the site is done'}
           </span>

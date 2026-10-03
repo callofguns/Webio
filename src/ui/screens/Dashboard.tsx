@@ -144,7 +144,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
 
       <SettingsMenu open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
-      <Modal open={confirmReset}>
+      <Modal open={confirmReset} onClose={() => setConfirmReset(false)}>
         <h2>Restart from day 1?</h2>
         <p className="muted" style={{ marginTop: 8 }}>This deletes your save. It can&rsquo;t be undone.</p>
         <div className="row" style={{ justifyContent: 'flex-end', marginTop: 20 }}>

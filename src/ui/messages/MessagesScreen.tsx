@@ -40,7 +40,7 @@ export function MessagesScreen() {
           </Button>
         </div>
         <ChatView deal={selected} biz={biz} />
-        <Modal open={notesOpen}>
+        <Modal open={notesOpen} onClose={() => setNotesOpen(false)}>
           <ClientNotes deal={selected} biz={biz} />
           <Button block style={{ marginTop: 12 }} onClick={() => setNotesOpen(false)}>
             Close

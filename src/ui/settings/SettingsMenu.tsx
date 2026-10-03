@@ -27,7 +27,7 @@ function Entries({ entries }: { entries: ChangeEntry[] }) {
 export function SettingsMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [page, setPage] = useState<Page>('log');
   return (
-    <Modal open={open} wide>
+    <Modal open={open} wide onClose={onClose}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <h2>Settings</h2>
         <span className="badge accent num">{VERSION}</span>
@@ -46,10 +46,10 @@ export function SettingsMenu({ open, onClose }: { open: boolean; onClose: () => 
           ]}
         />
       </div>
-      <div className="changelog-scroll">
+      <div className="modal-body">
         <Entries entries={page === 'log' ? UPDATE_LOG : UPCOMING} />
       </div>
-      <div className="row" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
+      <div className="row modal-foot" style={{ justifyContent: 'flex-end' }}>
         <Button variant="primary" onClick={onClose}>
           Close
         </Button>

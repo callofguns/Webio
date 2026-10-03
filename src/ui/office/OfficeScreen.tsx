@@ -144,7 +144,7 @@ export function OfficeScreen() {
         })}
       </div>
 
-      <Modal open={!!moving}>
+      <Modal open={!!moving} onClose={() => setMoving(null)}>
         {target && moving && (
           <>
             <h2>Move to {target.name.toLowerCase()}?</h2>

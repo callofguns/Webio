@@ -33,7 +33,7 @@ export function DaySummary() {
     : [];
 
   return (
-    <Modal open={!!summary}>
+    <Modal open={!!summary} onClose={dismiss}>
       {summary && (
         <>
           <p className="small faint">End of day {summary.day}</p>

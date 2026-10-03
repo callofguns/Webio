@@ -99,7 +99,7 @@ export function EmployeeCard({ e }: { e: Employee }) {
         </Button>
       </div>
 
-      <Modal open={confirmFire}>
+      <Modal open={confirmFire} onClose={() => setConfirmFire(false)}>
         <h2>Let {e.name} go?</h2>
         <p className="muted" style={{ marginTop: 8 }}>You still pay what they&rsquo;ve earned this week. The rest of the team will be a bit nervous.</p>
         <div className="row" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
