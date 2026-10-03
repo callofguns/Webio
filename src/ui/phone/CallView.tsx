@@ -17,10 +17,10 @@ const DELAY = { system: 450, them: 1000, you: 120 };
 
 function outcomeInfo(call: CallState): { text: string; tone: string } {
   const map: Record<CallOutcome, { text: string; tone: string }> = {
-    interested: { text: 'Interested — they’re waiting for your text', tone: 'good' },
+    interested: { text: 'Interested. They’re waiting for your text', tone: 'good' },
     callback: { text: call.callback ? `Call back on day ${call.callback.day} around ${formatHour(call.callback.hour)}` : 'Call back later', tone: 'warn' },
     no_answer: { text: 'No answer', tone: '' },
-    voicemail_left: { text: 'Voicemail left — they might call back', tone: '' },
+    voicemail_left: { text: 'Voicemail left. They might call back', tone: '' },
     blocked: { text: 'Couldn’t get past the front desk', tone: 'bad' },
     not_interested: { text: 'Not interested', tone: 'bad' },
     do_not_call: { text: 'Asked you to never call again', tone: 'bad' },

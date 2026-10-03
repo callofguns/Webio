@@ -171,7 +171,7 @@ export function callBlocker(biz: Business, day: number, minute: number): string 
   if (biz.status === 'do_not_call') return 'Asked you not to call';
   if (biz.status === 'interested') return 'You’re texting them';
   if (biz.status === 'client') return 'Already a client';
-  if (biz.cooldownUntil !== null && day < biz.cooldownUntil) return `Said no — wait until day ${biz.cooldownUntil}`;
+  if (biz.cooldownUntil !== null && day < biz.cooldownUntil) return `Said no. Wait until day ${biz.cooldownUntil}`;
   const hasCallbackToday = biz.callback?.day === day;
   if (biz.lastCalledDay === day && !hasCallbackToday) return 'Already called today';
   return null;
@@ -509,7 +509,7 @@ export const useGame = create<Store>()(
 
         newGame: (profile) => {
           set({ ...newGameState(), profile, activeCall: null, voicemailsToday: [] });
-          log(`${profile.agencyName} is open for business. You have $${START_MONEY.toLocaleString()} saved up — make it last.`);
+          log(`${profile.agencyName} is open for business. You have $${START_MONEY.toLocaleString()} saved up. Make it last.`);
         },
 
         resetGame: () => set({ ...newGameState(), profile: null, activeCall: null, voicemailsToday: [] }),

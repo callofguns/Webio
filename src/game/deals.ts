@@ -504,7 +504,7 @@ function negotiate(deal: Deal, biz: Business, choiceId: string, ctx: TextContext
     case 'neg_walk': {
       const you = 'Sorry, I can’t do it for that. Let me know if anything changes!';
       // Sometimes walking away makes them realize they want you.
-      if (chance(0.15, rand)) return won(price, you, 'Wait — actually, ok. Let’s do it at your price.');
+      if (chance(0.15, rand)) return won(price, you, 'Wait, actually, okay. Let’s do it at your price.');
       return lost(you, 'Ok, no worries. Good luck!');
     }
   }

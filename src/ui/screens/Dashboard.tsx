@@ -19,7 +19,7 @@ const TIPS = [
   'Research a business first. Pointing out a real problem beats a generic pitch.',
   'Listen to how they answer. A rushed "make it quick" means get to the point.',
   'Big claims like "10x your revenue" make skeptical owners hang up.',
-  'Most calls go nowhere. That’s normal — keep dialing.',
+  'Most calls go nowhere. That’s normal. Keep dialing.',
 ];
 
 export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void }) {

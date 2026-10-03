@@ -71,6 +71,37 @@ describe('cold calls', () => {
     }
   });
 
+  it('sounds like a person: no em dashes, no repeated lines, and varied objections', () => {
+    const rand = seeded(7);
+    const player = randomPlayer(rand);
+    const counts: Record<string, number> = {};
+    let theirLines = 0;
+    let calls = 0;
+    for (let i = 0; i < 2000; i++) {
+      const call = play({ ...generateBusiness(rand), researched: rand() < 0.5 }, player, rand);
+      calls++;
+      const them = call.lines.filter((l) => l.speaker === 'them').map((l) => l.text);
+      for (const l of call.lines) expect(l.text).not.toContain('\u2014');
+      // Nobody says the exact same thing twice in one call.
+      expect(new Set(them).size).toBe(them.length);
+      for (const t of them) {
+        counts[t] = (counts[t] ?? 0) + 1;
+        theirLines++;
+      }
+    }
+    expect(calls).toBeGreaterThan(1000);
+    // No single line takes over the calls.
+    const worst = Math.max(...Object.values(counts));
+    expect(worst / theirLines).toBeLessThan(0.08);
+    // The old favourites are rare now.
+    const family = Object.entries(counts)
+      .filter(([t]) => /nephew|son-in-law|daughter does|friend of ours/.test(t))
+      .reduce((n, [, c]) => n + c, 0);
+    expect(family / calls).toBeLessThan(0.06);
+    expect(Object.keys(counts).length).toBeGreaterThan(80);
+    expect(counts['Okay… I’m listening.']).toBeUndefined();
+  });
+
   it('does not change the business passed in', () => {
     const rand = seeded(2);
     const biz = generateBusiness(rand);
