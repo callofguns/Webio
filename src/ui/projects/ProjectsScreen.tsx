@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { FEATURES } from '../../game/deals';
 import { progress } from '../../game/projects';
+import { retainerFee } from '../../game/pricing';
 import type { Project } from '../../game/types';
 import { Icon } from '../components/Icon';
 import { Tabs } from '../components/Tabs';
@@ -34,6 +35,8 @@ export function ProjectsScreen() {
   const delivered = projects.filter((p) => p.status === 'delivered');
   const avgStars = delivered.length ? delivered.reduce((s, p) => s + (p.stars ?? 0), 0) / delivered.length : 0;
   const shown = tab === 'active' ? active : delivered;
+  const retainers = delivered.filter((p) => p.retainer);
+  const retainerIncome = retainers.reduce((sum, p) => sum + (p.retainer?.monthly ?? 0), 0);
 
   return (
     <AnimatePresence mode="wait">
@@ -48,6 +51,12 @@ export function ProjectsScreen() {
               <h1>Projects</h1>
               <p className="muted">
                 Reputation {reputation}
+                {retainers.length > 0 && (
+                  <>
+                    {' '}
+                    &middot; {retainers.length} retainer{retainers.length > 1 ? 's' : ''} bringing in {money(retainerIncome)}/month
+                  </>
+                )}
                 {delivered.length > 0 && (
                   <>
                     {' '}
@@ -102,7 +111,7 @@ export function ProjectsScreen() {
                     {p.status === 'delivered' ? (
                       <div className="row" style={{ justifyContent: 'space-between' }}>
                         <Stars n={p.stars ?? 0} />
-                        <span className="num" style={{ fontWeight: 600 }}>{money(p.price)}</span>
+                        <span className="num" style={{ fontWeight: 600 }}>{p.plan === 'retainer' ? `${money(retainerFee(p.price))}/mo` : money(p.price)}</span>
                       </div>
                     ) : (
                       <>
@@ -113,7 +122,9 @@ export function ProjectsScreen() {
                           <span className={`small ${daysLeft < 0 ? '' : 'muted'}`} style={daysLeft < 0 ? { color: 'var(--bad)', fontWeight: 600 } : undefined}>
                             {daysLeft < 0 ? `${-daysLeft} days late` : daysLeft === 0 ? 'Due today' : `Due in ${daysLeft} days`}
                           </span>
-                          <span className="small muted num">{money(p.price - p.depositPaid)} still owed</span>
+                          <span className="small muted num">
+                            {p.plan === 'retainer' ? `${money(retainerFee(p.price))}/mo once live` : `${money(p.price - p.depositPaid)} still owed`}
+                          </span>
                         </div>
                       </>
                     )}

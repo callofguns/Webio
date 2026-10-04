@@ -5,6 +5,8 @@ import {
   createDeal,
   dealStatus,
   endOfDayDeal,
+  choosePlan,
+  evaluateQuote,
   isWaiting,
   replyTime,
   knownBy,
@@ -126,6 +128,49 @@ describe('deals', () => {
   it('project reviews are never instant', () => {
     const now = toGameTime(1, 10 * 60);
     for (let i = 0; i < 200; i++) expect(replyTime(now, 'friendly', () => 0, 60, 240, 0)).toBeGreaterThan(now);
+  });
+
+  it('a monthly retainer deal has no deposit and a monthly fee of a tenth', () => {
+    const rand = seeded(11);
+    let found = 0;
+    for (let i = 0; i < 80 && found < 5; i++) {
+      const biz = { ...generateBusiness(rand), temperament: 'friendly' as const };
+      const d = askEverything(createDeal(biz, 90, START, rand), biz, rand);
+      const quote = { ...fairQuote(d, 0.6, biz), plan: 'retainer' as const, depositPct: 0 };
+      const sent = sendQuote(d, biz, quote, ctxAt(afterReplies(d)), rand);
+      if (sent.stage !== 'won') continue;
+      found++;
+      expect(sent.plan).toBe('retainer');
+      expect(sent.messages.at(-1)?.text).toMatch(/monthly/i);
+    }
+    expect(found).toBeGreaterThan(0);
+  });
+
+  it('when you offer both, friendly owners pick the monthly plan more than skeptical ones', () => {
+    const rand = seeded(12);
+    const share = (temperament: 'friendly' | 'skeptical') => {
+      let retainers = 0;
+      for (let i = 0; i < 2000; i++) {
+        const biz = { ...generateBusiness(rand), temperament };
+        if (choosePlan({ pages: 4, features: [], price: 1000, days: 10, depositPct: 0, plan: 'either' }, biz, rand) === 'retainer') retainers++;
+      }
+      return retainers / 2000;
+    };
+    expect(share('friendly')).toBeGreaterThan(share('skeptical') + 0.15);
+  });
+
+  it('skeptical owners often turn down a monthly plan that a buyout would have won', () => {
+    const rand = seeded(13);
+    let buyoutWins = 0;
+    let retainerWins = 0;
+    for (let i = 0; i < 1500; i++) {
+      const biz = { ...generateBusiness(rand), temperament: 'skeptical' as const };
+      const d = askEverything(createDeal(biz, 60, START, rand), biz, rand);
+      const q = fairQuote(d, 0.7, biz);
+      if (evaluateQuote(d, biz, { ...q, plan: 'buyout' }, 0, rand).kind === 'accept') buyoutWins++;
+      if (evaluateQuote(d, biz, { ...q, plan: 'retainer' }, 0, rand).kind === 'accept') retainerWins++;
+    }
+    expect(retainerWins).toBeLessThan(buyoutWins);
   });
 
   it('replies never land in the middle of the night', () => {

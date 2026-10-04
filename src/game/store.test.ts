@@ -254,3 +254,75 @@ describe('Claude subscription', () => {
     expect(testTime('max')).toBe(30);
   });
 });
+
+describe('monthly retainers', () => {
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  it('pay nothing up front, pay the first month when the site goes live, then every 30 days', () => {
+    const s = useGame.getState();
+    const biz = { ...s.businesses[0], status: 'client' as const };
+    const deal = {
+      ...createDeal(biz, 80, toGameTime(1, 600)),
+      stage: 'won' as const,
+      settled: true,
+      plan: 'retainer' as const,
+      agreedPrice: 1200,
+      quote: { pages: 3, features: [], price: 1200, days: 14, depositPct: 50, plan: 'retainer' as const },
+    };
+    const project = createProject(deal, biz, 1);
+    // No deposit, even though the quote said 50%.
+    expect(project.plan).toBe('retainer');
+    expect(project.depositPaid).toBe(0);
+
+    // The client has looked at the finished site and loves it.
+    const t = toGameTime(s.day, s.minute);
+    useGame.setState({
+      businesses: [biz, ...s.businesses.slice(1)],
+      deals: [deal],
+      projects: [{ ...project, status: 'review', review: { at: t - 1, approved: true, stars: 4, satisfaction: 85, feedback: null } }],
+    });
+    const before = useGame.getState().money;
+    useGame.getState().wait(10);
+    let p = useGame.getState().projects[0];
+    expect(p.status).toBe('delivered');
+    // 1,200 / 10 = 120 a month, first month paid now.
+    expect(useGame.getState().money).toBe(before + 120);
+    expect(p.retainer).toMatchObject({ monthly: 120, paid: 120, months: 1, nextBillDay: 1 + 30 });
+
+    // 29 more days: nothing yet. On day 31 the next payment lands.
+    for (let i = 0; i < 29; i++) useGame.getState().endDay();
+    expect(useGame.getState().day).toBe(30);
+    expect(useGame.getState().projects[0].retainer?.months).toBe(1);
+    useGame.getState().endDay();
+    expect(useGame.getState().day).toBe(31);
+    p = useGame.getState().projects[0];
+    expect(p.retainer).toMatchObject({ paid: 240, months: 2, nextBillDay: 61 });
+    // And it keeps going, forever.
+    for (let i = 0; i < 30; i++) useGame.getState().endDay();
+    expect(useGame.getState().projects[0].retainer?.months).toBe(3);
+  });
+
+  it('a buyout client still pays the rest of the price on delivery', () => {
+    const s = useGame.getState();
+    const biz = { ...s.businesses[0], status: 'client' as const };
+    const deal = {
+      ...createDeal(biz, 80, toGameTime(1, 600)),
+      stage: 'won' as const,
+      settled: true,
+      plan: 'buyout' as const,
+      agreedPrice: 1000,
+      quote: { pages: 3, features: [], price: 1000, days: 14, depositPct: 0, plan: 'buyout' as const },
+    };
+    const project = createProject(deal, biz, 1);
+    const t = toGameTime(s.day, s.minute);
+    useGame.setState({
+      businesses: [biz, ...s.businesses.slice(1)],
+      deals: [deal],
+      projects: [{ ...project, status: 'review', review: { at: t - 1, approved: true, stars: 4, satisfaction: 85, feedback: null } }],
+    });
+    const before = useGame.getState().money;
+    useGame.getState().wait(10);
+    expect(useGame.getState().money).toBe(before + 1000);
+    expect(useGame.getState().projects[0].retainer).toBeUndefined();
+  });
+});

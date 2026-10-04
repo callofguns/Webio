@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { buyBlocker, FURNITURE, moveBlocker, OFFICES, officeEffects, type FurnitureId, type OfficeId } from './office';
 import { CLAUDE_PLANS, claudeEffects, planBlocker, type ClaudePlan } from './claude';
+import { RETAINER_DAYS, retainerFee } from './pricing';
 import type { Business, DayStats, Deal, Employee, GameState, JobBoard, LogEntry, Project, Quote, Role, SkillId, TeamDay, TextMessage } from './types';
 import {
   DAILY_LIVING_COST,
@@ -261,21 +262,58 @@ export const useGame = create<Store>()(
           if (p.status !== 'review' || !p.review || p.review.at > t) continue;
           const biz = get().businesses.find((b) => b.id === p.businessId)!;
           if (p.review.approved) {
-            const owed = p.price - p.depositPaid;
+            // Buyout: the rest of the price. Retainer: the first month's fee, then one every 30 days.
+            const retainer = p.plan === 'retainer';
+            const owed = retainer ? retainerFee(p.price) : p.price - p.depositPaid;
             const s = get();
             set({
               money: s.money + owed,
               reputation: Math.max(0, s.reputation + REPUTATION_FOR_STARS[p.review.stars]),
               today: { ...s.today, moneyIn: s.today.moneyIn + owed },
             });
-            updateProject(p.id, (x) => ({ ...x, status: 'delivered', stars: x.review!.stars, deliveredDay: get().day }));
+            updateProject(p.id, (x) => ({
+              ...x,
+              status: 'delivered',
+              stars: x.review!.stars,
+              deliveredDay: get().day,
+              ...(retainer ? { retainer: { monthly: owed, nextBillDay: get().day + RETAINER_DAYS, paid: owed, months: 1 } } : {}),
+            }));
             set({ employees: get().employees.map((e) => (e.assignedProjectId === p.id ? { ...e, assignedProjectId: null } : e)) });
-            log(`${biz.name} approved their site (${'\u2605'.repeat(p.review.stars)}) and paid $${owed.toLocaleString()}.`, p.review.stars >= 3 ? 'good' : 'bad');
+            log(
+              retainer
+                ? `${biz.name} approved their site (${'\u2605'.repeat(p.review.stars)}) and started the $${owed.toLocaleString()}/month plan. First month paid.`
+                : `${biz.name} approved their site (${'\u2605'.repeat(p.review.stars)}) and paid $${owed.toLocaleString()}.`,
+              p.review.stars >= 3 ? 'good' : 'bad',
+            );
           } else {
             updateProject(p.id, applyRevision);
             log(`${biz.name} asked for changes to their site.`, 'bad');
           }
         }
+      };
+
+      /** Monthly retainers that have come due. Called at the start of each day. */
+      const collectRetainers = () => {
+        const s = get();
+        let total = 0;
+        const names: string[] = [];
+        const projects = s.projects.map((p) => {
+          if (!p.retainer || p.retainer.nextBillDay > s.day) return p;
+          let { nextBillDay, paid, months } = p.retainer;
+          let due = 0;
+          while (nextBillDay <= s.day) {
+            due += p.retainer.monthly;
+            paid += p.retainer.monthly;
+            months++;
+            nextBillDay += RETAINER_DAYS;
+          }
+          total += due;
+          names.push(s.businesses.find((b) => b.id === p.businessId)?.name ?? 'A client');
+          return { ...p, retainer: { ...p.retainer, nextBillDay, paid, months } };
+        });
+        if (!total) return;
+        set({ projects, money: s.money + total, today: { ...s.today, moneyIn: s.today.moneyIn + total } });
+        log(names.length === 1 ? `${names[0]} paid their $${total.toLocaleString()} monthly retainer.` : `Retainers came in: $${total.toLocaleString()} from ${names.length} clients.`, 'good');
       };
 
       /** Your employees work in the background while the clock moves through work hours. */
@@ -915,6 +953,7 @@ export const useGame = create<Store>()(
           log(rent ? `Paid $${DAILY_LIVING_COST} in living costs and $${rent} rent.` : `Paid $${DAILY_LIVING_COST} in living costs.`, 'bad');
           settleDeals();
           settleProjects();
+          collectRetainers();
           for (const id of returned) {
             const b = get().businesses.find((x) => x.id === id)!;
             log(`${b.name} returned your voicemail! Call back today around ${formatHour(b.callback!.hour)}.`, 'good');

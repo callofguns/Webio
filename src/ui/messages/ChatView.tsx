@@ -13,6 +13,7 @@ import { useNumberKeys } from '../useNumberKeys';
 import { Burst, stamp } from '../components/Burst';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
+import { retainerFee } from '../../game/pricing';
 import { Modal } from '../components/Modal';
 
 function QuoteCard({ quote }: { quote: Quote }) {
@@ -33,14 +34,40 @@ function QuoteCard({ quote }: { quote: Quote }) {
         <span className="muted">Ready in</span>
         <span>{quote.days} days</span>
       </div>
-      <div className="qc-row">
-        <span className="muted">Deposit</span>
-        <span>{quote.depositPct ? `${quote.depositPct}% up front` : 'None'}</span>
-      </div>
-      <div className="qc-row qc-total">
-        <span>Total</span>
-        <span className="num">{money(quote.price)}</span>
-      </div>
+      {(quote.plan ?? 'buyout') === 'buyout' && (
+        <div className="qc-row">
+          <span className="muted">Deposit</span>
+          <span>{quote.depositPct ? `${quote.depositPct}% up front` : 'None'}</span>
+        </div>
+      )}
+      {quote.plan === 'retainer' ? (
+        <>
+          <div className="qc-row">
+            <span className="muted">Covers</span>
+            <span>Hosting &amp; upkeep</span>
+          </div>
+          <div className="qc-row qc-total">
+            <span>Monthly</span>
+            <span className="num">{money(retainerFee(quote.price))}/mo</span>
+          </div>
+        </>
+      ) : quote.plan === 'either' ? (
+        <>
+          <div className="qc-row qc-total">
+            <span>Buy it</span>
+            <span className="num">{money(quote.price)}</span>
+          </div>
+          <div className="qc-row qc-total">
+            <span>Or monthly</span>
+            <span className="num">{money(retainerFee(quote.price))}/mo</span>
+          </div>
+        </>
+      ) : (
+        <div className="qc-row qc-total">
+          <span>Total</span>
+          <span className="num">{money(quote.price)}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -172,7 +199,7 @@ export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
               {(() => {
                 const signed = (
                   <motion.span className="badge good outcome-stamp" {...stamp}>
-                    Contract signed &middot; {money(deal.agreedPrice ?? 0)}
+                    Contract signed &middot; {deal.plan === 'retainer' ? `${money(retainerFee(deal.agreedPrice ?? 0))}/month` : money(deal.agreedPrice ?? 0)}
                   </motion.span>
                 );
                 // Confetti only for a fresh win, not every time you reopen the chat.

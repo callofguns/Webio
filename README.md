@@ -49,6 +49,10 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 - **Quote builder:** pages, features, timeline, deposit and price. Some features need a
   higher Development skill before you can offer them
 - Clients accept, ask for a revision, counter-offer, or say no
+- **Price plans:** offer a one-time **buyout**, a **monthly retainer** (a tenth of the full price, paid
+  forever, covering hosting and upkeep), or let the client pick. Retainer clients pay nothing up front,
+  pay their first month when the site goes live, then every 30 days. Friendly and busy owners like the
+  monthly plan, skeptical and grumpy ones often don't
 - **Negotiate:** accept, meet in the middle, hold firm, or walk away
 - Ignore a client for a day and they cool off. Keep ignoring them and they ghost you
 - Signed deals pay the deposit right away and show up in **Projects**

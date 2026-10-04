@@ -10,6 +10,14 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Price plans',
+    notes: [
+      'Quotes can now be a one-time buyout, a monthly retainer, or both (the client picks).',
+      'The monthly retainer is a tenth of the full price: $1,000 once, or $100 a month forever, covering hosting and maintenance.',
+      'Retainer clients pay their first month when the site goes live, then every 30 days.',
+    ],
+  },
+  {
     title: 'Claude subscription',
     notes: [
       'New Claude subscription in the Office tab, charged every day.',

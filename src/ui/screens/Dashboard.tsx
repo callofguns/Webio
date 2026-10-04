@@ -33,6 +33,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
   const earned = s.lifetime.moneyIn + s.today.moneyIn;
   const callbacks = s.businesses.filter((b) => b.status === 'callback' && b.callback?.day === s.day).length;
   const runway = Math.max(0, Math.floor(s.money / dailyBurn(s.employees, OFFICES[s.office].rent, CLAUDE_PLANS[s.claude].price)));
+  const retainerIncome = s.projects.reduce((sum, p) => sum + (p.retainer?.monthly ?? 0), 0);
   const tip = TIPS[(s.day - 1) % TIPS.length];
 
   const stats = [
@@ -44,7 +45,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
       value: <AnimatedNumber value={openDeals.length} />,
       sub: yourTurn ? `${yourTurn} waiting on your reply` : `${s.projects.length} signed so far`,
     },
-    { label: 'Earned', hue: 'var(--c-projects)', value: <AnimatedNumber value={earned} format={money} />, sub: `${s.today.dials} calls today` },
+    { label: 'Earned', hue: 'var(--c-projects)', value: <AnimatedNumber value={earned} format={money} />, sub: retainerIncome ? `${money(retainerIncome)}/month in retainers` : `${s.today.dials} calls today` },
     {
       label: 'Reputation',
       hue: 'var(--c-team)',

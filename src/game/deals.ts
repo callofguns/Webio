@@ -13,6 +13,7 @@ import type { Business, ClientNeeds, Deal, Feature, GameTime, Industry, Quote, T
 import { chance, clamp, pick, randInt, uid, type Rand, defaultRand } from './rng';
 import { WORKDAY_START } from './balance';
 import { pickupMultiplier } from './time';
+import { priceText, type PricePlan } from './pricing';
 
 // ---------------------------------------------------------------------------
 // Features and prices
@@ -243,11 +244,12 @@ export function textChoices(deal: Deal, biz: Business): TextChoice[] {
     }
     case 'negotiating': {
       const counter = deal.counter ?? 0;
-      const out: TextChoice[] = [{ id: 'neg_accept', label: `Accept their offer of $${counter.toLocaleString()}` }];
+      const fmt = (amount: number) => priceText(deal.plan, amount);
+      const out: TextChoice[] = [{ id: 'neg_accept', label: `Accept their offer of ${fmt(counter)}` }];
       if (!deal.finalOffer && deal.quote) {
         const mid = round50((deal.quote.price + counter) / 2);
-        out.push({ id: 'neg_middle', label: `Meet in the middle at $${mid.toLocaleString()}` });
-        out.push({ id: 'neg_firm', label: `Hold firm at $${deal.quote.price.toLocaleString()} and explain why`, hint: 'Risky' });
+        out.push({ id: 'neg_middle', label: `Meet in the middle at ${fmt(mid)}` });
+        out.push({ id: 'neg_firm', label: `Hold firm at ${fmt(deal.quote.price)} and explain why`, hint: 'Risky' });
       }
       out.push({ id: 'neg_walk', label: 'Politely walk away' });
       return out;
@@ -397,10 +399,34 @@ export type QuoteVerdict =
   | { kind: 'accept' }
   | { kind: 'counter'; counter: number }
   | { kind: 'revise'; missing: Feature[] }
-  | { kind: 'reject'; reason: 'price' | 'features' };
+  | { kind: 'reject'; reason: 'price' | 'features' | 'plan' };
+
+/** How likely a client is to choose a monthly plan when you offer both. */
+function retainerLean(biz: Business): number {
+  const base = { friendly: 0.5, busy: 0.55, skeptical: 0.2, grumpy: 0.25 }[biz.temperament];
+  const size = { solo: 0.1, small: 0, medium: -0.1 }[biz.size];
+  return clamp(base + size + (biz.website === 'none' ? 0.1 : 0), 0.05, 0.9);
+}
+
+/** Which way they'll pay: fixed if you offered one way, their pick if you offered both. */
+export function choosePlan(quote: Quote, biz: Business, rand: Rand = defaultRand): PricePlan {
+  if (quote.plan === 'retainer') return 'retainer';
+  if (quote.plan === 'either') return chance(retainerLean(biz), rand) ? 'retainer' : 'buyout';
+  return 'buyout';
+}
+
+/** How a monthly plan sits with each kind of owner. Some love not worrying about hosting, some hate subscriptions. */
+const RETAINER_FIT: Record<Temperament, number> = { friendly: 3, busy: 4, skeptical: -9, grumpy: -7 };
 
 /** How the client judges your quote. Higher score = more likely to say yes. */
-export function evaluateQuote(deal: Deal, biz: Business, quote: Quote, reputation: number, rand: Rand = defaultRand): QuoteVerdict {
+export function evaluateQuote(
+  deal: Deal,
+  biz: Business,
+  quote: Quote,
+  reputation: number,
+  rand: Rand = defaultRand,
+  plan: PricePlan = quote.plan === 'retainer' ? 'retainer' : 'buyout',
+): QuoteVerdict {
   const n = deal.needs;
   const missing = n.features.filter((f) => !quote.features.includes(f));
   let score = deal.warmth * 0.5 + Math.min(10, reputation * 0.5) + randInt(-6, 6, rand);
@@ -408,7 +434,14 @@ export function evaluateQuote(deal: Deal, biz: Business, quote: Quote, reputatio
   score -= missing.length * 14;
   if (quote.pages < n.pages) score -= (n.pages - quote.pages) * 5;
 
-  const r = quote.price / biz.budget;
+  // A small monthly fee feels lighter than one big payment, and who doesn't like hosting taken care of.
+  // But not everyone wants to be tied to a subscription.
+  let planFit = 0;
+  if (plan === 'retainer') planFit = RETAINER_FIT[biz.temperament] + (biz.size === 'solo' ? 2 : 0);
+  if (quote.plan === 'either') planFit += 3; // they like having a choice
+  score += planFit;
+
+  const r = (plan === 'retainer' ? quote.price * 0.85 : quote.price) / biz.budget;
   if (r <= 0.6) score += 18;
   else if (r <= 0.85) score += 12;
   else if (r <= 1) score += 5;
@@ -435,19 +468,40 @@ export function evaluateQuote(deal: Deal, biz: Business, quote: Quote, reputatio
     const counter = round50(Math.min(quote.price * 0.88, biz.budget * (0.85 + rand() * 0.15)));
     return { kind: 'counter', counter };
   }
+  // If only the monthly plan put them off, say so.
+  if (quote.plan === 'retainer' && planFit < 0 && score - planFit >= 18) return { kind: 'reject', reason: 'plan' };
   return { kind: 'reject', reason: missing.length > 1 ? 'features' : 'price' };
 }
 
 export const QUOTE_MINUTES = 20;
+
+const REJECT_TEXT = {
+  price: 'Sorry, that’s way more than we can spend right now. Thanks though.',
+  features: 'Thanks, but this isn’t really what we need. We’ll pass.',
+  plan: 'Thanks, but we’d rather not sign up for a monthly plan. We’ll pass.',
+};
+
+/** What they say when they accept. When you offered both ways to pay, they tell you which one they want. */
+function acceptText(quote: Quote, plan: PricePlan): string {
+  const deposit = plan === 'buyout' && quote.depositPct ? ' I’ll send the deposit today.' : '';
+  if (quote.plan === 'either') {
+    return plan === 'retainer'
+      ? 'This looks great. We’ll take the monthly plan, so we don’t have to worry about hosting. Let’s do it!'
+      : `This looks great. We’d rather just buy it outright. Let’s do it!${deposit}`;
+  }
+  if (plan === 'retainer') return 'This looks great. The monthly plan works for us. Let’s do it!';
+  return `This looks great. Let’s do it!${deposit}`;
+}
 
 export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextContext, rand: Rand = defaultRand): Deal {
   if (isWaiting(deal, ctx.now) || deal.stage !== 'discovery') return deal;
   const sentAt = ctx.now;
   // Reading a quote takes a bit, so an instant answer is less likely.
   const at = replyTime(sentAt, biz.temperament, rand, 45, 200, 0.4);
-  const verdict = evaluateQuote(deal, biz, quote, ctx.reputation, rand);
+  const plan = choosePlan(quote, biz, rand);
+  const verdict = evaluateQuote(deal, biz, quote, ctx.reputation, rand, plan);
   const mine = textMessage('you', 'Here’s my quote. Let me know what you think!', sentAt, quote);
-  let d: Deal = { ...deal, quote, idleDays: 0 };
+  let d: Deal = { ...deal, quote, idleDays: 0, plan };
 
   switch (verdict.kind) {
     case 'accept':
@@ -456,14 +510,14 @@ export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextCont
         stage: 'won',
         agreedPrice: quote.price,
         closedAt: at,
-        messages: [...d.messages, mine, textMessage('them', `This looks great. Let’s do it!${quote.depositPct ? ' I’ll send the deposit today.' : ''}`, at)],
+        messages: [...d.messages, mine, textMessage('them', acceptText(quote, plan), at)],
       };
     case 'counter':
       return {
         ...d,
         stage: 'negotiating',
         counter: verdict.counter,
-        messages: [...d.messages, mine, textMessage('them', `Looks good, but it’s more than we wanted to spend. Could you do $${verdict.counter.toLocaleString()}?`, at)],
+        messages: [...d.messages, mine, textMessage('them', `Looks good, but it’s more than we wanted to spend. Could you do ${priceText(plan, verdict.counter)}?`, at)],
       };
     case 'revise': {
       const names = verdict.missing.map((f) => FEATURES[f].label.toLowerCase()).join(' and ');
@@ -481,7 +535,7 @@ export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextCont
         messages: [
           ...d.messages,
           mine,
-          textMessage('them', verdict.reason === 'price' ? 'Sorry, that’s way more than we can spend right now. Thanks though.' : 'Thanks, but this isn’t really what we need. We’ll pass.', at),
+          textMessage('them', REJECT_TEXT[verdict.reason], at),
         ],
       };
   }
@@ -493,6 +547,7 @@ export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextCont
 function negotiate(deal: Deal, biz: Business, choiceId: string, ctx: TextContext, rand: Rand): Deal {
   const counter = deal.counter!;
   const price = deal.quote!.price;
+  const fmt = (amount: number) => priceText(deal.plan, amount);
   const at = replyTime(ctx.now, biz.temperament, rand, 10, 90, 0.6);
   const won = (agreed: number, you: string, them: string, warmthDelta = 0): Deal => ({
     ...deal,
@@ -516,15 +571,15 @@ function negotiate(deal: Deal, biz: Business, choiceId: string, ctx: TextContext
 
   switch (choiceId) {
     case 'neg_accept':
-      return won(counter, `Deal! $${counter.toLocaleString()} works for me.`, 'Great, let’s get started!');
+      return won(counter, `Deal! ${fmt(counter)} works for me.`, 'Great, let’s get started!');
 
     case 'neg_middle': {
       const mid = round50((price + counter) / 2);
       const p = clamp(0.55 + (deal.warmth - 50) / 100, 0.15, 0.9);
-      const you = `How about we meet in the middle at $${mid.toLocaleString()}?`;
+      const you = `How about we meet in the middle at ${fmt(mid)}?`;
       return chance(p, rand)
         ? won(mid, you, 'Ok, that’s fair. Deal.')
-        : final(you, `Sorry, $${counter.toLocaleString()} is really the most we can do.`);
+        : final(you, `Sorry, ${fmt(counter)} is really the most we can do.`);
     }
 
     case 'neg_firm': {
@@ -532,7 +587,7 @@ function negotiate(deal: Deal, biz: Business, choiceId: string, ctx: TextContext
       const you = 'I hear you. That price covers everything we talked about, and I can’t go lower without cutting corners.';
       if (chance(p, rand)) return won(price, you, 'Alright, fair enough. Let’s do it.', -5);
       if (chance(0.5, rand)) return lost(you, 'Then I think we’ll pass for now. Thanks anyway.');
-      return final(you, `I get it, but $${counter.toLocaleString()} is my final offer.`);
+      return final(you, `I get it, but ${fmt(counter)} is my final offer.`);
     }
 
     case 'neg_walk': {

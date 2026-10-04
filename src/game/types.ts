@@ -1,5 +1,6 @@
 import type { Design, Vibe } from './design';
 import type { ClaudePlan } from './claude';
+import type { PricePlan, QuotePlan } from './pricing';
 import type { FurnitureId, OfficeId } from './office';
 
 // Core data shapes for the whole game. Everything saved to the player's
@@ -128,8 +129,10 @@ export interface Quote {
   features: Feature[];
   price: number;
   days: number;
-  /** Percent paid up front: 0, 25 or 50. */
+  /** Percent paid up front: 0, 25 or 50. Only for buyouts. */
   depositPct: number;
+  /** How they can pay. Missing in old saves, which means a one-time buyout. */
+  plan?: QuotePlan;
 }
 
 /** What the client actually wants. Hidden until you ask. */
@@ -163,8 +166,10 @@ export interface Deal {
   counter: number | null;
   /** True once they've said "that's my final offer". */
   finalOffer: boolean;
-  /** Price you agreed on. */
+  /** Price you agreed on. For a retainer, the monthly fee is a tenth of this. */
   agreedPrice: number | null;
+  /** How the client chose to pay (they pick when you offer both). */
+  plan?: PricePlan;
   /** When the deal was won or lost (the reply that decided it). */
   closedAt: GameTime | null;
   /** True after the win/loss has been applied (money paid, project created). */
@@ -215,6 +220,10 @@ export interface Project {
   dueDay: number;
   hasContent: boolean;
   status: ProjectStatus;
+  /** How this client pays. Missing means a one-time buyout. */
+  plan?: PricePlan;
+  /** Monthly payments, once a retainer site goes live. */
+  retainer?: { monthly: number; nextBillDay: number; paid: number; months: number };
 
   // --- Part 3: building ---
   design: Design;

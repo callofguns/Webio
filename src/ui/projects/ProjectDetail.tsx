@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DAY_HARD_END, useGame } from '../../game/store';
 import { contentMissing, progress, siteQuality } from '../../game/projects';
+import { retainerFee } from '../../game/pricing';
 import type { Project } from '../../game/types';
 import { Button } from '../components/Button';
 import { Tabs } from '../components/Tabs';
@@ -56,7 +57,7 @@ export function ProjectDetail({ project, onBack }: { project: Project; onBack: (
           </Button>
           <h1>{biz.name}</h1>
           <p className="muted">
-            {money(project.price)} &middot;{' '}
+            {project.plan === 'retainer' ? `${money(retainerFee(project.price))}/month` : money(project.price)} &middot;{' '}
             {project.status === 'delivered'
               ? `delivered on day ${project.deliveredDay}`
               : daysLeft < 0
@@ -119,9 +120,17 @@ export function ProjectDetail({ project, onBack }: { project: Project; onBack: (
                 <span className="num">{siteQuality(project)}/100</span>
               </div>
               <div className="row" style={{ justifyContent: 'space-between' }}>
-                <span className="muted">Paid</span>
-                <span className="num" style={{ fontWeight: 600 }}>{money(project.price)}</span>
+                <span className="muted">{project.retainer ? 'Paid so far' : 'Paid'}</span>
+                <span className="num" style={{ fontWeight: 600 }}>{money(project.retainer ? project.retainer.paid : project.price)}</span>
               </div>
+              {project.retainer && (
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="muted">Retainer</span>
+                  <span className="num">
+                    {money(project.retainer.monthly)}/month &middot; next on day {project.retainer.nextBillDay}
+                  </span>
+                </div>
+              )}
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <span className="muted">Rounds of changes</span>
                 <span className="num">{project.revisions}</span>

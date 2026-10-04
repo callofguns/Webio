@@ -56,7 +56,9 @@ export function createProject(deal: Deal, biz: Business, day: number, rand: Rand
     pages: quote.pages,
     features: quote.features,
     price,
-    depositPaid: Math.round((price * quote.depositPct) / 100),
+    // A retainer client pays nothing up front. Their first month is paid when the site goes live.
+    plan: deal.plan ?? 'buyout',
+    depositPaid: deal.plan === 'retainer' ? 0 : Math.round((price * quote.depositPct) / 100),
     signedDay: day,
     dueDay: day + quote.days,
     hasContent: deal.needs.hasContent,

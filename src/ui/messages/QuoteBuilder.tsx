@@ -7,6 +7,7 @@ import { Modal } from '../components/Modal';
 import { Tabs } from '../components/Tabs';
 import { Icon } from '../components/Icon';
 import { money } from '../components/AnimatedNumber';
+import { retainerFee, type QuotePlan } from '../../game/pricing';
 
 function Stepper({ value, min, max, onChange, suffix }: { value: number; min: number; max: number; onChange: (n: number) => void; suffix?: string }) {
   return (
@@ -52,11 +53,13 @@ function QuoteForm({ deal, biz, onClose }: Props) {
       ),
   );
   const [days, setDays] = useState(start?.days ?? 10);
+  const [plan, setPlan] = useState<QuotePlan>(start?.plan ?? 'buyout');
   const [deposit, setDeposit] = useState<'0' | '25' | '50'>(String(start?.depositPct ?? 50) as '0' | '25' | '50');
   const suggested = marketPrice(pages, features);
   const [price, setPrice] = useState(start?.price ?? suggested);
   const [touchedPrice, setTouchedPrice] = useState(!!start);
   const estimate = buildDays(pages, features);
+  const fee = retainerFee(price);
 
   // Until you type your own price, keep it at the suggested price.
   useEffect(() => {
@@ -127,25 +130,50 @@ function QuoteForm({ deal, biz, onClose }: Props) {
 
           <div className="form-row">
             <div>
-              <div style={{ fontWeight: 500 }}>Deposit up front</div>
-              <div className="small faint">Money now, but careful clients don&rsquo;t love it</div>
+              <div style={{ fontWeight: 500 }}>How they pay</div>
+              <div className="small faint">
+                {plan === 'buyout' && 'They pay once and the site is theirs.'}
+                {plan === 'retainer' && 'A monthly fee, forever. It covers hosting and maintenance.'}
+                {plan === 'either' && 'You offer both and they pick the one they like.'}
+              </div>
             </div>
             <Tabs
-              id="deposit"
-              value={deposit}
-              onChange={setDeposit}
+              id="plan"
+              value={plan}
+              onChange={setPlan}
               options={[
-                { value: '0', label: 'None' },
-                { value: '25', label: '25%' },
-                { value: '50', label: '50%' },
+                { value: 'buyout', label: 'Buyout' },
+                { value: 'retainer', label: 'Monthly' },
+                { value: 'either', label: 'Client picks' },
               ]}
             />
           </div>
 
+          {plan !== 'retainer' && (
+            <div className="form-row">
+              <div>
+                <div style={{ fontWeight: 500 }}>Deposit up front</div>
+                <div className="small faint">
+                  {plan === 'either' ? 'Only if they buy it outright. ' : ''}Money now, but careful clients don&rsquo;t love it
+                </div>
+              </div>
+              <Tabs
+                id="deposit"
+                value={deposit}
+                onChange={setDeposit}
+                options={[
+                  { value: '0', label: 'None' },
+                  { value: '25', label: '25%' },
+                  { value: '50', label: '50%' },
+                ]}
+              />
+            </div>
+          )}
+
           <div className="form-row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
             <div className="row" style={{ justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontWeight: 500 }}>Price</div>
+                <div style={{ fontWeight: 500 }}>{plan === 'buyout' ? 'Price' : 'Full price'}</div>
                 <div className="small faint">
                   Typical price: {money(suggested)}
                   {known.budget && deal.budgetHint && ` · they said ${money(deal.budgetHint[0])}–${money(deal.budgetHint[1])}`}
@@ -178,18 +206,37 @@ function QuoteForm({ deal, biz, onClose }: Props) {
               }}
               aria-label="Price"
             />
+            <div className="small" style={{ marginTop: 2 }}>
+              {plan === 'buyout' && <>They pay <strong className="num">{money(price)}</strong> once.</>}
+              {plan === 'retainer' && (
+                <>
+                  They pay <strong className="num">{money(fee)}/month</strong> for as long as they keep the site. That is a tenth of the full price.
+                </>
+              )}
+              {plan === 'either' && (
+                <>
+                  They choose: <strong className="num">{money(price)}</strong> once, or <strong className="num">{money(fee)}/month</strong>.
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="row modal-foot" style={{ justifyContent: 'space-between' }}>
           <span className="small muted">
-            {Number(deposit) > 0 ? `${money((price * Number(deposit)) / 100)} up front if they accept` : 'Paid when the site is done'}
+            {plan === 'retainer'
+              ? `${money(fee)}/month once the site goes live`
+              : plan === 'either'
+                ? `${money(fee)}/month or ${money(price)} once`
+                : Number(deposit) > 0
+                  ? `${money((price * Number(deposit)) / 100)} up front if they accept`
+                  : 'Paid when the site is done'}
           </span>
           <Button
             variant="primary"
             disabled={price < 50 || tooLate}
             onClick={() => {
-              sendQuote(deal.id, { pages, features, price, days, depositPct: Number(deposit) });
+              sendQuote(deal.id, { pages, features, price, days, depositPct: plan === 'retainer' ? 0 : Number(deposit), plan });
               onClose();
             }}
           >
