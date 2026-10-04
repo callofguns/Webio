@@ -1,6 +1,6 @@
 // The game's version and what's changed in it. The settings menu reads this.
 
-export const VERSION = 'v1-beta';
+export const VERSION = 'Beta-v2';
 
 export interface ChangeEntry {
   title: string;
@@ -10,16 +10,21 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
-    title: 'v1-beta · Settings and fixes',
+    title: 'Beta-v2 · Calls, replies and fixes',
     notes: [
-      'New settings menu on the home screen with the version and update log.',
-      'Popups close when you tap outside them, press Escape, or drag the sheet down.',
-      'Much more natural cold call dialogue, with fewer repeated lines.',
+      'Delete conversations that were lost, one at a time or all at once.',
       'Clients sometimes text back right away when they are free.',
-      'Client notes only fill in once the client has replied.',
-      'You can delete conversations that were lost, one at a time or all at once.',
       'Phones stay in portrait and tablets in landscape. Turn the device the right way to keep playing.',
+      'Much more natural cold call dialogue, with 14 kinds of objections and fewer repeated lines.',
+      'Popups close when you tap outside them, press Escape, or drag the sheet down.',
+      'Fixed: the tab bar covering "Send quote" on phones.',
+      'Fixed: client notes showing answers before the client had replied.',
+      'Fixed: text growing and buttons freezing after rotating a phone.',
     ],
+  },
+  {
+    title: 'v1-beta · Settings menu',
+    notes: ['New settings menu on the home screen.', 'See the version, what changed, and what is coming next.'],
   },
   {
     title: 'Part 5 · Offices and equipment',

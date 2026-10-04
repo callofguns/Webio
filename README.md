@@ -106,7 +106,7 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 
 ## Version and update log
 
-The game is at **v1-beta**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
+The game is at **Beta-v2**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
 
 ## Look and feel
 
