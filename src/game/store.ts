@@ -708,7 +708,7 @@ export const useGame = create<Store>()(
           if (!p || p.status !== 'in_progress' || !allTasksDone(p) || p.pendingEvent || busy(10)) return;
           const biz = s.businesses.find((b) => b.id === p.businessId)!;
           const t = now();
-          const review = { ...evaluateSite(p, biz, s.day), at: replyTime(t, biz.temperament, Math.random, 60, 240) };
+          const review = { ...evaluateSite(p, biz, s.day), at: replyTime(t, biz.temperament, Math.random, 60, 240, 0) };
           const first = biz.ownerName.split(' ')[0];
           postToThread(
             p.dealId,

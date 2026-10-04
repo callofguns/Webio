@@ -6,6 +6,7 @@ import {
   dealStatus,
   endOfDayDeal,
   isWaiting,
+  replyTime,
   knownBy,
   marketPrice,
   OPEN_QUOTE,
@@ -66,7 +67,10 @@ describe('deals', () => {
   it('you cannot text again while waiting for a reply', () => {
     const rand = seeded(2);
     const biz = generateBusiness(rand);
-    const deal = sendText(createDeal(biz, 50, START, rand), biz, 'intro_pro', ctxAt(START), rand);
+    // A rand that never rolls an instant reply, so this reply is on its way.
+    const slow = () => 0.99;
+    const deal = sendText(createDeal(biz, 50, START, rand), biz, 'intro_pro', ctxAt(START), slow);
+    expect(isWaiting(deal, START + 1)).toBe(true);
     expect(sendText(deal, biz, 'q_budget', ctxAt(START + 1), rand)).toBe(deal);
   });
 
@@ -91,6 +95,37 @@ describe('deals', () => {
     expect(textChoices(d, biz).map((c) => c.id)).not.toContain('q_budget');
     // Once the reply is in, it's known.
     expect(knownBy(d, afterReplies(d)).budget).toBe(true);
+  });
+
+  it('sometimes a free client texts back right away', () => {
+    const rand = seeded(5);
+    const biz = { ...generateBusiness(rand), temperament: 'friendly' as const };
+    const deal = createDeal(biz, 50, START, rand);
+    // A roll of 0 is the luckiest roll: they're free and answer on the spot.
+    const instant = sendText(deal, biz, 'intro_pro', ctxAt(START), () => 0);
+    expect(isWaiting(instant, START)).toBe(false);
+    expect(dealStatus(instant, START)).toBe('your_turn');
+    expect(visibleMessages(instant, START).at(-1)?.from).toBe('them');
+  });
+
+  it('how often replies are instant depends on who they are and when', () => {
+    const rate = (t: 'friendly' | 'busy' | 'skeptical' | 'grumpy', day: number, hour: number) => {
+      const rand = seeded(9);
+      const now = toGameTime(day, hour * 60);
+      let n = 0;
+      for (let i = 0; i < 4000; i++) if (replyTime(now, t, rand) === now) n++;
+      return n / 4000;
+    };
+    expect(rate('friendly', 1, 10.5)).toBeGreaterThan(0.3);
+    expect(rate('busy', 1, 10.5)).toBeLessThan(0.12);
+    expect(rate('friendly', 1, 10.5)).toBeGreaterThan(rate('friendly', 1, 12.5)); // lunch is busier
+    expect(rate('friendly', 1, 22)).toBe(0); // nobody texts back at 10 PM
+    expect(rate('friendly', 1, 6)).toBe(0);
+  });
+
+  it('project reviews are never instant', () => {
+    const now = toGameTime(1, 10 * 60);
+    for (let i = 0; i < 200; i++) expect(replyTime(now, 'friendly', () => 0, 60, 240, 0)).toBeGreaterThan(now);
   });
 
   it('replies never land in the middle of the night', () => {

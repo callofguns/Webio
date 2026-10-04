@@ -42,6 +42,8 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 - **Messages:** every business that says yes on the phone gets a text thread
 - Replies take game time (busy owners are slow, nobody texts at night), so you keep
   calling while you wait, or use **Wait 1 hr**
+- Sometimes a free client texts back right away (friendly owners most often, busy owners
+  rarely, less at lunch and late in the day, never at night)
 - Ask about their needs, budget, deadline and content. Ask too much and they get annoyed
 - **Client notes** fill in as you learn things (grumpy owners lowball their budget!)
 - **Quote builder:** pages, features, timeline, deposit and price. Some features need a

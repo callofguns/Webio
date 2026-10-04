@@ -12,6 +12,7 @@
 import type { Business, ClientNeeds, Deal, Feature, GameTime, Industry, Quote, Temperament, TextMessage } from './types';
 import { chance, clamp, pick, randInt, uid, type Rand, defaultRand } from './rng';
 import { WORKDAY_START } from './balance';
+import { pickupMultiplier } from './time';
 
 // ---------------------------------------------------------------------------
 // Features and prices
@@ -88,8 +89,23 @@ export function fromGameTime(t: GameTime): { day: number; minute: number } {
 
 const REPLY_SPEED: Record<Temperament, number> = { friendly: 1, busy: 3, skeptical: 1.5, grumpy: 2 };
 
-/** When the client will reply. People don't text back late at night. */
-export function replyTime(now: GameTime, t: Temperament, rand: Rand, min = 10, max = 60): GameTime {
+/** How likely each kind of owner is to text back right away, if they're free. */
+const INSTANT_REPLY: Record<Temperament, number> = { friendly: 0.35, busy: 0.06, skeptical: 0.14, grumpy: 0.1 };
+
+/**
+ * When the client will reply. People don't text back late at night.
+ * Sometimes they're free with their phone in hand and answer right away. That
+ * happens less when they're busy (lunch, end of the day) and for busy owners.
+ * `quick` scales that chance. Use 0 for things that always take a while.
+ */
+export function replyTime(now: GameTime, t: Temperament, rand: Rand, min = 10, max = 60, quick = 1): GameTime {
+  if (quick > 0) {
+    const { day, minute } = fromGameTime(now);
+    if (minute >= 8 * 60 && minute < 21 * 60) {
+      const free = INSTANT_REPLY[t] * pickupMultiplier(day, minute) * quick;
+      if (chance(Math.min(0.6, free), rand)) return now;
+    }
+  }
   let at = now + Math.round(randInt(min, max, rand) * REPLY_SPEED[t]);
   const { day, minute } = fromGameTime(at);
   if (minute >= 21 * 60 || minute < 8 * 60) {
@@ -427,7 +443,8 @@ export const QUOTE_MINUTES = 20;
 export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextContext, rand: Rand = defaultRand): Deal {
   if (isWaiting(deal, ctx.now) || deal.stage !== 'discovery') return deal;
   const sentAt = ctx.now;
-  const at = replyTime(sentAt, biz.temperament, rand, 45, 200);
+  // Reading a quote takes a bit, so an instant answer is less likely.
+  const at = replyTime(sentAt, biz.temperament, rand, 45, 200, 0.4);
   const verdict = evaluateQuote(deal, biz, quote, ctx.reputation, rand);
   const mine = textMessage('you', 'Here’s my quote. Let me know what you think!', sentAt, quote);
   let d: Deal = { ...deal, quote, idleDays: 0 };
@@ -476,7 +493,7 @@ export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextCont
 function negotiate(deal: Deal, biz: Business, choiceId: string, ctx: TextContext, rand: Rand): Deal {
   const counter = deal.counter!;
   const price = deal.quote!.price;
-  const at = replyTime(ctx.now, biz.temperament, rand, 10, 90);
+  const at = replyTime(ctx.now, biz.temperament, rand, 10, 90, 0.6);
   const won = (agreed: number, you: string, them: string, warmthDelta = 0): Deal => ({
     ...deal,
     stage: 'won',
