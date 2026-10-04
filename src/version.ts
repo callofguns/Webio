@@ -10,6 +10,14 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Designers work on their own',
+    notes: [
+      'Designers now find design work by themselves when they have nothing to do.',
+      'They pick projects you have started that still need design, spreading out between them.',
+      'The Team screen explains what design work is.',
+    ],
+  },
+  {
     title: 'Price plans',
     notes: [
       'Quotes can now be a one-time buyout, a monthly retainer, or both (the client picks).',

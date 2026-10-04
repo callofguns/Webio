@@ -112,6 +112,10 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 
 The game is at **Beta-v2**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
 
+## What designers do
+
+Designers handle the **design** tasks of a site: the home page, the other pages, writing the text and finding photos, redesigns, and extra sections. Developers handle the **development** tasks (hosting, features like booking or a store, and going live). Designers find design work on their own: when they have nothing assigned, or their project has no design left, they pick up a project you have started that still needs design. Developers still need to be assigned by hand.
+
 ## Claude subscription
 
 In the **Office** tab you can subscribe to Claude. It is charged every evening, like rent, and you can cancel any time.

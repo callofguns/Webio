@@ -80,13 +80,18 @@ export function EmployeeCard({ e }: { e: Employee }) {
             value={e.assignedProjectId ?? ''}
             onChange={(ev) => assignEmployee(e.id, ev.target.value || null)}
           >
-            <option value="">Nothing</option>
+            <option value="">{e.role === 'designer' ? 'Anything that needs design (automatic)' : 'Nothing'}</option>
             {openProjects.map((p) => (
               <option key={p.id} value={p.id}>
                 {businesses.find((b) => b.id === p.businessId)?.name}
               </option>
             ))}
           </select>
+          {e.role === 'designer' && (
+            <p className="small faint" style={{ marginTop: 6 }}>
+              Designers do the design work: the home page, the other pages, text and photos, redesigns and extra sections. When they run out, they find more on their own.
+            </p>
+          )}
         </div>
       )}
 

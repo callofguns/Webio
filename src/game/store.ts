@@ -46,7 +46,9 @@ import {
   changeDesign,
   createProject,
   evaluateSite,
+  findWork,
   fixBugs,
+  hasWorkLeft,
   MAX_POLISH,
   polishSite,
   REPUTATION_FOR_STARS,
@@ -328,6 +330,12 @@ export const useGame = create<Store>()(
         const newDeals: Deal[] = [];
         const messages: [string, LogEntry['tone']][] = [];
 
+        // How many designers are on each project, so free designers spread out.
+        const crowd = new Map<string, number>();
+        for (const e of s.employees) {
+          if (e.role === 'designer' && e.assignedProjectId) crowd.set(e.assignedProjectId, (crowd.get(e.assignedProjectId) ?? 0) + 1);
+        }
+
         const employees = s.employees.map((original) => {
           let e: Employee = { ...original, today: { ...original.today }, carryMinutes: original.carryMinutes + minutes };
           const gainXp = (amount: number) => {
@@ -354,9 +362,21 @@ export const useGame = create<Store>()(
               }
               gainXp(5);
             } else {
-              const project = projects.find((p) => p.id === e.assignedProjectId);
+              let project = projects.find((p) => p.id === e.assignedProjectId);
+              // Designers look for design work themselves when they have none.
+              if (e.role === 'designer' && !(project && hasWorkLeft(project, 'design'))) {
+                const found = findWork(projects, 'design', crowd);
+                if (found && found.id !== project?.id) {
+                  if (project) crowd.set(project.id, Math.max(0, (crowd.get(project.id) ?? 1) - 1));
+                  crowd.set(found.id, (crowd.get(found.id) ?? 0) + 1);
+                  project = found;
+                  e.assignedProjectId = found.id;
+                  const name = businesses.find((b) => b.id === found.businessId)?.name ?? 'a project';
+                  messages.push([`${e.name} found design work to do on ${name} and got started.`, 'neutral']);
+                }
+              }
               if (!project) {
-                e.today.note = 'Nothing to do. Assign them a project.';
+                e.today.note = e.role === 'designer' ? 'No design work right now. Start a project and they will pick it up.' : 'Nothing to do. Assign them a project.';
                 continue;
               }
               if (project.status !== 'in_progress') {

@@ -326,3 +326,99 @@ describe('monthly retainers', () => {
     expect(useGame.getState().projects[0].retainer).toBeUndefined();
   });
 });
+
+describe('designers find their own work', () => {
+  const person = (id: string, role: 'designer' | 'developer', assignedProjectId: string | null = null) => ({
+    id,
+    name: `Person ${id}`,
+    role,
+    level: 2,
+    xp: 0,
+    pay: 100,
+    traits: [],
+    knownTraits: [],
+    morale: 80,
+    hiredDay: 1,
+    assignedProjectId,
+    carryMinutes: 0,
+    lowMoraleDays: 0,
+    today: { dials: 0, leads: 0, hours: 0, note: '' },
+  });
+
+  /** Two client sites, each with a name, ready to work on. */
+  function twoProjects(started: [boolean, boolean] = [true, true]) {
+    const s = useGame.getState();
+    const bizList = s.businesses.slice(0, 2).map((b) => ({ ...b, status: 'client' as const }));
+    const make = (i: number, started: boolean, due: number) => {
+      const deal = {
+        ...createDeal(bizList[i], 80, toGameTime(1, 600)),
+        stage: 'won' as const,
+        settled: true,
+        agreedPrice: 1200,
+        quote: { pages: 3, features: [], price: 1200, days: due, depositPct: 0 },
+      };
+      const p = createProject(deal, bizList[i], 1);
+      return { deal, project: { ...p, status: started ? ('in_progress' as const) : ('not_started' as const) } };
+    };
+    const a = make(0, started[0], 10);
+    const b = make(1, started[1], 20);
+    useGame.setState({
+      businesses: [...bizList, ...s.businesses.slice(2)],
+      deals: [a.deal, b.deal],
+      projects: [a.project, b.project],
+    });
+    return [a.project, b.project];
+  }
+
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  it('a designer with nothing assigned picks up design work, soonest due first', () => {
+    const [a] = twoProjects();
+    useGame.setState({ employees: [person('d1', 'designer')] });
+    useGame.getState().wait(60);
+    const s = useGame.getState();
+    expect(s.employees[0].assignedProjectId).toBe(a.id);
+    expect(s.projects[0].tasks.find((t) => t.label === 'Design the home page')!.done).toBeGreaterThan(0);
+    expect(s.log.some((l) => l.text.includes('found design work'))).toBe(true);
+  });
+
+  it('two free designers spread over two projects', () => {
+    const [a, b] = twoProjects();
+    useGame.setState({ employees: [person('d1', 'designer'), person('d2', 'designer')] });
+    useGame.getState().wait(60);
+    const ids = useGame.getState().employees.map((e) => e.assignedProjectId);
+    expect(new Set(ids)).toEqual(new Set([a.id, b.id]));
+  });
+
+  it('a designer moves on when the design work on their project is finished', () => {
+    const [a, b] = twoProjects();
+    const doneDesign = { ...a, tasks: a.tasks.map((t) => (t.skill === 'design' ? { ...t, done: t.hours, quality: 70 } : t)) };
+    useGame.setState({ projects: [doneDesign, b], employees: [person('d1', 'designer', a.id)] });
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees[0].assignedProjectId).toBe(b.id);
+  });
+
+  it('only picks up projects you have started', () => {
+    const [a] = twoProjects([false, false]);
+    useGame.setState({ employees: [person('d1', 'designer')] });
+    useGame.getState().wait(60);
+    const e = useGame.getState().employees[0];
+    expect(e.assignedProjectId).toBeNull();
+    expect(e.today.note).toMatch(/No design work/);
+    expect(useGame.getState().projects.find((p) => p.id === a.id)!.tasks.every((t) => t.done === 0)).toBe(true);
+  });
+
+  it('a designer you assigned by hand stays on that project while it has design work', () => {
+    const [, b] = twoProjects();
+    useGame.setState({ employees: [person('d1', 'designer', b.id)] });
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees[0].assignedProjectId).toBe(b.id);
+  });
+
+  it('developers still need to be assigned', () => {
+    twoProjects();
+    useGame.setState({ employees: [person('v1', 'developer')] });
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees[0].assignedProjectId).toBeNull();
+  });
+});

@@ -103,6 +103,22 @@ export function progress(p: Project): number {
   return total ? done / total : 0;
 }
 
+/** A project you've started that still has unfinished work of this kind. */
+export function hasWorkLeft(p: Project, skill: BuildTask['skill']): boolean {
+  return p.status === 'in_progress' && p.tasks.some((t) => t.skill === skill && t.done < t.hours);
+}
+
+/**
+ * Where a free team member should pick up work. Only started projects count.
+ * Projects with fewer people already on them come first, then the soonest due.
+ * `crowd` is how many people are already working on each project.
+ */
+export function findWork(projects: Project[], skill: BuildTask['skill'], crowd: ReadonlyMap<string, number> = new Map()): Project | null {
+  const options = projects.filter((p) => hasWorkLeft(p, skill));
+  options.sort((a, b) => (crowd.get(a.id) ?? 0) - (crowd.get(b.id) ?? 0) || a.dueDay - b.dueDay);
+  return options[0] ?? null;
+}
+
 export function allTasksDone(p: Project): boolean {
   return p.tasks.every((t) => t.done >= t.hours);
 }
