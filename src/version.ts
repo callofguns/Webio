@@ -10,8 +10,15 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
-    title: 'v1-beta · Settings and update log',
-    notes: ['New settings menu on the home screen.', 'See the version, what changed, and what is coming next.'],
+    title: 'v1-beta · Settings and fixes',
+    notes: [
+      'New settings menu on the home screen with the version and update log.',
+      'Popups close when you tap outside them, press Escape, or drag the sheet down.',
+      'Much more natural cold call dialogue, with fewer repeated lines.',
+      'Clients sometimes text back right away when they are free.',
+      'Client notes only fill in once the client has replied.',
+      'Phones stay in portrait and tablets in landscape. Turn the device the right way to keep playing.',
+    ],
   },
   {
     title: 'Part 5 · Offices and equipment',

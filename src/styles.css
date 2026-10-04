@@ -105,6 +105,8 @@
 /* ---------- Base ---------- */
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
+/* Stop phones from enlarging text when they are turned sideways. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--bg);
@@ -900,3 +902,27 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
   .modal-foot { margin: 0 -20px; padding: 12px 20px max(16px, env(safe-area-inset-bottom)); }
   .sheet-grab { flex: 0 0 auto; }
 }
+
+/* ---- "Turn your device" screen ---- */
+.rotate-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 24px; text-align: center;
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.3px);
+  background-size: 20px 20px;
+}
+.rotate-art { height: 120px; display: grid; place-items: center; margin-bottom: 8px; }
+.rotate-device {
+  display: grid; place-items: center;
+  background: var(--surface); border: 3px solid var(--text); border-radius: 14px; box-shadow: var(--shadow-lg);
+  animation: rotate-hint 2.8s var(--ease, ease-in-out) infinite;
+}
+.rotate-device.phone { width: 58px; height: 100px; }
+.rotate-device.tablet { width: 120px; height: 86px; }
+@keyframes rotate-hint {
+  0%, 18% { transform: rotate(90deg); }
+  50%, 80% { transform: rotate(0deg); }
+  100% { transform: rotate(90deg); }
+}
+@media (prefers-reduced-motion: reduce) { .rotate-device { animation: none; } }
