@@ -10,6 +10,13 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Late-night work',
+    notes: [
+      'You can now work until midnight instead of stopping at 10 PM.',
+      'Work after 8 PM is sloppier and buggier, and after 10 PM it is even worse. A coffee machine halves the damage.',
+    ],
+  },
+  {
     title: 'Designers work on their own',
     notes: [
       'Designers now find design work by themselves when they have nothing to do.',

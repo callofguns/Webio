@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { DAY_HARD_END, useGame } from '../../game/store';
-import { LATE_NIGHT, WORKDAY_END } from '../../game/balance';
+import { DEEP_NIGHT, LATE_NIGHT, WORKDAY_END } from '../../game/balance';
 import { allTasksDone, EVENTS, FIX_MINUTES_PER_BUG, hoursLeft, MAX_POLISH, siteQuality } from '../../game/projects';
 import type { Project } from '../../game/types';
 import { CLAUDE_PLANS, claudeEffects } from '../../game/claude';
@@ -29,6 +29,8 @@ export function BuildPanel({ project }: { project: Project }) {
   const untilSix = Math.max(1, Math.floor((WORKDAY_END - minute) / 60));
   const event = project.pendingEvent ? EVENTS[project.pendingEvent] : null;
   const late = minute >= LATE_NIGHT;
+  const deep = minute >= DEEP_NIGHT;
+  const hasCoffee = officeEffects(office, furniture).latePenalty < 6;
   const eventRef = useRef<HTMLDivElement>(null);
 
   // A surprise stops your work, so make sure you can see it.
@@ -102,7 +104,12 @@ export function BuildPanel({ project }: { project: Project }) {
           </p>
         )}
         {event && <p className="small" style={{ color: 'var(--warn)', marginTop: 8 }}>Deal with the surprise above before you keep working.</p>}
-        {late && !done && <p className="small" style={{ color: 'var(--warn)', marginTop: 8 }}>It&rsquo;s late. Tired work is sloppier and buggier.</p>}
+        {late && !done && (
+          <p className="small" style={{ color: 'var(--warn)', marginTop: 8 }}>
+            {deep ? 'It’s the middle of the night. Work is a lot sloppier and buggier now.' : 'It’s late. Tired work is sloppier and buggier.'}
+            {hasCoffee ? ' Your coffee machine takes the edge off.' : ''}
+          </p>
+        )}
       </div>
 
       <div className="card">

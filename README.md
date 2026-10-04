@@ -63,7 +63,7 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 - **Plan:** pick a layout, color palette, fonts and home page sections, with a
   **live preview** of the client's site. Text the client to ask what style they like
 - **Build:** work 1 hr, 3 hrs or until 6 PM. Tasks fill in the preview as you go.
-  Late-night work is sloppier
+  Late-night work is sloppier (you can work until midnight, but after 10 PM it is much worse)
 - Coding creates hidden **bugs**. Test the site to find them, then fix them
 - **Polish** to raise the quality, and handle surprise events (blurry photos,
   tricky bugs, extra requests)

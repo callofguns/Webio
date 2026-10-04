@@ -71,11 +71,26 @@ describe('projects', () => {
     expect(progress(fast)).toBeGreaterThan(progress(slow));
   });
 
-  it('never works past 10 PM', () => {
+  it('never works past midnight', () => {
     const rand = seeded(4);
     const { project } = newProject(rand);
     const res = work(project, 10, { minute: 20 * 60, designLevel: 1, devLevel: 1 }, rand);
-    expect(res.minutes).toBeLessThanOrEqual(120);
+    expect(res.minutes).toBeLessThanOrEqual(240);
+  });
+
+  it('you can work late into the night, but the later it gets the sloppier the work', () => {
+    const lostQuality = (minute: number, latePenalty?: number) => {
+      const rand = seeded(6);
+      const { project } = newProject(rand);
+      const res = work({ ...project, tasks: project.tasks.map((t) => ({ ...t })) }, 1, { minute, designLevel: 1, devLevel: 1, latePenalty, events: false }, rand);
+      expect(res.minutes).toBe(60);
+      return res.project.tasks.reduce((sum, t) => sum + t.penalty, 0);
+    };
+    expect(lostQuality(14 * 60)).toBe(0);
+    expect(lostQuality(21 * 60)).toBe(6);
+    expect(lostQuality(22 * 60 + 30)).toBe(9); // 1.5 times as bad after 10 PM
+    expect(lostQuality(22 * 60 + 30, 3)).toBe(4.5); // a coffee machine halves it
+    expect(lostQuality(23 * 60)).toBe(9); // the last hour before midnight is still allowed
   });
 
   it('testing finds bugs and fixing removes them', () => {

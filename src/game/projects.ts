@@ -9,7 +9,7 @@
 
 import type { BuildTask, Business, Deal, Feature, Project, ProjectEventId, ProjectReview } from './types';
 import { chance, clamp, pick, randInt, uid, type Rand, defaultRand } from './rng';
-import { DAY_HARD_END, LATE_NIGHT } from './balance';
+import { DAY_HARD_END, DEEP_NIGHT, DEEP_NIGHT_MULT, LATE_NIGHT } from './balance';
 import { FEATURES } from './deals';
 import {
   DEFAULT_DESIGN,
@@ -230,9 +230,10 @@ export interface WorkResult {
 const EVENT_CHANCE_PER_HOUR = 0.08;
 const MAX_EVENTS = 3;
 
-function bugChance(t: BuildTask, devLevel: number, late: boolean): number {
+/** `lateBugs` is the extra bug chance from working late: 0 by day, more at night. */
+function bugChance(t: BuildTask, devLevel: number, lateBugs: number): number {
   const difficulty = t.feature ? FEATURES[t.feature].devLevel : 1;
-  return clamp(0.06 + 0.04 * difficulty - 0.02 * (devLevel - 1) + (late ? 0.05 : 0), 0.01, 0.35);
+  return clamp(0.06 + 0.04 * difficulty - 0.02 * (devLevel - 1) + lateBugs, 0.01, 0.35);
 }
 
 function possibleEvents(p: Project, current: BuildTask): ProjectEventId[] {
@@ -263,11 +264,12 @@ export function work(p: Project, hours: number, ctx: WorkContext, rand: Rand = d
     if (!t) break;
     const level = t.skill === 'design' ? ctx.designLevel : ctx.devLevel;
     const late = minute >= LATE_NIGHT;
+    const deep = minute >= DEEP_NIGHT;
 
     t.done = Math.min(t.hours, t.done + speed(level) * (ctx.speedMult ?? 1));
-    if (late) t.penalty += ctx.latePenalty ?? 6;
+    if (late) t.penalty += (ctx.latePenalty ?? 6) * (deep ? DEEP_NIGHT_MULT : 1);
     xp[t.skill] += 10;
-    if (t.skill === 'development' && chance(bugChance(t, ctx.devLevel, late) * (ctx.bugMult ?? 1), rand)) hiddenBugs++;
+    if (t.skill === 'development' && chance(bugChance(t, ctx.devLevel, deep ? 0.08 : late ? 0.05 : 0) * (ctx.bugMult ?? 1), rand)) hiddenBugs++;
     if (t.done >= t.hours) {
       t.quality = clamp(45 + 8 * level + randInt(-8, 8, rand) - t.penalty + (ctx.qualityBonus ?? 0), 10, 95);
     }
