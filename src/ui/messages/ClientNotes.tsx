@@ -1,4 +1,5 @@
-import { FEATURES } from '../../game/deals';
+import { FEATURES, knownBy, toGameTime } from '../../game/deals';
+import { useGame } from '../../game/store';
 import { INDUSTRIES, SIZE_LABELS } from '../../game/businesses';
 import type { Business, Deal } from '../../game/types';
 import { money } from '../components/AnimatedNumber';
@@ -7,7 +8,10 @@ const Ask = ({ what }: { what: string }) => <span className="unknown">Ask about 
 
 /** What you've learned about the client so far. */
 export function ClientNotes({ deal, biz }: { deal: Deal; biz: Business }) {
-  const { known, needs } = deal;
+  const now = useGame((s) => toGameTime(s.day, s.minute));
+  // Only what they've actually replied about so far.
+  const known = knownBy(deal, now);
+  const { needs } = deal;
   return (
     <div className="card notes-card">
       <div className="card-title">

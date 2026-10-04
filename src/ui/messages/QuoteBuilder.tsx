@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DAY_HARD_END, useGame } from '../../game/store';
-import { buildDays, FEATURE_ORDER, FEATURES, marketPrice, QUOTE_MINUTES } from '../../game/deals';
+import { buildDays, FEATURE_ORDER, FEATURES, knownBy, marketPrice, QUOTE_MINUTES, toGameTime } from '../../game/deals';
 import type { Business, Deal, Feature } from '../../game/types';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
@@ -33,14 +33,16 @@ export function QuoteBuilder({ open, ...props }: Props & { open: boolean }) {
 }
 
 function QuoteForm({ deal, biz, onClose }: Props) {
-  const { skills, minute, sendQuote } = useGame();
+  const { skills, day, minute, sendQuote } = useGame();
+  // You only know what they've replied about by now.
+  const known = knownBy(deal, toGameTime(day, minute));
   const devLevel = skills.development.level;
   // Copywriting only counts as "known" once you've asked about their content.
-  const knownNeeds: Feature[] = deal.known.features ? deal.needs.features.filter((f) => f !== 'copywriting') : [];
-  const knownContentNeed = deal.known.content && !deal.needs.hasContent;
+  const knownNeeds: Feature[] = known.features ? deal.needs.features.filter((f) => f !== 'copywriting') : [];
+  const knownContentNeed = known.content && !deal.needs.hasContent;
 
   const start = deal.quote;
-  const [pages, setPages] = useState(start?.pages ?? (deal.known.features ? deal.needs.pages : 4));
+  const [pages, setPages] = useState(start?.pages ?? (known.features ? deal.needs.pages : 4));
   // Pre-tick what you already know they need (and can build).
   const [features, setFeatures] = useState<Feature[]>(
     () =>
@@ -78,14 +80,14 @@ function QuoteForm({ deal, biz, onClose }: Props) {
           </Button>
         </div>
         <p className="small muted" style={{ marginTop: 4 }}>
-          Writing it up takes {QUOTE_MINUTES} minutes. {deal.known.features ? '' : 'You haven’t asked what they need, so this is a guess.'}
+          Writing it up takes {QUOTE_MINUTES} minutes. {known.features ? '' : deal.known.features ? 'They haven’t replied about it yet, so this is a guess.' : 'You haven’t asked what they need, so this is a guess.'}
         </p>
 
         <div className="modal-body" style={{ marginTop: 12 }}>
           <div className="form-row">
             <div>
               <div style={{ fontWeight: 500 }}>Pages</div>
-              {deal.known.features && <div className="small faint">They mentioned about {deal.needs.pages}</div>}
+              {known.features && <div className="small faint">They mentioned about {deal.needs.pages}</div>}
             </div>
             <Stepper value={pages} min={1} max={12} onChange={setPages} />
           </div>
@@ -117,7 +119,7 @@ function QuoteForm({ deal, biz, onClose }: Props) {
               <div style={{ fontWeight: 500 }}>Ready in</div>
               <div className="small faint" style={{ color: rushed ? 'var(--bad)' : undefined }}>
                 {rushed ? `Rushed! It takes about ${estimate} days to build.` : `About ${estimate} days of work`}
-                {deal.known.deadline && ` · they want it within ${deal.needs.deadlineDays}`}
+                {known.deadline && ` · they want it within ${deal.needs.deadlineDays}`}
               </div>
             </div>
             <Stepper value={days} min={2} max={60} onChange={setDays} suffix="d" />
@@ -146,7 +148,7 @@ function QuoteForm({ deal, biz, onClose }: Props) {
                 <div style={{ fontWeight: 500 }}>Price</div>
                 <div className="small faint">
                   Typical price: {money(suggested)}
-                  {deal.budgetHint && ` · they said ${money(deal.budgetHint[0])}–${money(deal.budgetHint[1])}`}
+                  {known.budget && deal.budgetHint && ` · they said ${money(deal.budgetHint[0])}–${money(deal.budgetHint[1])}`}
                 </div>
               </div>
               <div className="price-input">

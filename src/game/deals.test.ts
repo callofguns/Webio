@@ -6,6 +6,7 @@ import {
   dealStatus,
   endOfDayDeal,
   isWaiting,
+  knownBy,
   marketPrice,
   OPEN_QUOTE,
   sendQuote,
@@ -75,6 +76,21 @@ describe('deals', () => {
     const d = askEverything(createDeal(biz, 50, START, rand), biz, rand);
     expect(d.known).toEqual({ features: true, budget: true, deadline: true, content: true });
     expect(textChoices(d, biz).map((c) => c.id)).toEqual([OPEN_QUOTE]);
+  });
+
+  it('you only learn an answer once their reply arrives', () => {
+    const rand = seeded(4);
+    const biz = generateBusiness(rand);
+    let d = sendText(createDeal(biz, 50, START, rand), biz, 'intro_pro', ctxAt(START), rand);
+    const t1 = afterReplies(d);
+    d = sendText(d, biz, 'q_budget', ctxAt(t1), rand);
+    // Asked, but no reply yet: nothing in the notes.
+    expect(knownBy(d, t1).budget).toBe(false);
+    expect(dealStatus(d, t1)).toBe('waiting');
+    // You don't get asked the same question again, though.
+    expect(textChoices(d, biz).map((c) => c.id)).not.toContain('q_budget');
+    // Once the reply is in, it's known.
+    expect(knownBy(d, afterReplies(d)).budget).toBe(true);
   });
 
   it('replies never land in the middle of the night', () => {

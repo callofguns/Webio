@@ -151,6 +151,23 @@ export function visibleMessages(deal: Deal, now: GameTime): TextMessage[] {
   return deal.messages.filter((m) => m.t <= now);
 }
 
+type NeedKey = keyof Deal['known'];
+
+/** What you've actually learned by now. An answer only counts once their reply has arrived. */
+export function knownBy(deal: Deal, now: GameTime): Deal['known'] {
+  const out = { ...deal.known };
+  for (const key of Object.keys(out) as NeedKey[]) {
+    if (out[key] && (deal.knownAt?.[key] ?? 0) > now) out[key] = false;
+  }
+  return out;
+}
+
+/** Remember that you asked about something. You learn the answer when their reply arrives at `at`. */
+function learn(d: Deal, key: NeedKey, at: GameTime): Deal {
+  if (d.known[key]) return d;
+  return { ...d, known: { ...d.known, [key]: true }, knownAt: { ...d.knownAt, [key]: at } };
+}
+
 export function isWaiting(deal: Deal, now: GameTime): boolean {
   return deal.messages.some((m) => m.t > now);
 }
@@ -302,18 +319,18 @@ export function sendText(deal: Deal, biz: Business, choiceId: string, ctx: TextC
   const annoyed = d.patience <= 0;
   let reply = '';
   let warmthDelta = 0;
-  const known = { ...d.known };
   let budgetHint = d.budgetHint;
+  let asked: NeedKey | null = null;
   const n = d.needs;
 
   switch (choiceId) {
     case 'q_features':
-      known.features = true;
+      asked = 'features';
       warmthDelta = 3;
       reply = `Mostly we need people to be able to ${listPhrases(n.features)}. ${pagesHint(n.pages)}`;
       break;
     case 'q_budget':
-      known.budget = true;
+      asked = 'budget';
       if (t === 'skeptical' && chance(0.5, rand)) {
         warmthDelta = -2;
         reply = 'I’d rather see your price first.';
@@ -327,14 +344,14 @@ export function sendText(deal: Deal, biz: Business, choiceId: string, ctx: TextC
       }
       break;
     case 'q_deadline': {
-      known.deadline = true;
+      asked = 'deadline';
       warmthDelta = 1;
       const weeks = Math.round(n.deadlineDays / 7);
       reply = n.deadlineDays < 14 ? 'As soon as possible! Two weeks max, ideally.' : `Ideally in the next ${weeks} weeks or so.`;
       break;
     }
     case 'q_content':
-      known.content = true;
+      asked = 'content';
       warmthDelta = 1;
       reply = n.hasContent
         ? 'We’ve got a logo and plenty of photos. I can write some text too.'
@@ -347,9 +364,9 @@ export function sendText(deal: Deal, biz: Business, choiceId: string, ctx: TextC
     reply = `${reply} Can you just send me a price? I’m pretty busy.`;
   }
 
+  if (asked) d = learn(d, asked, at);
   return {
     ...d,
-    known,
     budgetHint,
     patience: d.patience - 1,
     warmth: clamp(d.warmth + warmthDelta, 0, 100),
@@ -433,7 +450,7 @@ export function sendQuote(deal: Deal, biz: Business, quote: Quote, ctx: TextCont
       };
     case 'revise': {
       const names = verdict.missing.map((f) => FEATURES[f].label.toLowerCase()).join(' and ');
-      d = { ...d, warmth: clamp(d.warmth - 4, 0, 100), known: { ...d.known, features: true } };
+      d = learn({ ...d, warmth: clamp(d.warmth - 4, 0, 100) }, 'features', at);
       return {
         ...d,
         messages: [...d.messages, mine, textMessage('them', `Hmm, I was hoping it would include ${names}. Could you send an updated quote?`, at)],

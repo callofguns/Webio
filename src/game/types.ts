@@ -149,6 +149,8 @@ export interface Deal {
   needs: ClientNeeds;
   /** Which needs you've found out by asking. */
   known: { features: boolean; budget: boolean; deadline: boolean; content: boolean };
+  /** When each answer actually arrives. Until then you haven't learned it. Missing = already known. */
+  knownAt?: Partial<Record<'features' | 'budget' | 'deadline' | 'content', GameTime>>;
   /** What they told you about budget. null = they wouldn't say. */
   budgetHint: [number, number] | null;
   warmth: number;
