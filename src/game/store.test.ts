@@ -99,8 +99,11 @@ describe('texting clients', () => {
       depositPct: 50,
     });
     expect(useGame.getState().deals[0].stage).toBe('won');
-    // Nothing is paid until their "yes" actually arrives.
-    expect(useGame.getState().money).toBe(START_MONEY);
+    // Nothing is paid until their "yes" actually arrives. (Sometimes a free
+    // client answers on the spot, and then it's paid straight away.)
+    const sent = useGame.getState();
+    const answeredAlready = sent.deals[0].closedAt! <= toGameTime(sent.day, sent.minute);
+    expect(sent.money).toBe(answeredAlready ? START_MONEY + Math.round(price / 2) : START_MONEY);
 
     for (let i = 0; i < 30 && !useGame.getState().deals[0].settled; i++) {
       if (useGame.getState().minute >= 21 * 60) useGame.getState().endDay();
