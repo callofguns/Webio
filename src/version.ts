@@ -10,6 +10,14 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Claude subscription',
+    notes: [
+      'New Claude subscription in the Office tab, charged every day.',
+      'Claude Pro ($20/day): you build sites 50% faster. You still test for bugs yourself.',
+      'Claude Max ($45/day): you build 75% faster and bug tests take half the time.',
+    ],
+  },
+  {
     title: 'Beta-v2 · Calls, replies and fixes',
     notes: [
       'Delete conversations that were lost, one at a time or all at once.',

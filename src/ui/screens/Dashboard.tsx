@@ -5,6 +5,7 @@ import { formatClock } from '../../game/time';
 import { dealStatus, toGameTime } from '../../game/deals';
 import { dailyBurn } from '../../game/team';
 import { OFFICES } from '../../game/office';
+import { CLAUDE_PLANS } from '../../game/claude';
 import { AnimatedNumber, money } from '../components/AnimatedNumber';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
@@ -31,7 +32,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
   const yourTurn = openDeals.filter((d) => dealStatus(d, now) === 'your_turn').length;
   const earned = s.lifetime.moneyIn + s.today.moneyIn;
   const callbacks = s.businesses.filter((b) => b.status === 'callback' && b.callback?.day === s.day).length;
-  const runway = Math.max(0, Math.floor(s.money / dailyBurn(s.employees, OFFICES[s.office].rent)));
+  const runway = Math.max(0, Math.floor(s.money / dailyBurn(s.employees, OFFICES[s.office].rent, CLAUDE_PLANS[s.claude].price)));
   const tip = TIPS[(s.day - 1) % TIPS.length];
 
   const stats = [

@@ -1,6 +1,7 @@
 import { useGame } from '../../game/store';
 import { dailyBurn } from '../../game/team';
 import { OFFICES } from '../../game/office';
+import { CLAUDE_PLANS } from '../../game/claude';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { money } from '../components/AnimatedNumber';
@@ -11,7 +12,8 @@ export function DaySummary() {
   const dismiss = useGame((s) => s.dismissSummary);
   const employees = useGame((s) => s.employees);
   const rent = useGame((s) => OFFICES[s.office].rent);
-  const burn = dailyBurn(employees, rent);
+  const sub = useGame((s) => CLAUDE_PLANS[s.claude].price);
+  const burn = dailyBurn(employees, rent, sub);
   const runway = Math.floor(cash / burn);
 
   const rows: [string, string][] = summary
@@ -28,6 +30,7 @@ export function DaySummary() {
         ['Money earned', money(summary.moneyIn)],
         ...(summary.payroll ? ([['Wages paid', money(summary.payroll)]] as [string, string][]) : []),
         ...(summary.rent ? ([['Rent', money(summary.rent)]] as [string, string][]) : []),
+        ...(summary.claude ? ([['Claude subscription', money(summary.claude)]] as [string, string][]) : []),
         ['Money spent', money(summary.moneyOut)],
       ]
     : [];
@@ -51,7 +54,7 @@ export function DaySummary() {
           <p className="small muted" style={{ marginTop: 14 }}>
             {cash < 0
               ? 'You’re in debt. Find a client soon.'
-              : `You spend about ${money(burn)}/day${employees.length || rent ? ` including ${[employees.length && 'wages', rent && 'rent'].filter(Boolean).join(' and ')}` : ''}. That lasts about ${runway} more days without income.`}
+              : `You spend about ${money(burn)}/day${employees.length || rent ? ` including ${[employees.length && 'wages', rent && 'rent', sub && 'Claude'].filter(Boolean).join(' and ')}` : ''}. That lasts about ${runway} more days without income.`}
           </p>
           <Button variant="primary" block style={{ marginTop: 18 }} onClick={dismiss}>
             Start next day

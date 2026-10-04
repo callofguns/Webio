@@ -4,6 +4,8 @@ import { DAY_HARD_END, useGame } from '../../game/store';
 import { LATE_NIGHT, WORKDAY_END } from '../../game/balance';
 import { allTasksDone, EVENTS, FIX_MINUTES_PER_BUG, hoursLeft, MAX_POLISH, siteQuality } from '../../game/projects';
 import type { Project } from '../../game/types';
+import { CLAUDE_PLANS, claudeEffects } from '../../game/claude';
+import { officeEffects } from '../../game/office';
 import { Button } from '../components/Button';
 import { softSpring, spring } from '../motion';
 
@@ -16,9 +18,11 @@ const FEEDBACK_TEXT: Record<string, string> = {
 };
 
 export function BuildPanel({ project }: { project: Project }) {
-  const { skills, minute, activeCall, workOnProject, testProject, fixProjectBugs, polishProject, resolveProjectEvent, submitProject } = useGame();
+  const { skills, minute, activeCall, claude, office, furniture, workOnProject, testProject, fixProjectBugs, polishProject, resolveProjectEvent, submitProject } = useGame();
   const onCall = !!activeCall && activeCall.phase !== 'ended';
-  const left = hoursLeft(project, skills.design.level, skills.development.level);
+  const { build, testMinutes } = claudeEffects(claude);
+  const playerSpeed = officeEffects(office, furniture).playerSpeed;
+  const left = hoursLeft(project, skills.design.level, skills.development.level, build * playerSpeed);
   const done = allTasksDone(project);
   const quality = siteQuality(project);
   const canWork = !onCall && minute + 60 <= DAY_HARD_END && !project.pendingEvent && !done;
@@ -92,6 +96,11 @@ export function BuildPanel({ project }: { project: Project }) {
             </Button>
           )}
         </div>
+        {claude !== 'none' && (
+          <p className="small faint" style={{ marginTop: 8 }}>
+            {CLAUDE_PLANS[claude].name} is helping: you build {Math.round((build - 1) * 100)}% faster{testMinutes < 60 ? ' and bug tests are half as long' : ''}.
+          </p>
+        )}
         {event && <p className="small" style={{ color: 'var(--warn)', marginTop: 8 }}>Deal with the surprise above before you keep working.</p>}
         {late && !done && <p className="small" style={{ color: 'var(--warn)', marginTop: 8 }}>It&rsquo;s late. Tired work is sloppier and buggier.</p>}
       </div>
@@ -112,8 +121,8 @@ export function BuildPanel({ project }: { project: Project }) {
           <span className="num" style={{ fontWeight: 600, color: project.foundBugs ? 'var(--bad)' : undefined }}>{project.foundBugs}</span>
         </div>
         <div className="row wrap" style={{ marginTop: 8 }}>
-          <Button size="sm" disabled={onCall || minute + 60 > DAY_HARD_END || !!project.pendingEvent} onClick={() => testProject(project.id)} title="Look for hidden bugs">
-            Test on phone &amp; laptop &middot; 1 hr
+          <Button size="sm" disabled={onCall || minute + testMinutes > DAY_HARD_END || !!project.pendingEvent} onClick={() => testProject(project.id)} title="Look for hidden bugs">
+            Test on phone &amp; laptop &middot; {testMinutes === 60 ? '1 hr' : `${testMinutes} min`}
           </Button>
           <Button size="sm" disabled={onCall || project.foundBugs === 0 || minute + FIX_MINUTES_PER_BUG > DAY_HARD_END} onClick={() => fixProjectBugs(project.id)}>
             Fix bugs &middot; {project.foundBugs * FIX_MINUTES_PER_BUG} min

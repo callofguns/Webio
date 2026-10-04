@@ -108,6 +108,17 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 
 The game is at **Beta-v2**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
 
+## Claude subscription
+
+In the **Office** tab you can subscribe to Claude. It is charged every evening, like rent, and you can cancel any time.
+
+| Plan | Price | What it does |
+| --- | --- | --- |
+| Claude Pro | $20/day | You build sites 50% faster. You still test for bugs yourself. |
+| Claude Max | $45/day | You build 75% faster, and a bug test takes 30 min instead of an hour. |
+
+It only speeds up your own work, not your team's. The prices are explained in `src/game/claude.ts`.
+
 ## Look and feel
 
 The game is styled like a web designer's tool:

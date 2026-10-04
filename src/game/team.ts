@@ -37,9 +37,9 @@ export const TRAITS: Record<Trait, { label: string; good: boolean; text: string 
 
 export const MAX_LEVEL = 5;
 
-/** Average money going out per day: living costs, rent, and wages (paid 5 days a week). */
-export function dailyBurn(employees: Employee[], rent = 0): number {
-  return DAILY_LIVING_COST + rent + (employees.reduce((n, e) => n + e.pay, 0) * 5) / 7;
+/** Average money going out per day: living costs, rent, subscriptions, and wages (paid 5 days a week). */
+export function dailyBurn(employees: Employee[], rent = 0, subscription = 0): number {
+  return DAILY_LIVING_COST + rent + subscription + (employees.reduce((n, e) => n + e.pay, 0) * 5) / 7;
 }
 
 // ---------------------------------------------------------------------------

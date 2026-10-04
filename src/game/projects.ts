@@ -105,8 +105,9 @@ export function allTasksDone(p: Project): boolean {
   return p.tasks.every((t) => t.done >= t.hours);
 }
 
-export function hoursLeft(p: Project, designLevel: number, devLevel: number): number {
-  return p.tasks.reduce((s, t) => s + Math.max(0, t.hours - t.done) / speed(t.skill === 'design' ? designLevel : devLevel), 0);
+/** Hours of your own time left to finish the build. `mult` is any extra speed you have (laptop, Claude). */
+export function hoursLeft(p: Project, designLevel: number, devLevel: number, mult = 1): number {
+  return p.tasks.reduce((s, t) => s + Math.max(0, t.hours - t.done) / (speed(t.skill === 'design' ? designLevel : devLevel) * mult), 0);
 }
 
 /** 0-100. The average quality of finished work plus polish and choices you made. */

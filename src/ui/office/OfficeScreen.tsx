@@ -16,14 +16,17 @@ import { dailyBurn } from '../../game/team';
 import { WORKDAY_END, WORKDAY_START } from '../../game/balance';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import type { ClaudePlan } from '../../game/claude';
 import { money } from '../components/AnimatedNumber';
 import { spring } from '../motion';
 import { FloorPlan } from './FloorPlan';
+import { ClaudePlans } from './ClaudePlans';
+import { CLAUDE_PLANS } from '../../game/claude';
 
 const pct = (mult: number) => Math.round((mult - 1) * 100);
 
 /** The current office's bonuses, in plain words. */
-function perkList(office: OfficeId, furniture: Parameters<typeof officeEffects>[1]): string[] {
+function perkList(office: OfficeId, furniture: Parameters<typeof officeEffects>[1], claude: ClaudePlan): string[] {
   const fx = officeEffects(office, furniture);
   const out = [`Fits ${fx.capacity} ${OFFICES[office].remote ? 'remote ' : ''}employee${fx.capacity === 1 ? '' : 's'}`];
   if (fx.morale) out.push(`Team morale +${fx.morale}`);
@@ -35,6 +38,10 @@ function perkList(office: OfficeId, furniture: Parameters<typeof officeEffects>[
   if (fx.dialMult > 1) out.push(`Sales callers make ${pct(fx.dialMult)}% more calls`);
   if (fx.leadWarmth) out.push('New leads start out warmer');
   if (fx.latePenalty < 6) out.push('Late-night work is less sloppy');
+  if (claude !== 'none') {
+    out.push(`${CLAUDE_PLANS[claude].name}: you build ${pct(CLAUDE_PLANS[claude].build)}% faster`);
+    if (CLAUDE_PLANS[claude].testMinutes < 60) out.push('Bug tests take half the time');
+  }
   if (out.length === 1) out.push('No bonuses yet. Clients can tell you work from home.');
   return out;
 }
@@ -47,7 +54,7 @@ export function OfficeScreen() {
   const working = (s.day - 1) % 7 < 5 && s.minute >= WORKDAY_START && s.minute < WORKDAY_END;
   const active = new Set(activeFurniture(s.office, s.furniture));
   const target = moving ? OFFICES[moving] : null;
-  const burnAfterMove = target ? dailyBurn(s.employees, target.rent) : 0;
+  const burnAfterMove = target ? dailyBurn(s.employees, target.rent, CLAUDE_PLANS[s.claude].price) : 0;
 
   return (
     <div className="screen">
@@ -69,7 +76,7 @@ export function OfficeScreen() {
             <h2>What you get here</h2>
           </div>
           <ul className="perk-list">
-            {perkList(s.office, s.furniture).map((p) => (
+            {perkList(s.office, s.furniture, s.claude).map((p) => (
               <li key={p}>{p}</li>
             ))}
           </ul>
@@ -114,6 +121,8 @@ export function OfficeScreen() {
           );
         })}
       </div>
+
+      <ClaudePlans />
 
       <h2>Equipment</h2>
       <div className="grid office-grid">

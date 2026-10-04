@@ -1,4 +1,5 @@
 import type { Design, Vibe } from './design';
+import type { ClaudePlan } from './claude';
 import type { FurnitureId, OfficeId } from './office';
 
 // Core data shapes for the whole game. Everything saved to the player's
@@ -330,9 +331,11 @@ export interface GameState {
   office: OfficeId;
   /** Equipment you've bought. */
   furniture: FurnitureId[];
+  /** Your Claude subscription (part 5b). Charged every day. */
+  claude: ClaudePlan;
   log: LogEntry[];
   today: DayStats;
   lifetime: DayStats;
   /** Summary of the day that just ended, shown in a popup. */
-  lastDaySummary: (DayStats & { day: number; expenses: number; payroll: number; rent: number; team: TeamDay | null }) | null;
+  lastDaySummary: (DayStats & { day: number; expenses: number; payroll: number; rent: number; claude?: number; team: TeamDay | null }) | null;
 }

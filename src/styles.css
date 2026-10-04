@@ -817,7 +817,7 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
 /* ---------- Office ---------- */
 .office-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .office-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
-.office-card { position: relative; }
+.office-card, .claude-card { position: relative; }
 .perk-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
 .perk-list li { display: flex; gap: 8px; align-items: baseline; }
 .perk-list li::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--hue); transform: rotate(45deg); flex-shrink: 0; }

@@ -4,6 +4,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { buyBlocker, FURNITURE, moveBlocker, OFFICES, officeEffects, type FurnitureId, type OfficeId } from './office';
+import { CLAUDE_PLANS, claudeEffects, planBlocker, type ClaudePlan } from './claude';
 import type { Business, DayStats, Deal, Employee, GameState, JobBoard, LogEntry, Project, Quote, Role, SkillId, TeamDay, TextMessage } from './types';
 import {
   DAILY_LIVING_COST,
@@ -78,7 +79,7 @@ import {
 import { chance, pick, randInt, uid } from './rng';
 import { formatHour, isBusinessHours } from './time';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 export { DAY_HARD_END };
 
 function emptyStats(): DayStats {
@@ -106,6 +107,7 @@ function newGameState(): GameState {
     payrollDue: 0,
     office: 'bedroom',
     furniture: [],
+    claude: 'none',
     log: [],
     today: emptyStats(),
     lifetime: emptyStats(),
@@ -163,6 +165,8 @@ interface Store extends GameState {
   fireEmployee: (employeeId: string) => void;
   // Office (part 5)
   moveOffice: (to: OfficeId) => void;
+  /** Subscribe to, switch, or cancel your Claude plan. */
+  setClaudePlan: (plan: ClaudePlan) => void;
   buyFurniture: (item: FurnitureId) => void;
   endDay: () => void;
   dismissSummary: () => void;
@@ -388,7 +392,7 @@ export const useGame = create<Store>()(
         if ((s.day - 1) % 7 === 4 && payrollDue > 0) {
           payroll = payrollDue;
           payrollDue = 0;
-          if (s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent < 0) {
+          if (s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent - CLAUDE_PLANS[s.claude].price < 0) {
             // Nobody likes a bounced paycheck.
             employees = employees.map((e) => ({ ...e, morale: Math.max(0, e.morale - 25) }));
           }
@@ -404,7 +408,7 @@ export const useGame = create<Store>()(
         set({ employees, payrollDue, jobPosts, applicants: [...staying, ...fresh] });
         for (const q of quitters) log(`${q.name} quit. They weren\u2019t happy here.`, 'bad');
         if (payroll) log(`Payday: paid your team $${payroll.toLocaleString()}.`, 'bad');
-        if (payroll && s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent < 0) log('You couldn\u2019t cover payroll. Your team is upset.', 'bad');
+        if (payroll && s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent - CLAUDE_PLANS[s.claude].price < 0) log('You couldn\u2019t cover payroll. Your team is upset.', 'bad');
         if (expiredPosts) log(`${expiredPosts} job post${expiredPosts > 1 ? 's' : ''} ended.`);
         if (gone) log(`${gone} applicant${gone > 1 ? 's' : ''} took another job.`, 'bad');
         if (fresh.length) log(`${fresh.length} new job applicant${fresh.length > 1 ? 's' : ''}. Check the Team screen.`, 'good');
@@ -663,7 +667,7 @@ export const useGame = create<Store>()(
             minute: s.minute,
             designLevel: s.skills.design.level,
             devLevel: s.skills.development.level,
-            speedMult: fx.playerSpeed,
+            speedMult: fx.playerSpeed * claudeEffects(s.claude).build,
             latePenalty: fx.latePenalty,
           });
           if (res.minutes === 0) return;
@@ -675,11 +679,12 @@ export const useGame = create<Store>()(
 
         testProject: (projectId) => {
           const p = get().projects.find((x) => x.id === projectId);
-          if (!p || p.status !== 'in_progress' || busy(60)) return;
+          const minutes = claudeEffects(get().claude).testMinutes;
+          if (!p || p.status !== 'in_progress' || busy(minutes)) return;
           const res = testSite(p, get().skills.development.level);
           updateProject(projectId, () => res.project);
           addXp('development', 5);
-          spendTime(60);
+          spendTime(minutes);
           const biz = get().businesses.find((b) => b.id === p.businessId)!;
           log(res.found ? `Testing ${biz.name}\u2019s site found ${res.found} bug${res.found > 1 ? 's' : ''}.` : `Testing ${biz.name}\u2019s site found no bugs.`);
         },
@@ -812,6 +817,15 @@ export const useGame = create<Store>()(
           log(`Moved into ${OFFICES[to].name.toLowerCase()}. Rent is $${OFFICES[to].rent}/day.`, 'good');
         },
 
+        setClaudePlan: (plan) => {
+          const s = get();
+          if (s.activeCall && s.activeCall.phase !== 'ended') return;
+          if (planBlocker(plan, s.claude, s.money)) return;
+          set({ claude: plan });
+          if (plan === 'none') log(`Cancelled ${CLAUDE_PLANS[s.claude].name}. You\u2019re building on your own again.`);
+          else log(`Subscribed to ${CLAUDE_PLANS[plan].name}. $${CLAUDE_PLANS[plan].price}/day, charged each evening.`, 'good');
+        },
+
         buyFurniture: (item) => {
           const s = get();
           if (buyBlocker(item, s.office, s.furniture, s.money)) return;
@@ -839,9 +853,10 @@ export const useGame = create<Store>()(
           const teamDay = closeTeamDay();
           const s = get();
           const rent = OFFICES[s.office].rent;
-          const expenses = DAILY_LIVING_COST + rent + teamDay.payroll;
+          const claude = CLAUDE_PLANS[s.claude].price;
+          const expenses = DAILY_LIVING_COST + rent + claude + teamDay.payroll;
           const nextDay = s.day + 1;
-          const summary = { ...s.today, moneyOut: s.today.moneyOut + expenses, day: s.day, expenses, payroll: teamDay.payroll, rent, team: teamDay.team };
+          const summary = { ...s.today, moneyOut: s.today.moneyOut + expenses, day: s.day, expenses, payroll: teamDay.payroll, rent, claude, team: teamDay.team };
 
           // Some voicemails get returned overnight.
           let businesses = s.businesses;
@@ -938,6 +953,10 @@ export const useGame = create<Store>()(
           // Part 5 added offices. Everyone starts in their bedroom.
           state.office = 'bedroom';
           state.furniture = [];
+        }
+        if (version < 6) {
+          // The Claude subscription is new. Nobody has one yet.
+          state.claude = 'none';
         }
         return state;
       },

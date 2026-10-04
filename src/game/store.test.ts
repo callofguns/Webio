@@ -3,6 +3,7 @@ import { callBlocker, useGame } from './store';
 import { DAILY_LIVING_COST, RESEARCH_MINUTES, START_MONEY, WORKDAY_START } from './balance';
 import { createDeal, toGameTime } from './deals';
 import { allTasksDone, createProject } from './projects';
+import { CLAUDE_PLANS } from './claude';
 
 describe('game store', () => {
   beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
@@ -174,5 +175,82 @@ describe('building a site', () => {
     } else {
       expect(after.revisions).toBe(1);
     }
+  });
+});
+
+describe('Claude subscription', () => {
+  /** A client site you've started, with nothing built yet. */
+  function startedProject() {
+    const s = useGame.getState();
+    const biz = { ...s.businesses[0], status: 'client' as const };
+    const deal = {
+      ...createDeal(biz, 80, toGameTime(1, 600)),
+      stage: 'won' as const,
+      settled: true,
+      agreedPrice: 1200,
+      quote: { pages: 3, features: [], price: 1200, days: 14, depositPct: 0 },
+    };
+    const project = createProject(deal, biz, 1);
+    useGame.setState({ businesses: [biz, ...s.businesses.slice(1)], deals: [deal], projects: [project] });
+    useGame.getState().startProject(project.id);
+    return project.id;
+  }
+
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  it('starts with no plan and can subscribe, switch and cancel', () => {
+    expect(useGame.getState().claude).toBe('none');
+    useGame.getState().setClaudePlan('pro');
+    expect(useGame.getState().claude).toBe('pro');
+    useGame.getState().setClaudePlan('max');
+    expect(useGame.getState().claude).toBe('max');
+    useGame.getState().setClaudePlan('none');
+    expect(useGame.getState().claude).toBe('none');
+  });
+
+  it('cannot subscribe without the money for the first day', () => {
+    useGame.setState({ money: 10 });
+    useGame.getState().setClaudePlan('pro');
+    expect(useGame.getState().claude).toBe('none');
+  });
+
+  it('is charged every evening, and shows in the day summary', () => {
+    useGame.getState().setClaudePlan('max');
+    useGame.getState().endDay();
+    const s = useGame.getState();
+    expect(s.money).toBe(START_MONEY - DAILY_LIVING_COST - CLAUDE_PLANS.max.price);
+    expect(s.lastDaySummary?.claude).toBe(CLAUDE_PLANS.max.price);
+    // And cancelling stops the charge.
+    useGame.getState().setClaudePlan('none');
+    const before = useGame.getState().money;
+    useGame.getState().endDay();
+    expect(useGame.getState().money).toBe(before - DAILY_LIVING_COST);
+  });
+
+  it('Pro builds 50% faster and Max 75% faster', () => {
+    const progress = (plan: 'none' | 'pro' | 'max') => {
+      useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+      const id = startedProject();
+      useGame.getState().setClaudePlan(plan);
+      useGame.getState().workOnProject(id, 1);
+      return useGame.getState().projects[0].tasks[0].done;
+    };
+    expect(progress('none')).toBeCloseTo(1);
+    expect(progress('pro')).toBeCloseTo(1.5);
+    expect(progress('max')).toBeCloseTo(1.75);
+  });
+
+  it('Max halves the time a bug test takes, Pro does not', () => {
+    const testTime = (plan: 'none' | 'pro' | 'max') => {
+      useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+      const id = startedProject();
+      useGame.getState().setClaudePlan(plan);
+      const before = useGame.getState().minute;
+      useGame.getState().testProject(id);
+      return useGame.getState().minute - before;
+    };
+    expect(testTime('none')).toBe(60);
+    expect(testTime('pro')).toBe(60);
+    expect(testTime('max')).toBe(30);
   });
 });
