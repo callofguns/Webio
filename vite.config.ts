@@ -33,6 +33,9 @@ export default defineConfig({
       workbox: {
         // Fonts are bundled, so everything (fonts included) works offline.
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'],
+        // The first install takes over the open page, so a later update can
+        // be handed over cleanly when the player taps "Reload".
+        clientsClaim: true,
       },
     }),
   ],

@@ -20,6 +20,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
       'Fixed: the tab bar covering "Send quote" on phones.',
       'Fixed: client notes showing answers before the client had replied.',
       'Fixed: text growing and buttons freezing after rotating a phone.',
+      'Fixed: the "new version" popup showing off-center on phones, and the Reload button doing nothing.',
     ],
   },
   {

@@ -649,7 +649,8 @@ select.input { appearance: auto; }
 /* ---------- PWA bits ---------- */
 .toast {
   position: fixed; z-index: 60;
-  left: 50%; transform: translateX(-50%);
+  /* Centered with auto margins, not a transform, because the spring animation uses transform. */
+  left: 0; right: 0; margin-inline: auto;
   bottom: calc(24px + env(safe-area-inset-bottom));
   display: flex; align-items: center; gap: 12px;
   background: var(--surface); color: var(--text);
@@ -764,7 +765,14 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
   .form-row { flex-wrap: wrap; }
   /* Show who applied before the job-post form. */
   .team-hiring > :last-child { order: -1; }
-  .toast { bottom: calc(76px + env(safe-area-inset-bottom)); }
+  /* Sits above the tab bar and uses the full width, with the buttons on their own line. */
+  .toast {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: 12px; right: 12px; margin-inline: 0; width: auto; max-width: none;
+    flex-wrap: wrap; justify-content: space-between;
+  }
+  .toast.update > span { flex: 1 1 100%; }
+  .toast.update .row { margin-left: auto; }
 }
 
 @media (max-width: 380px) {

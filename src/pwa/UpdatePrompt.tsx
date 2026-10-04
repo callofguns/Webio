@@ -12,8 +12,14 @@ export function UpdatePrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
-      // Check for a new version every hour while the game is open.
-      if (registration) setInterval(() => registration.update(), 60 * 60 * 1000);
+      if (!registration) return;
+      // Check for a new version every hour while the game is open...
+      setInterval(() => registration.update(), 60 * 60 * 1000);
+      // ...and whenever you come back to it. Phones keep the app asleep in the
+      // background, so a timer alone would rarely notice an update.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') registration.update().catch(() => {});
+      });
     },
   });
 
@@ -27,7 +33,7 @@ export function UpdatePrompt() {
     <AnimatePresence>
       {(offlineReady || needRefresh) && (
         <motion.div
-          className="toast"
+          className={`toast ${needRefresh ? 'update' : ''}`}
           role="status"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -41,7 +47,15 @@ export function UpdatePrompt() {
                 Later
               </Button>
               {/* Your game is saved automatically, so reloading is safe. */}
-              <Button size="sm" variant="primary" onClick={() => updateServiceWorker(true)}>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => {
+                  void updateServiceWorker(true);
+                  // If the browser had nothing to hand over, a plain reload still picks up the new files.
+                  setTimeout(() => window.location.reload(), 2500);
+                }}
+              >
                 Reload
               </Button>
             </div>
