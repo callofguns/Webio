@@ -17,6 +17,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
       'Much more natural cold call dialogue, with fewer repeated lines.',
       'Clients sometimes text back right away when they are free.',
       'Client notes only fill in once the client has replied.',
+      'You can delete conversations that were lost, one at a time or all at once.',
       'Phones stay in portrait and tablets in landscape. Turn the device the right way to keep playing.',
     ],
   },

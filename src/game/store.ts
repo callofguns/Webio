@@ -26,6 +26,7 @@ import { generateBusinesses } from './businesses';
 import { chooseOption, startCall, timeoutCall, type CallContext, type CallState } from './calls';
 import {
   createDeal,
+  dealStatus,
   DAY_MINUTES,
   endOfDayDeal,
   QUOTE_MINUTES,
@@ -136,6 +137,8 @@ interface Store extends GameState {
   sendText: (dealId: string, choiceId: string) => void;
   sendQuote: (dealId: string, quote: Quote) => void;
   markRead: (dealId: string) => void;
+  /** Removes conversations that were lost. Anything else is left alone. */
+  deleteLostDeals: (dealIds: string[]) => void;
   /** Let time pass, e.g. while waiting for a reply. */
   wait: (minutes: number) => void;
   // Projects (part 3)
@@ -597,6 +600,18 @@ export const useGame = create<Store>()(
           const before = s.deals.find((d) => d.id === dealId);
           updateDeal(dealId, (d, biz) => sendQuoteToClient(d, biz, quote, textContext()));
           if (get().deals.find((d) => d.id === dealId) !== before) spendTime(QUOTE_MINUTES);
+        },
+
+        deleteLostDeals: (dealIds) => {
+          settleDeals();
+          const t = now();
+          const gone = new Set(
+            get()
+              .deals.filter((d) => dealIds.includes(d.id) && d.stage === 'lost' && dealStatus(d, t) === 'lost')
+              .map((d) => d.id),
+          );
+          if (!gone.size) return;
+          set({ deals: get().deals.filter((d) => !gone.has(d.id)) });
         },
 
         markRead: (dealId) => {

@@ -50,6 +50,26 @@ describe('game store', () => {
     expect(callBlocker(after, s.day, s.minute)).not.toBeNull();
   });
 
+  it('lost conversations can be deleted, but nothing else', () => {
+    const { businesses } = useGame.getState();
+    const t = toGameTime(1, WORKDAY_START);
+    const mk = (i: number, stage: 'lost' | 'won' | 'discovery', closedAt: number | null) => ({
+      ...createDeal(businesses[i], 50, t),
+      stage,
+      closedAt,
+      settled: closedAt !== null,
+    });
+    const lost = mk(0, 'lost', t);
+    const won = mk(1, 'won', t);
+    const open = mk(2, 'discovery', null);
+    // A loss whose reply hasn't arrived yet still shows as waiting.
+    const pending = mk(3, 'lost', t + 600);
+    pending.messages = [...pending.messages, { id: 'late', from: 'them', text: 'No thanks.', t: t + 600 }];
+    useGame.setState({ deals: [lost, won, open, pending] });
+    useGame.getState().deleteLostDeals([lost.id, won.id, open.id, pending.id]);
+    expect(useGame.getState().deals.map((d) => d.id)).toEqual([won.id, open.id, pending.id]);
+  });
+
   it('nobody picks up on Sunday', () => {
     const biz = useGame.getState().businesses[0];
     expect(callBlocker(biz, 7, 10 * 60)).toBe('Businesses are closed');

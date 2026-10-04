@@ -12,6 +12,8 @@ import { QuoteBuilder } from './QuoteBuilder';
 import { useNumberKeys } from '../useNumberKeys';
 import { Burst, stamp } from '../components/Burst';
 import { Avatar } from '../components/Avatar';
+import { Icon } from '../components/Icon';
+import { Modal } from '../components/Modal';
 
 function QuoteCard({ quote }: { quote: Quote }) {
   return (
@@ -64,7 +66,8 @@ function Bubble({ m }: { m: TextMessage }) {
 }
 
 export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
-  const { day, minute, activeCall, projects, sendText, markRead, wait } = useGame();
+  const { day, minute, activeCall, projects, sendText, markRead, wait, deleteLostDeals } = useGame();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const now = toGameTime(day, minute);
   const [quoting, setQuoting] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
@@ -190,11 +193,34 @@ export function ChatView({ deal, biz }: { deal: Deal; biz: Business }) {
           <motion.div key="lost" className="choices" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
             <span className="badge bad" style={{ alignSelf: 'flex-start' }}>Deal lost</span>
             <span className="small faint">You can try calling them again in about a month.</span>
+            <Button size="sm" variant="ghost" style={{ alignSelf: 'flex-start', color: 'var(--bad)', padding: 0 }} onClick={() => setConfirmDelete(true)}>
+              <Icon name="trash" size={15} /> Delete conversation
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>
 
       <QuoteBuilder open={quoting} deal={deal} biz={biz} onClose={() => setQuoting(false)} />
+
+      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)}>
+        <h2>Delete this conversation?</h2>
+        <p className="muted" style={{ marginTop: 8 }}>
+          The texts with {biz.name} will be removed for good. You can still call them again once they&rsquo;ve cooled off.
+        </p>
+        <div className="row" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+          <Button onClick={() => setConfirmDelete(false)}>Keep it</Button>
+          <Button
+            variant="primary"
+            style={{ background: 'var(--bad)', borderColor: 'var(--bad)' }}
+            onClick={() => {
+              setConfirmDelete(false);
+              deleteLostDeals([deal.id]);
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

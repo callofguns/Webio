@@ -15,6 +15,7 @@ const PATHS = {
   file: 'M14 3H6v18h12V7zM14 3v4h4M9 13h6M9 17h6',
   check: 'M5 12l5 5L20 7',
   x: 'M6 6l12 12M18 6 6 18',
+  trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
   settings: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 7a2 2 0 1 0 0 .01M9 17a2 2 0 1 0 0 .01',
 } as const;
 

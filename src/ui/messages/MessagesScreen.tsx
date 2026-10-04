@@ -15,7 +15,8 @@ import { Button } from '../components/Button';
 const ORDER: Record<DealStatus, number> = { your_turn: 0, waiting: 1, won: 2, lost: 3 };
 
 export function MessagesScreen() {
-  const { deals, businesses, day, minute } = useGame();
+  const { deals, businesses, day, minute, deleteLostDeals } = useGame();
+  const [confirmClear, setConfirmClear] = useState(false);
   const now = toGameTime(day, minute);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
@@ -29,6 +30,7 @@ export function MessagesScreen() {
   const selected = deals.find((d) => d.id === selectedId) ?? (mobile ? null : sorted[0]) ?? null;
   const biz = selected ? businesses.find((b) => b.id === selected.businessId)! : null;
   const yourTurn = deals.filter((d) => dealStatus(d, now) === 'your_turn').length;
+  const lost = deals.filter((d) => dealStatus(d, now) === 'lost');
 
   if (mobile && selected && biz) {
     return (
@@ -63,6 +65,11 @@ export function MessagesScreen() {
                 : 'Everyone’s been answered. Replies come in as time passes.'}
           </p>
         </div>
+        {lost.length > 0 && (
+          <Button size="sm" onClick={() => setConfirmClear(true)}>
+            <Icon name="trash" size={15} /> Clear lost ({lost.length})
+          </Button>
+        )}
       </div>
 
       {deals.length === 0 ? (
@@ -83,6 +90,26 @@ export function MessagesScreen() {
           {!mobile && selected && biz && <ClientNotes deal={selected} biz={biz} />}
         </div>
       )}
+
+      <Modal open={confirmClear} onClose={() => setConfirmClear(false)}>
+        <h2>Delete {lost.length === 1 ? 'the lost conversation' : `all ${lost.length} lost conversations`}?</h2>
+        <p className="muted" style={{ marginTop: 8 }}>
+          Only conversations marked Lost are removed. Signed clients and open chats stay. You can still call these businesses again once they&rsquo;ve cooled off.
+        </p>
+        <div className="row" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+          <Button onClick={() => setConfirmClear(false)}>Keep them</Button>
+          <Button
+            variant="primary"
+            style={{ background: 'var(--bad)', borderColor: 'var(--bad)' }}
+            onClick={() => {
+              setConfirmClear(false);
+              deleteLostDeals(lost.map((d) => d.id));
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
