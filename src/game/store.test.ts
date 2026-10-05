@@ -327,7 +327,7 @@ describe('monthly retainers', () => {
   });
 });
 
-describe('designers find their own work', () => {
+describe('designers and developers find their own work', () => {
   const person = (id: string, role: 'designer' | 'developer', assignedProjectId: string | null = null) => ({
     id,
     name: `Person ${id}`,
@@ -415,10 +415,45 @@ describe('designers find their own work', () => {
     expect(useGame.getState().employees[0].assignedProjectId).toBe(b.id);
   });
 
-  it('developers still need to be assigned', () => {
-    twoProjects();
+  it('developers find coding work on their own too', () => {
+    const [a] = twoProjects();
     useGame.setState({ employees: [person('v1', 'developer')] });
     useGame.getState().wait(60);
-    expect(useGame.getState().employees[0].assignedProjectId).toBeNull();
+    const s = useGame.getState();
+    expect(s.employees[0].assignedProjectId).toBe(a.id);
+    expect(s.projects[0].tasks.find((t) => t.label === 'Set up hosting and site structure')!.done).toBeGreaterThan(0);
+    expect(s.log.some((l) => l.text.includes('found development work'))).toBe(true);
+  });
+
+  it('a designer and a developer each pick work of their own kind and do not count as each other\'s crowd', () => {
+    const [a] = twoProjects();
+    useGame.setState({ employees: [person('d1', 'designer'), person('v1', 'developer')] });
+    useGame.getState().wait(60);
+    // Both go to the soonest-due project: one design hour and one coding hour don't crowd each other.
+    expect(useGame.getState().employees.map((e) => e.assignedProjectId)).toEqual([a.id, a.id]);
+  });
+
+  it('two free developers spread over two projects', () => {
+    const [a, b] = twoProjects();
+    useGame.setState({ employees: [person('v1', 'developer'), person('v2', 'developer')] });
+    useGame.getState().wait(60);
+    expect(new Set(useGame.getState().employees.map((e) => e.assignedProjectId))).toEqual(new Set([a.id, b.id]));
+  });
+
+  it('a developer moves on when the coding on their project is finished', () => {
+    const [a, b] = twoProjects();
+    const doneCoding = { ...a, tasks: a.tasks.map((t) => (t.skill === 'development' ? { ...t, done: t.hours, quality: 70 } : t)) };
+    useGame.setState({ projects: [doneCoding, b], employees: [person('v1', 'developer', a.id)] });
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees[0].assignedProjectId).toBe(b.id);
+  });
+
+  it('a developer with no started projects waits', () => {
+    twoProjects([false, false]);
+    useGame.setState({ employees: [person('v1', 'developer')] });
+    useGame.getState().wait(60);
+    const e = useGame.getState().employees[0];
+    expect(e.assignedProjectId).toBeNull();
+    expect(e.today.note).toMatch(/No development work/);
   });
 });

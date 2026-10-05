@@ -10,6 +10,10 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Developers work on their own too',
+    notes: ['Developers now find coding work by themselves, just like designers do.', 'They spread across the projects you have started.'],
+  },
+  {
     title: 'Late-night work',
     notes: [
       'You can now work until midnight instead of stopping at 10 PM.',

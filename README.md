@@ -114,7 +114,7 @@ The game is at **Beta-v2**. Click the settings button in the top right of the Da
 
 ## What designers do
 
-Designers handle the **design** tasks of a site: the home page, the other pages, writing the text and finding photos, redesigns, and extra sections. Developers handle the **development** tasks (hosting, features like booking or a store, and going live). Designers find design work on their own: when they have nothing assigned, or their project has no design left, they pick up a project you have started that still needs design. Developers still need to be assigned by hand.
+Designers handle the **design** tasks of a site: the home page, the other pages, writing the text and finding photos, redesigns, and extra sections. Developers handle the **development** tasks (hosting, features like booking or a store, and going live). Designers and developers find work of their own kind on their own: when they have nothing assigned, or their project has none of their kind of work left, they pick up a project you have started that still needs it.
 
 ## Claude subscription
 

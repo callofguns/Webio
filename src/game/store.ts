@@ -330,10 +330,13 @@ export const useGame = create<Store>()(
         const newDeals: Deal[] = [];
         const messages: [string, LogEntry['tone']][] = [];
 
-        // How many designers are on each project, so free designers spread out.
-        const crowd = new Map<string, number>();
+        // How many designers and developers are on each project, so free people spread out.
+        const crowds = { designer: new Map<string, number>(), developer: new Map<string, number>() };
         for (const e of s.employees) {
-          if (e.role === 'designer' && e.assignedProjectId) crowd.set(e.assignedProjectId, (crowd.get(e.assignedProjectId) ?? 0) + 1);
+          if (e.role !== 'sales' && e.assignedProjectId) {
+            const c = crowds[e.role];
+            c.set(e.assignedProjectId, (c.get(e.assignedProjectId) ?? 0) + 1);
+          }
         }
 
         const employees = s.employees.map((original) => {
@@ -363,20 +366,22 @@ export const useGame = create<Store>()(
               gainXp(5);
             } else {
               let project = projects.find((p) => p.id === e.assignedProjectId);
-              // Designers look for design work themselves when they have none.
-              if (e.role === 'designer' && !(project && hasWorkLeft(project, 'design'))) {
-                const found = findWork(projects, 'design', crowd);
+              // Designers and developers look for work of their own kind when they have none.
+              const skill = e.role === 'designer' ? 'design' : 'development';
+              if (!(project && hasWorkLeft(project, skill))) {
+                const crowd = crowds[e.role === 'designer' ? 'designer' : 'developer'];
+                const found = findWork(projects, skill, crowd);
                 if (found && found.id !== project?.id) {
                   if (project) crowd.set(project.id, Math.max(0, (crowd.get(project.id) ?? 1) - 1));
                   crowd.set(found.id, (crowd.get(found.id) ?? 0) + 1);
                   project = found;
                   e.assignedProjectId = found.id;
                   const name = businesses.find((b) => b.id === found.businessId)?.name ?? 'a project';
-                  messages.push([`${e.name} found design work to do on ${name} and got started.`, 'neutral']);
+                  messages.push([`${e.name} found ${skill} work to do on ${name} and got started.`, 'neutral']);
                 }
               }
               if (!project) {
-                e.today.note = e.role === 'designer' ? 'No design work right now. Start a project and they will pick it up.' : 'Nothing to do. Assign them a project.';
+                e.today.note = `No ${skill} work right now. Start a project and they will pick it up.`;
                 continue;
               }
               if (project.status !== 'in_progress') {
