@@ -6,6 +6,16 @@ import { persist } from 'zustand/middleware';
 import { buyBlocker, FURNITURE, moveBlocker, OFFICES, officeEffects, type FurnitureId, type OfficeId } from './office';
 import { CLAUDE_PLANS, claudeEffects, planBlocker, type ClaudePlan } from './claude';
 import { RETAINER_DAYS, retainerFee } from './pricing';
+import {
+  COURSE_NAMES,
+  COURSES,
+  EMPLOYEE_XP_MULT,
+  employeeCourseBlocker,
+  playerCourseBlocker,
+  skillOfRole,
+  TRAINING_MORALE,
+  type CourseId,
+} from './training';
 import type { Business, DayStats, Deal, Employee, GameState, JobBoard, LogEntry, Project, Quote, Role, SkillId, TeamDay, TextMessage } from './types';
 import {
   DAILY_LIVING_COST,
@@ -82,7 +92,7 @@ import {
 import { chance, pick, randInt, uid } from './rng';
 import { formatHour, isBusinessHours } from './time';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 export { DAY_HARD_END };
 
 function emptyStats(): DayStats {
@@ -111,6 +121,7 @@ function newGameState(): GameState {
     office: 'bedroom',
     furniture: [],
     claude: 'none',
+    lastCourseDay: 0,
     log: [],
     today: emptyStats(),
     lifetime: emptyStats(),
@@ -168,6 +179,10 @@ interface Store extends GameState {
   fireEmployee: (employeeId: string) => void;
   // Office (part 5)
   moveOffice: (to: OfficeId) => void;
+  /** Take a course yourself. It uses up part of your day. */
+  takeCourse: (skill: SkillId, course: CourseId) => void;
+  /** Send someone on your team on a course. They don't work until it's over. */
+  trainEmployee: (employeeId: string, course: CourseId) => void;
   /** Subscribe to, switch, or cancel your Claude plan. */
   setClaudePlan: (plan: ClaudePlan) => void;
   buyFurniture: (item: FurnitureId) => void;
@@ -348,6 +363,21 @@ export const useGame = create<Store>()(
           };
           while (e.carryMinutes >= 60) {
             e.carryMinutes -= 60;
+            // Someone on a course learns instead of working.
+            if (e.training) {
+              const { course: courseId, hoursLeft } = e.training;
+              const name = COURSE_NAMES[skillOfRole(e.role)][courseId].name;
+              if (hoursLeft > 1) {
+                e.training = { course: courseId, hoursLeft: hoursLeft - 1 };
+                e.today.note = `In training: ${name}`;
+              } else {
+                e.training = undefined;
+                e.today.note = `Finished the ${name}`;
+                gainXp(COURSES[courseId].xp * EMPLOYEE_XP_MULT);
+                messages.push([`${e.name} finished the ${name} and is back to work.`, 'good']);
+              }
+              continue;
+            }
             if (e.role === 'sales') {
               const r = salesHour(e, businesses, s.day, s.reputation, Math.random, fx.dialMult * fx.teamSpeed);
               businesses = r.businesses;
@@ -880,6 +910,33 @@ export const useGame = create<Store>()(
           log(`Moved into ${OFFICES[to].name.toLowerCase()}. Rent is $${OFFICES[to].rent}/day.`, 'good');
         },
 
+        takeCourse: (skill, courseId) => {
+          const s = get();
+          if (s.activeCall && s.activeCall.phase !== 'ended') return;
+          const course = COURSES[courseId];
+          if (playerCourseBlocker(course, s.skills[skill].level, s.money, s.minute, DAY_HARD_END, s.lastCourseDay === s.day)) return;
+          set({ money: s.money - course.cost, lastCourseDay: s.day, today: { ...s.today, moneyOut: s.today.moneyOut + course.cost } });
+          spendTime(course.hours * 60);
+          addXp(skill, course.xp);
+          log(`Finished the ${COURSE_NAMES[skill][courseId].name}. +${course.xp} ${skill} XP.`, 'good');
+        },
+
+        trainEmployee: (employeeId, courseId) => {
+          const s = get();
+          const e = s.employees.find((x) => x.id === employeeId);
+          if (!e) return;
+          const course = COURSES[courseId];
+          if (employeeCourseBlocker(course, e.level, !!e.training, s.money)) return;
+          set({
+            money: s.money - course.cost,
+            today: { ...s.today, moneyOut: s.today.moneyOut + course.cost },
+            employees: s.employees.map((x) =>
+              x.id === employeeId ? { ...x, training: { course: courseId, hoursLeft: course.hours }, morale: Math.min(100, x.morale + TRAINING_MORALE) } : x,
+            ),
+          });
+          log(`${e.name} is off to the ${COURSE_NAMES[skillOfRole(e.role)][courseId].name}. They'll be back after ${course.hours} working hours.`);
+        },
+
         setClaudePlan: (plan) => {
           const s = get();
           if (s.activeCall && s.activeCall.phase !== 'ended') return;
@@ -1021,6 +1078,10 @@ export const useGame = create<Store>()(
         if (version < 6) {
           // The Claude subscription is new. Nobody has one yet.
           state.claude = 'none';
+        }
+        if (version < 7) {
+          // Courses are new. You haven't taken one.
+          state.lastCourseDay = 0;
         }
         return state;
       },

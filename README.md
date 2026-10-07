@@ -15,7 +15,7 @@ and growing is hard.
 4. Get paid, grow your reputation, and repeat
 
 Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade your office**
-*(done — part 5)*, and **train** yourself and your team to unlock better skills *(part 6)*.
+*(done — part 5)*, and **train** yourself and your team to unlock better skills *(done — part 6)*.
 
 ## What's in part 1
 
@@ -107,6 +107,19 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 - **Equipment:** faster laptop, second monitor, coffee machine, plants, phone headsets,
   good chairs, whiteboard wall and a client lounge, each with its own bonus. Some
   only fit in a real office
+
+## What's in part 6
+
+- **Courses** on the Skills screen, for sales, design and development. Each skill has three:
+  a **workshop** (2 hrs, $75, levels 1-2), a **course** (4 hrs, $200, levels 2-4) and a
+  **masterclass** (8 hrs, $600, level 4 and up). They give a lot of experience at once,
+  so you level up much faster than just working
+- You can take **one course a day**, and it uses up that part of your day. Courses that
+  are too advanced (or too basic) for your level are locked
+- **Send your team on courses** too. Someone on a course doesn't work until it's over, gets
+  twice the experience (employees need twice as much to level up), and is a bit happier.
+  Better employees will want to be paid more, so watch their pay
+- Salespeople learn sales, designers learn design, developers learn development
 
 ## Version and update log
 

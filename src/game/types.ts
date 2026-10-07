@@ -1,6 +1,7 @@
 import type { Design, Vibe } from './design';
 import type { ClaudePlan } from './claude';
 import type { PricePlan, QuotePlan } from './pricing';
+import type { CourseId } from './training';
 import type { FurnitureId, OfficeId } from './office';
 
 // Core data shapes for the whole game. Everything saved to the player's
@@ -314,6 +315,8 @@ export interface Employee {
   assignedProjectId: string | null;
   /** Work time that hasn't added up to a full hour yet. */
   carryMinutes: number;
+  /** A course they're on. They don't work until it's done. */
+  training?: { course: CourseId; hoursLeft: number };
   lowMoraleDays: number;
   /** What they did today, for the Team screen. */
   today: { dials: number; leads: number; hours: number; note: string };
@@ -342,6 +345,8 @@ export interface GameState {
   furniture: FurnitureId[];
   /** Your Claude subscription (part 5b). Charged every day. */
   claude: ClaudePlan;
+  /** The last day you took a course yourself. You can take one a day. */
+  lastCourseDay: number;
   log: LogEntry[];
   today: DayStats;
   lifetime: DayStats;

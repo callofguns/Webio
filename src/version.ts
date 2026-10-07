@@ -10,6 +10,14 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Part 6 · Courses and training',
+    notes: [
+      'New Courses section on the Skills screen: a workshop, a course and a masterclass for sales, design and development.',
+      'Courses cost money and part of your day, and give a lot of experience, so you level up faster. One course a day.',
+      'Send your team on courses too. They stop working while they are away, learn twice as much, and come back sharper.',
+    ],
+  },
+  {
     title: 'Developers work on their own too',
     notes: ['Developers now find coding work by themselves, just like designers do.', 'They spread across the projects you have started.'],
   },
@@ -102,10 +110,6 @@ export const UPDATE_LOG: ChangeEntry[] = [
 
 /** Ideas for later. Nothing here is promised. */
 export const UPCOMING: ChangeEntry[] = [
-  {
-    title: 'Part 6 · Training',
-    notes: ['Courses for you and your team that unlock skills faster.', 'Pay for training in money and time.'],
-  },
   {
     title: 'Later',
     notes: ['More types of websites and bigger clients.', 'More office upgrades and team roles.', 'Sound effects and more events.'],

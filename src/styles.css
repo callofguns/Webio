@@ -934,3 +934,12 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
   100% { transform: rotate(90deg); }
 }
 @media (prefers-reduced-motion: reduce) { .rotate-device { animation: none; } }
+
+/* ---- Courses ---- */
+.course-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px dashed var(--border); }
+.course-row:first-of-type { border-top: 0; padding-top: 0; }
+.course-row .btn { flex-shrink: 0; align-self: center; }
+@media (max-width: 900px) {
+  .course-row { flex-wrap: wrap; }
+  .course-row .btn { width: 100%; align-self: stretch; }
+}

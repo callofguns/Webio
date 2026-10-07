@@ -18,6 +18,7 @@ function unlocks(skill: SkillId): { level: number; names: string[] }[] {
   return [...byLevel.entries()].sort((a, b) => a[0] - b[0]).map(([level, names]) => ({ level, names }));
 }
 import { softSpring } from '../motion';
+import { Courses } from './Courses';
 
 const SKILL_HUE: Record<SkillId, string> = { sales: 'var(--c-phone)', design: 'var(--c-skills)', development: 'var(--c-projects)' };
 
@@ -34,7 +35,7 @@ export function SkillsScreen() {
       <div className="screen-head">
         <div>
           <h1>Skills</h1>
-          <p className="muted">You get better by doing. Courses and training come later.</p>
+          <p className="muted">You get better by doing, or by paying for courses.</p>
         </div>
       </div>
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
@@ -63,6 +64,8 @@ export function SkillsScreen() {
           );
         })}
       </div>
+
+      <Courses />
     </div>
   );
 }

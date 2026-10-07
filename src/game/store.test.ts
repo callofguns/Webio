@@ -4,6 +4,7 @@ import { DAILY_LIVING_COST, RESEARCH_MINUTES, START_MONEY, WORKDAY_START } from 
 import { createDeal, toGameTime } from './deals';
 import { allTasksDone, createProject } from './projects';
 import { CLAUDE_PLANS } from './claude';
+import { COURSES } from './training';
 
 describe('game store', () => {
   beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
@@ -455,5 +456,90 @@ describe('designers and developers find their own work', () => {
     const e = useGame.getState().employees[0];
     expect(e.assignedProjectId).toBeNull();
     expect(e.today.note).toMatch(/No development work/);
+  });
+});
+
+describe('courses', () => {
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  const person = (role: 'sales' | 'designer' | 'developer', level = 2) => ({
+    id: 'e1',
+    name: 'Maya Haddad',
+    role,
+    level,
+    xp: 0,
+    pay: 100,
+    traits: [],
+    knownTraits: [],
+    morale: 60,
+    hiredDay: 1,
+    assignedProjectId: null,
+    carryMinutes: 0,
+    lowMoraleDays: 0,
+    today: { dials: 0, leads: 0, hours: 0, note: '' },
+  });
+
+  it('taking a course costs money and time and gives experience', () => {
+    useGame.getState().takeCourse('design', 'workshop');
+    const s = useGame.getState();
+    expect(s.money).toBe(START_MONEY - COURSES.workshop.cost);
+    expect(s.minute).toBe(WORKDAY_START + COURSES.workshop.hours * 60);
+    // 70 XP is not quite enough for level 2 (100 XP).
+    expect(s.skills.design.level).toBe(1);
+    expect(s.skills.design.xp).toBe(COURSES.workshop.xp);
+    expect(s.today.moneyOut).toBe(COURSES.workshop.cost);
+  });
+
+  it('two workshops in a row would level you up, but you only get one course a day', () => {
+    useGame.getState().takeCourse('sales', 'workshop');
+    useGame.getState().takeCourse('sales', 'workshop');
+    expect(useGame.getState().skills.sales.xp).toBe(COURSES.workshop.xp);
+    useGame.getState().endDay();
+    useGame.getState().takeCourse('sales', 'workshop');
+    expect(useGame.getState().skills.sales.level).toBe(2);
+  });
+
+  it('refuses courses that are too advanced or too expensive', () => {
+    useGame.getState().takeCourse('design', 'masterclass');
+    expect(useGame.getState().money).toBe(START_MONEY);
+    useGame.setState({ money: 10 });
+    useGame.getState().takeCourse('design', 'workshop');
+    expect(useGame.getState().skills.design.xp).toBe(0);
+  });
+
+  it('an employee on a course stops working, then comes back with experience', () => {
+    useGame.setState({ employees: [person('sales')] });
+    useGame.getState().trainEmployee('e1', 'workshop');
+    expect(useGame.getState().money).toBe(START_MONEY - COURSES.workshop.cost);
+    expect(useGame.getState().employees[0].training).toEqual({ course: 'workshop', hoursLeft: 2 });
+    expect(useGame.getState().employees[0].morale).toBe(65);
+    useGame.getState().wait(60);
+    let e = useGame.getState().employees[0];
+    expect(e.training?.hoursLeft).toBe(1);
+    expect(e.today.dials).toBe(0);
+    useGame.getState().wait(60);
+    e = useGame.getState().employees[0];
+    expect(e.training).toBeUndefined();
+    expect(e.xp).toBe(COURSES.workshop.xp * 2);
+    expect(e.today.dials).toBe(0);
+    // Next hour they're calling again.
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees[0].today.dials).toBeGreaterThan(0);
+  });
+
+  it('enough course experience levels an employee up', () => {
+    useGame.setState({ employees: [person('developer', 2)] });
+    useGame.getState().trainEmployee('e1', 'course');
+    useGame.getState().wait(4 * 60);
+    // Level 2 to 3 takes 2 x 283 = 566 XP. The course teaches 220 x 2 = 440, so not yet.
+    expect(useGame.getState().employees[0].level).toBe(2);
+    expect(useGame.getState().employees[0].xp).toBe(440);
+  });
+
+  it('cannot send someone on a second course while they are away', () => {
+    useGame.setState({ employees: [person('designer')] });
+    useGame.getState().trainEmployee('e1', 'workshop');
+    useGame.getState().trainEmployee('e1', 'course');
+    expect(useGame.getState().money).toBe(START_MONEY - COURSES.workshop.cost);
   });
 });
