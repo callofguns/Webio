@@ -121,6 +121,15 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
   Better employees will want to be paid more, so watch their pay
 - Salespeople learn sales, designers learn design, developers learn development
 
+## Sales closers
+
+Sales callers at **level 4 and up** don't just bring in a lead. They carry on by text themselves: say hello, ask what the client needs and their budget, send a quote, negotiate, and sign the deal. A signed deal turns into a project in **Projects** and pays its deposit, with no help from you. You can read the whole conversation in Messages, and it plays out over the following days like a real one.
+
+- They only quote features you can build, and promise delivery dates that allow for the sites already in your queue
+- Better closers price closer to what the client can afford (level 5 asks for too much less often than level 4)
+- They stop signing new sites once you have too many on the go (3, plus 2 for each designer or developer) and hand those leads to you instead
+- Lower level callers still just hand you the lead. Send them on a course to reach level 4
+
 ## Version and update log
 
 The game is at **Beta-v2**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.

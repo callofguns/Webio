@@ -6,6 +6,7 @@ import { persist } from 'zustand/middleware';
 import { buyBlocker, FURNITURE, moveBlocker, OFFICES, officeEffects, type FurnitureId, type OfficeId } from './office';
 import { CLAUDE_PLANS, claudeEffects, planBlocker, type ClaudePlan } from './claude';
 import { RETAINER_DAYS, retainerFee } from './pricing';
+import { CLOSER_LEVEL, closeDeal, pipelineCap } from './closer';
 import {
   COURSE_NAMES,
   COURSES,
@@ -389,9 +390,32 @@ export const useGame = create<Store>()(
                 e.today.note = 'Ran out of businesses to call, so searched the directory';
               }
               for (const lead of r.leads) {
-                newDeals.push(createDeal(lead.biz, lead.warmth + fx.leadWarmth, at, Math.random, e.name.split(' ')[0]));
+                const deal = createDeal(lead.biz, lead.warmth + fx.leadWarmth, at, Math.random, e.name.split(' ')[0]);
                 e.today.leads++;
-                messages.push([`${e.name} got ${lead.biz.name} interested! Text them in Messages.`, 'good']);
+                // Sites you're building or about to start. Closers stop signing when you have too many.
+                const queue = projects.filter((p) => p.status !== 'delivered').length + [...s.deals, ...newDeals].filter((d) => d.stage === 'won' && !d.settled).length;
+                const builders = s.employees.filter((x) => x.role !== 'sales').length;
+                if (e.level >= CLOSER_LEVEL && queue < pipelineCap(builders)) {
+                  // The best callers carry on by text themselves, all the way to a signed deal.
+                  const res = closeDeal(
+                    deal,
+                    lead.biz,
+                    { name: e.name, level: e.level },
+                    { agencyName: s.profile?.agencyName ?? 'my agency', reputation: s.reputation, devLevel: s.skills.development.level, queue },
+                    at,
+                    Math.random,
+                  );
+                  newDeals.push(res.deal);
+                  messages.push([`${e.name} got ${lead.biz.name} interested and is texting them to close the deal.`, 'good']);
+                } else {
+                  newDeals.push(deal);
+                  messages.push([
+                    e.level >= CLOSER_LEVEL
+                      ? `${e.name} got ${lead.biz.name} interested, but you already have plenty of sites on the go. Text them in Messages.`
+                      : `${e.name} got ${lead.biz.name} interested! Text them in Messages.`,
+                    'good',
+                  ]);
+                }
               }
               gainXp(5);
             } else {

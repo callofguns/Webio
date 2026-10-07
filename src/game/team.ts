@@ -15,7 +15,7 @@ import { DAILY_LIVING_COST, NOT_INTERESTED_COOLDOWN, WORKDAY_END, WORKDAY_START,
 // Roles, pay and traits
 
 export const ROLES: Record<Role, { label: string; plural: string; does: string }> = {
-  sales: { label: 'Sales caller', plural: 'Sales callers', does: 'Calls businesses for you and passes on the interested ones.' },
+  sales: { label: 'Sales caller', plural: 'Sales callers', does: 'Calls businesses for you and passes on the interested ones. At level 4 they text the clients and sign deals on their own.' },
   designer: { label: 'Designer', plural: 'Designers', does: 'Does the design tasks on the project you assign.' },
   developer: { label: 'Developer', plural: 'Developers', does: 'Does the coding tasks on the project you assign.' },
 };

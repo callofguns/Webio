@@ -10,6 +10,14 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Closers',
+    notes: [
+      'Sales people at level 4 and up now close deals on their own: they text the client, ask what they need, send a quote and negotiate.',
+      'A signed deal goes straight to your Projects. You can read the whole conversation in Messages.',
+      'They stop signing new sites when you already have too many on the go, and leave those leads to you.',
+    ],
+  },
+  {
     title: 'Part 6 · Courses and training',
     notes: [
       'New Courses section on the Skills screen: a workshop, a course and a masterclass for sales, design and development.',

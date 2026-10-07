@@ -5,6 +5,7 @@ import { createDeal, toGameTime } from './deals';
 import { allTasksDone, createProject } from './projects';
 import { CLAUDE_PLANS } from './claude';
 import { COURSES } from './training';
+import { pipelineCap } from './closer';
 
 describe('game store', () => {
   beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
@@ -541,5 +542,81 @@ describe('courses', () => {
     useGame.getState().trainEmployee('e1', 'workshop');
     useGame.getState().trainEmployee('e1', 'course');
     expect(useGame.getState().money).toBe(START_MONEY - COURSES.workshop.cost);
+  });
+});
+
+describe('sales people closing deals on their own', () => {
+  const caller = (level: number) => ({
+    id: 's1',
+    name: 'Leo Silva',
+    role: 'sales' as const,
+    level,
+    xp: 0,
+    pay: 150,
+    traits: ['people_person' as const],
+    knownTraits: [],
+    morale: 90,
+    hiredDay: 1,
+    assignedProjectId: null,
+    carryMinutes: 0,
+    lowMoraleDays: 0,
+    today: { dials: 0, leads: 0, hours: 0, note: '' },
+  });
+
+  /** Lets a work day pass again and again until the caller brings in a lead. */
+  function untilLead() {
+    for (let i = 0; i < 400 && useGame.getState().deals.length === 0; i++) {
+      const s = useGame.getState();
+      if (s.minute >= 17 * 60) useGame.getState().endDay();
+      else useGame.getState().wait(60);
+    }
+    return useGame.getState().deals[0];
+  }
+
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  it('a level 5 caller carries a lead all the way through the texts', () => {
+    useGame.setState({ employees: [caller(5)] });
+    const deal = untilLead();
+    expect(deal).toBeDefined();
+    expect(deal.messages.some((m) => m.text.includes('is handling the texts'))).toBe(true);
+    expect(deal.messages.filter((m) => m.from === 'you').length).toBeGreaterThanOrEqual(3);
+    expect(deal.messages.some((m) => m.quote)).toBe(true);
+    expect(['won', 'lost', 'discovery', 'negotiating']).toContain(deal.stage);
+
+    // Let the days go by. If it was won, it ends up in Projects without you lifting a finger.
+    for (let i = 0; i < 12; i++) useGame.getState().endDay();
+    const s = useGame.getState();
+    const d = s.deals.find((x) => x.id === deal.id)!;
+    if (d.stage === 'won') {
+      expect(s.projects.some((p) => p.dealId === d.id)).toBe(true);
+      expect(s.log.some((l) => l.text.includes('Contract signed'))).toBe(true);
+    }
+  });
+
+  it('a lower level caller only hands you the lead', () => {
+    useGame.setState({ employees: [caller(3)] });
+    const deal = untilLead();
+    expect(deal.stage).toBe('intro');
+    expect(deal.messages).toHaveLength(1);
+  });
+
+  it('closers stop signing when you already have too many sites on the go', () => {
+    const s = useGame.getState();
+    const biz = { ...s.businesses[0], status: 'client' as const };
+    const busy = Array.from({ length: pipelineCap(0) }, (_, i) => {
+      const deal = { ...createDeal(biz, 80, toGameTime(1, 600)), stage: 'won' as const, settled: true, agreedPrice: 1000, quote: { pages: 3, features: [], price: 1000, days: 14, depositPct: 0 } };
+      return { deal, project: { ...createProject(deal, biz, 1), id: `busy${i}` } };
+    });
+    useGame.setState({ employees: [caller(5)], deals: busy.map((b) => b.deal), projects: busy.map((b) => b.project) });
+    const before = useGame.getState().deals.length;
+    for (let i = 0; i < 400 && useGame.getState().deals.length === before; i++) {
+      if (useGame.getState().minute >= 17 * 60) useGame.getState().endDay();
+      else useGame.getState().wait(60);
+    }
+    const fresh = useGame.getState().deals.at(-1)!;
+    expect(useGame.getState().deals.length).toBeGreaterThan(before);
+    expect(fresh.stage).toBe('intro');
+    expect(fresh.messages).toHaveLength(1);
   });
 });

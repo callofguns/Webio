@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { BONUS_AMOUNT, marketPay, ROLES } from '../../game/team';
+import { CLOSER_LEVEL } from '../../game/closer';
 import type { Employee } from '../../game/types';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
@@ -43,6 +44,13 @@ export function EmployeeCard({ e }: { e: Employee }) {
       </div>
 
       <LevelDots level={e.level} />
+      {e.role === 'sales' && (
+        <p className="small faint" style={{ marginTop: -4 }}>
+          {e.level >= CLOSER_LEVEL
+            ? 'A closer: they text the clients they find, send the quote and sign the deal on their own.'
+            : `At level ${CLOSER_LEVEL} they start texting clients and signing deals on their own.`}
+        </p>
+      )}
 
       <div>
         <div className="row" style={{ justifyContent: 'space-between', marginBottom: 4 }}>
