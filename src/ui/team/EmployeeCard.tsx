@@ -97,7 +97,7 @@ export function EmployeeCard({ e }: { e: Employee }) {
           </select>
           <p className="small faint" style={{ marginTop: 6 }}>
             {e.role === 'designer'
-              ? 'Designers do the design work: the home page, the other pages, text and photos, redesigns and extra sections. When they run out, they find more on their own.'
+              ? 'Designers plan new projects (they ask the client about their style, pick a design and start the project) and do the design work: the home page, the other pages, text and photos, redesigns and extra sections. When they run out, they find more on their own.'
               : 'Developers do the coding: setting up hosting, features like booking or a store, and going live. When they run out, they find more on their own.'}
           </p>
         </div>

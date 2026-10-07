@@ -55,11 +55,13 @@ import {
   applyRevision,
   builderFields,
   changeDesign,
+  chooseDesign,
   createProject,
   evaluateSite,
   findWork,
   fixBugs,
   hasWorkLeft,
+  isDefaultDesign,
   MAX_POLISH,
   polishSite,
   REPUTATION_FOR_STARS,
@@ -344,6 +346,8 @@ export const useGame = create<Store>()(
         let businesses = s.businesses;
         let projects = s.projects;
         const newDeals: Deal[] = [];
+        /** Texts your designers send to clients about their projects. */
+        const threadPosts = new Map<string, TextMessage[]>();
         const messages: [string, LogEntry['tone']][] = [];
 
         // How many designers and developers are on each project, so free people spread out.
@@ -419,6 +423,35 @@ export const useGame = create<Store>()(
               }
               gainXp(5);
             } else {
+              // Designers plan new projects first: ask the client what style they like, then pick
+              // a design to match and start the project. Projects you've designed yourself are left alone.
+              if (e.role === 'designer') {
+                const toPlan = projects.find((p) => p.status === 'not_started' && isDefaultDesign(p.design) && (p.tasteAt === null || p.tasteAt <= at));
+                if (toPlan) {
+                  const biz = businesses.find((b) => b.id === toPlan.businessId);
+                  const name = biz?.name ?? 'a client';
+                  if (toPlan.tasteAt === null && biz) {
+                    const replyAt = replyTime(at, biz.temperament, Math.random);
+                    threadPosts.set(toPlan.dealId, [
+                      ...(threadPosts.get(toPlan.dealId) ?? []),
+                      textMessage('you', `Hi! It’s ${e.name.split(' ')[0]}, the designer. Quick question for the design: what kind of style do you like? Any websites you love?`, at),
+                      textMessage('them', TASTE_HINTS[toPlan.taste], replyAt),
+                    ]);
+                    projects = projects.map((p) => (p.id === toPlan.id ? { ...p, tasteAt: replyAt } : p));
+                    e.today.note = `Asking ${name} what style they like`;
+                    messages.push([`${e.name} asked ${name} what style they like.`, 'neutral']);
+                    gainXp(6);
+                  } else if (biz) {
+                    projects = projects.map((p) => (p.id === toPlan.id ? { ...p, design: chooseDesign(p, biz, e.level), status: 'in_progress' as const } : p));
+                    e.today.note = `Planned ${name}'s site and started the project`;
+                    messages.push([`${e.name} planned ${name}'s site and started the project.`, 'good']);
+                    gainXp(10);
+                  }
+                  e.today.hours += 1;
+                  continue;
+                }
+              }
+
               let project = projects.find((p) => p.id === e.assignedProjectId);
               // Designers and developers look for work of their own kind when they have none.
               const skill = e.role === 'designer' ? 'design' : 'development';
@@ -435,11 +468,19 @@ export const useGame = create<Store>()(
                 }
               }
               if (!project) {
-                e.today.note = `No ${skill} work right now. Start a project and they will pick it up.`;
+                e.today.note =
+                  e.role === 'developer' && projects.some((p) => p.status === 'not_started') && s.employees.some((x) => x.role === 'designer')
+                    ? 'Waiting for a project to be planned'
+                    : `No ${skill} work right now. Start a project and they will pick it up.`;
                 continue;
               }
               if (project.status !== 'in_progress') {
-                e.today.note = project.status === 'not_started' ? 'Waiting for you to plan and start the project' : 'Waiting while the client reviews it';
+                e.today.note =
+                  project.status === 'not_started'
+                    ? s.employees.some((x) => x.role === 'designer')
+                      ? 'Waiting for the project to be planned'
+                      : 'Waiting for you to plan and start the project'
+                    : 'Waiting while the client reviews it';
                 continue;
               }
               const res = work(project, 1, {
@@ -466,7 +507,8 @@ export const useGame = create<Store>()(
           return e;
         });
 
-        set({ employees, businesses, projects, deals: [...get().deals, ...newDeals] });
+        const deals = get().deals.map((d) => (threadPosts.has(d.id) ? { ...d, messages: [...d.messages, ...threadPosts.get(d.id)!] } : d));
+        set({ employees, businesses, projects, deals: [...deals, ...newDeals] });
         for (const [text, tone] of messages) log(text, tone);
       };
 

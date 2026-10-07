@@ -5,15 +5,18 @@ import {
   allTasksDone,
   applyRevision,
   changeDesign,
+  chooseDesign,
   createProject,
   designFit,
   evaluateSite,
   fixBugs,
+  isDefaultDesign,
   progress,
   siteQuality,
   testSite,
   work,
 } from './projects';
+import { SECTION_ORDER } from './design';
 import { FONTS, INDUSTRY_VIBES, LAYOUTS, PALETTES, RECOMMENDED_SECTIONS, type Design } from './design';
 import type { Business, Project } from './types';
 
@@ -162,5 +165,61 @@ describe('projects', () => {
     const { biz, project } = newProject(rand);
     const awful = { ...project, hiddenBugs: 10, revisions: 2 };
     expect(evaluateSite(awful, biz, 30, rand).approved).toBe(true);
+  });
+});
+
+describe('planning a design', () => {
+  const unstarted = (rand: () => number) => {
+    const { biz, project } = newProject(rand);
+    return { biz, project: { ...project, status: 'not_started' as const } };
+  };
+
+  it('a new project starts with the untouched default design', () => {
+    const { project } = unstarted(seeded(1));
+    expect(isDefaultDesign(project.design)).toBe(true);
+  });
+
+  it('a good designer picks a design that suits the client better than the default', () => {
+    const rand = seeded(2);
+    let better = 0;
+    let worse = 0;
+    for (let i = 0; i < 300; i++) {
+      const { biz, project } = unstarted(rand);
+      const planned = { ...project, design: chooseDesign(project, biz, 4, rand) };
+      const diff = designFit(planned, biz).total - designFit(project, biz).total;
+      if (diff > 0) better++;
+      if (diff < 0) worse++;
+    }
+    expect(better).toBeGreaterThan(worse * 5);
+  });
+
+  it('a new designer can only use options their level allows, and misses more often', () => {
+    const rand = seeded(3);
+    let fit1 = 0;
+    let fit5 = 0;
+    const n = 400;
+    for (let i = 0; i < n; i++) {
+      const { biz, project } = unstarted(rand);
+      const d1 = chooseDesign(project, biz, 1, rand);
+      expect(LAYOUTS[d1.layout].level).toBeLessThanOrEqual(1);
+      expect(PALETTES[d1.palette].level).toBeLessThanOrEqual(1);
+      expect(FONTS[d1.font].level).toBeLessThanOrEqual(1);
+      fit1 += designFit({ ...project, design: d1 }, biz).total;
+      fit5 += designFit({ ...project, design: chooseDesign(project, biz, 5, rand) }, biz).total;
+    }
+    expect(fit5 / n).toBeGreaterThan(fit1 / n + 3);
+  });
+
+  it('always plans a sensible set of sections, with a way to get in touch', () => {
+    const rand = seeded(4);
+    for (let i = 0; i < 200; i++) {
+      const { biz, project } = unstarted(rand);
+      const { sections } = chooseDesign(project, biz, 3, rand);
+      expect(sections).toContain('contact');
+      expect(sections.length).toBeGreaterThanOrEqual(3);
+      expect(sections.length).toBeLessThanOrEqual(6);
+      expect(sections).toEqual(SECTION_ORDER.filter((x) => sections.includes(x)));
+      for (const r of RECOMMENDED_SECTIONS[biz.industry]) expect(sections).toContain(r);
+    }
   });
 });

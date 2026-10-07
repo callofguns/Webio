@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DAY_HARD_END, useGame } from '../../game/store';
-import { contentMissing, progress, siteQuality } from '../../game/projects';
+import { contentMissing, isDefaultDesign, progress, siteQuality } from '../../game/projects';
 import { retainerFee } from '../../game/pricing';
 import type { Project } from '../../game/types';
 import { Button } from '../components/Button';
@@ -37,7 +37,8 @@ function Steps({ status }: { status: Project['status'] }) {
 }
 
 export function ProjectDetail({ project, onBack }: { project: Project; onBack: () => void }) {
-  const { businesses, day, minute, activeCall, startProject, wait } = useGame();
+  const { businesses, day, minute, activeCall, startProject, wait, employees } = useGame();
+  const hasDesigner = employees.some((e) => e.role === 'designer');
   const biz = businesses.find((b) => b.id === project.businessId)!;
   const [tab, setTab] = useState<'build' | 'design'>('build');
   const daysLeft = project.dueDay - day;
@@ -72,6 +73,11 @@ export function ProjectDetail({ project, onBack }: { project: Project; onBack: (
         <div className="stack" style={{ gap: 16 }}>
           {project.status === 'not_started' && (
             <>
+              {hasDesigner && isDefaultDesign(project.design) && (
+                <div className="banner info">
+                  <strong>Your designer will plan this one.</strong> They will ask {first} what style they like, pick a design and start the project. Or plan it yourself now and they will leave it alone.
+                </div>
+              )}
               <DesignPanel project={project} biz={biz} />
               <Button variant="primary" block style={{ height: 44 }} onClick={() => startProject(project.id)}>
                 Start building &rarr;

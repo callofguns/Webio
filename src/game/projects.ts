@@ -18,6 +18,7 @@ import {
   LAYOUTS,
   PALETTES,
   RECOMMENDED_SECTIONS,
+  SECTION_ORDER,
   SECTIONS,
   type Design,
   type Vibe,
@@ -151,7 +152,7 @@ export interface DesignFit {
   missingSections: string[];
 }
 
-function vibeScore(vibes: Vibe[], taste: Vibe, industryVibes: Vibe[]): number {
+export function vibeScore(vibes: Vibe[], taste: Vibe, industryVibes: Vibe[]): number {
   if (vibes.includes(taste)) return 10;
   if (vibes.some((v) => industryVibes.includes(v))) return 5;
   return 0;
@@ -170,6 +171,38 @@ export function designFit(p: Project, biz: Business): DesignFit {
   if (count < 3) sections -= 6; // too empty
   const missingSections = rec.filter((s) => !p.design.sections.includes(s)).map((s) => SECTIONS[s].name);
   return { layout, palette, font, sections, total: layout + palette + font + sections, missingSections };
+}
+
+// ---------------------------------------------------------------------------
+// Planning (a designer's job)
+
+/** True if you haven't touched the design: it's still the starting one. */
+export function isDefaultDesign(d: Design): boolean {
+  return d.layout === DEFAULT_DESIGN.layout && d.palette === DEFAULT_DESIGN.palette && d.font === DEFAULT_DESIGN.font && d.sections.join() === DEFAULT_DESIGN.sections.join();
+}
+
+/**
+ * The design a designer picks once they know the client's style. They choose
+ * the options that suit it best, from what their level allows. Newer
+ * designers sometimes pick something that doesn't quite fit.
+ */
+export function chooseDesign(p: Project, biz: Business, designerLevel: number, rand: Rand = defaultRand): Design {
+  const industryVibes = INDUSTRY_VIBES[biz.industry];
+  const miss = clamp(0.35 - 0.1 * designerLevel, 0, 0.3); // level 1: 25%, level 3 and up: 5% or less
+  function pickBest<T extends string>(table: Record<T, { level: number; vibes: Vibe[] }>): T {
+    const ids = (Object.keys(table) as T[]).filter((id) => table[id].level <= designerLevel);
+    if (chance(miss, rand)) return pick(ids, rand);
+    return ids.reduce((best, id) => (vibeScore(table[id].vibes, p.taste, industryVibes) > vibeScore(table[best].vibes, p.taste, industryVibes) ? id : best), ids[0]);
+  }
+  // The sections visitors expect for this kind of business, plus a way to get in touch.
+  const wanted = new Set(RECOMMENDED_SECTIONS[biz.industry]);
+  wanted.add('contact');
+  return {
+    layout: pickBest(LAYOUTS),
+    palette: pickBest(PALETTES),
+    font: pickBest(FONTS),
+    sections: SECTION_ORDER.filter((s) => wanted.has(s)),
+  };
 }
 
 // ---------------------------------------------------------------------------

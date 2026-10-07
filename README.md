@@ -136,7 +136,7 @@ The game is at **Beta-v3, the final beta**. Click the settings button in the top
 
 ## What designers do
 
-Designers handle the **design** tasks of a site: the home page, the other pages, writing the text and finding photos, redesigns, and extra sections. Developers handle the **development** tasks (hosting, features like booking or a store, and going live). Designers and developers find work of their own kind on their own: when they have nothing assigned, or their project has none of their kind of work left, they pick up a project you have started that still needs it.
+Designers also **plan** new projects. When you sign a client, a free designer texts them to ask what style they like, and once the client answers, picks a layout, colors, font and sections to match (newer designers sometimes miss, and can only use options their level allows), then starts the project. Projects you've already designed yourself are left alone, and developers wait until a project is started. Designers handle the **design** tasks of a site: the home page, the other pages, writing the text and finding photos, redesigns, and extra sections. Developers handle the **development** tasks (hosting, features like booking or a store, and going live). Designers and developers find work of their own kind on their own: when they have nothing assigned, or their project has none of their kind of work left, they pick up a project you have started that still needs it.
 
 ## Claude subscription
 

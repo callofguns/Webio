@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { callBlocker, useGame } from './store';
 import { DAILY_LIVING_COST, RESEARCH_MINUTES, START_MONEY, WORKDAY_START } from './balance';
 import { createDeal, toGameTime } from './deals';
-import { allTasksDone, createProject } from './projects';
+import { allTasksDone, createProject, designFit, isDefaultDesign } from './projects';
 import { CLAUDE_PLANS } from './claude';
 import { COURSES } from './training';
 import { pipelineCap } from './closer';
@@ -400,14 +400,16 @@ describe('designers and developers find their own work', () => {
     expect(useGame.getState().employees[0].assignedProjectId).toBe(b.id);
   });
 
-  it('only picks up projects you have started', () => {
+  it('does not do design work on projects that have not been started, but plans them instead', () => {
     const [a] = twoProjects([false, false]);
     useGame.setState({ employees: [person('d1', 'designer')] });
     useGame.getState().wait(60);
     const e = useGame.getState().employees[0];
     expect(e.assignedProjectId).toBeNull();
-    expect(e.today.note).toMatch(/No design work/);
+    // Their hour went on asking the client about style, not on building.
+    expect(e.today.note).toMatch(/style/i);
     expect(useGame.getState().projects.find((p) => p.id === a.id)!.tasks.every((t) => t.done === 0)).toBe(true);
+    expect(useGame.getState().projects.find((p) => p.id === a.id)!.status).toBe('not_started');
   });
 
   it('a designer you assigned by hand stays on that project while it has design work', () => {
@@ -552,10 +554,11 @@ describe('sales people closing deals on their own', () => {
     role: 'sales' as const,
     level,
     xp: 0,
-    pay: 150,
-    traits: ['people_person' as const],
+    // Paid well and happy, so they don't quit while the test waits for a lead.
+    pay: 600,
+    traits: ['people_person' as const, 'reliable' as const],
     knownTraits: [],
-    morale: 90,
+    morale: 100,
     hiredDay: 1,
     assignedProjectId: null,
     carryMinutes: 0,
@@ -598,7 +601,8 @@ describe('sales people closing deals on their own', () => {
     useGame.setState({ employees: [caller(3)] });
     const deal = untilLead();
     expect(deal.stage).toBe('intro');
-    expect(deal.messages).toHaveLength(1);
+    // Nobody has texted the client for you. (They might have nudged you if the lead came in late in the day.)
+    expect(deal.messages.some((m) => m.from === 'you' || m.text.includes('is handling the texts'))).toBe(false);
   });
 
   it('closers stop signing when you already have too many sites on the go', () => {
@@ -617,6 +621,99 @@ describe('sales people closing deals on their own', () => {
     const fresh = useGame.getState().deals.at(-1)!;
     expect(useGame.getState().deals.length).toBeGreaterThan(before);
     expect(fresh.stage).toBe('intro');
-    expect(fresh.messages).toHaveLength(1);
+    expect(fresh.messages.some((m) => m.from === 'you' || m.text.includes('is handling the texts'))).toBe(false);
+  });
+});
+
+describe('designers plan new projects', () => {
+  const designer = (level = 3) => ({
+    id: 'd1',
+    name: 'Zara Chen',
+    role: 'designer' as const,
+    level,
+    xp: 0,
+    pay: 120,
+    traits: [],
+    knownTraits: [],
+    morale: 80,
+    hiredDay: 1,
+    assignedProjectId: null,
+    carryMinutes: 0,
+    lowMoraleDays: 0,
+    today: { dials: 0, leads: 0, hours: 0, note: '' },
+  });
+
+  /** A signed client whose site hasn't been planned or started. */
+  function unplanned() {
+    const s = useGame.getState();
+    const biz = { ...s.businesses[0], status: 'client' as const };
+    const deal = {
+      ...createDeal(biz, 80, toGameTime(1, 600)),
+      stage: 'won' as const,
+      settled: true,
+      agreedPrice: 1200,
+      quote: { pages: 3, features: [], price: 1200, days: 14, depositPct: 0 },
+    };
+    const project = createProject(deal, biz, 1);
+    useGame.setState({ businesses: [biz, ...s.businesses.slice(1)], deals: [deal], projects: [project] });
+    return { biz, deal, project };
+  }
+
+  /** Lets work hours pass until the project has been started. */
+  function untilStarted() {
+    for (let i = 0; i < 80 && useGame.getState().projects[0].status === 'not_started'; i++) {
+      if (useGame.getState().minute >= 17 * 60) useGame.getState().endDay();
+      else useGame.getState().wait(60);
+    }
+  }
+
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  it('a designer asks the client about their style first', () => {
+    const { deal } = unplanned();
+    useGame.setState({ employees: [designer()] });
+    useGame.getState().wait(60);
+    const s = useGame.getState();
+    expect(s.projects[0].tasteAt).not.toBeNull();
+    // They don't start until the client has answered.
+    expect(s.projects[0].status === 'not_started' || s.projects[0].tasteAt! <= toGameTime(s.day, s.minute)).toBe(true);
+    const thread = s.deals.find((d) => d.id === deal.id)!;
+    expect(thread.messages.some((m) => m.from === 'you' && m.text.includes('what kind of style'))).toBe(true);
+    expect(thread.messages.some((m) => m.from === 'them' && m.t === s.projects[0].tasteAt)).toBe(true);
+  });
+
+  it('then they pick a design that suits the client and start the project', () => {
+    const { biz, project } = unplanned();
+    useGame.setState({ employees: [designer(4)] });
+    untilStarted();
+    const p = useGame.getState().projects[0];
+    expect(p.status).toBe('in_progress');
+    expect(isDefaultDesign(p.design)).toBe(false);
+    expect(designFit(p, biz).total).toBeGreaterThanOrEqual(designFit(project, biz).total);
+    expect(useGame.getState().log.some((l) => l.text.includes('planned') && l.text.includes('started the project'))).toBe(true);
+  });
+
+  it('a project you designed yourself is left alone', () => {
+    const { project } = unplanned();
+    const mine = { ...project, design: { ...project.design, palette: 'earth' as const } };
+    useGame.setState({ projects: [mine], employees: [designer()] });
+    useGame.getState().wait(8 * 60);
+    expect(useGame.getState().projects[0].status).toBe('not_started');
+    expect(useGame.getState().projects[0].design.palette).toBe('earth');
+    expect(useGame.getState().projects[0].tasteAt).toBeNull();
+  });
+
+  it('developers wait for the designer to plan, then get to work', () => {
+    unplanned();
+    const dev = { ...designer(), id: 'v1', name: 'Kai Park', role: 'developer' as const };
+    useGame.setState({ employees: [designer(), dev] });
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees[1].today.note).toMatch(/planned/i);
+    untilStarted();
+    for (let i = 0; i < 6; i++) {
+      if (useGame.getState().minute >= 17 * 60) useGame.getState().endDay();
+      else useGame.getState().wait(60);
+    }
+    expect(useGame.getState().employees[1].assignedProjectId).toBe(useGame.getState().projects[0].id);
   });
 });

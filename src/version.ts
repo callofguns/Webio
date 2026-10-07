@@ -21,6 +21,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
       'Claude subscription in the Office tab: Pro builds 50% faster, Max builds 75% faster and halves bug testing time.',
       'You can work until midnight. Work gets sloppier the later it gets, and a coffee machine helps.',
       'Tap the tab you are already on to go back to its main page.',
+      'Designers now plan new projects too: they ask the client what style they like, pick a matching design and start the project.',
     ],
   },
   {
