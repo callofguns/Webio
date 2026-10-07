@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
 import { Tabs } from '../components/Tabs';
-import { UPCOMING, UPDATE_LOG, VERSION, type ChangeEntry } from '../../version';
+import { UPCOMING, UPDATE_LOG, VERSION, VERSION_NOTE, type ChangeEntry } from '../../version';
 
 type Page = 'log' | 'next';
 
@@ -33,7 +33,7 @@ export function SettingsMenu({ open, onClose }: { open: boolean; onClose: () => 
         <span className="badge accent num">{VERSION}</span>
       </div>
       <p className="muted" style={{ marginTop: 6 }}>
-        Webio {VERSION}. You&rsquo;re playing the beta, so things may still change.
+        Webio {VERSION}. {VERSION_NOTE}
       </p>
       <div style={{ margin: '14px 0' }}>
         <Tabs

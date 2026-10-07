@@ -1,6 +1,8 @@
 // The game's version and what's changed in it. The settings menu reads this.
 
-export const VERSION = 'Beta-v2';
+export const VERSION = 'Beta-v3';
+/** A line about this release, shown under the version in settings. */
+export const VERSION_NOTE = 'This is the final beta. Thanks for playing! Things may still change a little before the full release.';
 
 export interface ChangeEntry {
   title: string;
@@ -10,58 +12,15 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
-    title: 'Tabs go back to the main page',
-    notes: ['Tap the tab you are already on to go back to its main page, like back to the contacts list on Phone or the list of chats on Texts.'],
-  },
-  {
-    title: 'Closers',
+    title: 'Beta-v3 · The final beta',
     notes: [
-      'Sales people at level 4 and up now close deals on their own: they text the client, ask what they need, send a quote and negotiate.',
-      'A signed deal goes straight to your Projects. You can read the whole conversation in Messages.',
-      'They stop signing new sites when you already have too many on the go, and leave those leads to you.',
-    ],
-  },
-  {
-    title: 'Part 6 · Courses and training',
-    notes: [
-      'New Courses section on the Skills screen: a workshop, a course and a masterclass for sales, design and development.',
-      'Courses cost money and part of your day, and give a lot of experience, so you level up faster. One course a day.',
-      'Send your team on courses too. They stop working while they are away, learn twice as much, and come back sharper.',
-    ],
-  },
-  {
-    title: 'Developers work on their own too',
-    notes: ['Developers now find coding work by themselves, just like designers do.', 'They spread across the projects you have started.'],
-  },
-  {
-    title: 'Late-night work',
-    notes: [
-      'You can now work until midnight instead of stopping at 10 PM.',
-      'Work after 8 PM is sloppier and buggier, and after 10 PM it is even worse. A coffee machine halves the damage.',
-    ],
-  },
-  {
-    title: 'Designers work on their own',
-    notes: [
-      'Designers now find design work by themselves when they have nothing to do.',
-      'They pick projects you have started that still need design, spreading out between them.',
-      'The Team screen explains what design work is.',
-    ],
-  },
-  {
-    title: 'Price plans',
-    notes: [
-      'Quotes can now be a one-time buyout, a monthly retainer, or both (the client picks).',
-      'The monthly retainer is a tenth of the full price: $1,000 once, or $100 a month forever, covering hosting and maintenance.',
-      'Retainer clients pay their first month when the site goes live, then every 30 days.',
-    ],
-  },
-  {
-    title: 'Claude subscription',
-    notes: [
-      'New Claude subscription in the Office tab, charged every day.',
-      'Claude Pro ($20/day): you build sites 50% faster. You still test for bugs yourself.',
-      'Claude Max ($45/day): you build 75% faster and bug tests take half the time.',
+      'Part 6: courses. Pay for a workshop, course or masterclass in sales, design or development to level up faster, for you or your team (Skills screen).',
+      'Your best sales people (level 4 and up) now text clients, send quotes, negotiate and sign deals on their own. Signed deals go straight to Projects.',
+      'Designers and developers find work on their own when they have nothing to do.',
+      'Quotes can be a one-time buyout, a monthly retainer (a tenth of the price, paid forever), or both.',
+      'Claude subscription in the Office tab: Pro builds 50% faster, Max builds 75% faster and halves bug testing time.',
+      'You can work until midnight. Work gets sloppier the later it gets, and a coffee machine helps.',
+      'Tap the tab you are already on to go back to its main page.',
     ],
   },
   {
@@ -123,7 +82,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
 /** Ideas for later. Nothing here is promised. */
 export const UPCOMING: ChangeEntry[] = [
   {
-    title: 'Later',
-    notes: ['More types of websites and bigger clients.', 'More office upgrades and team roles.', 'Sound effects and more events.'],
+    title: 'After the beta',
+    notes: ['The full release, once the last bugs are fixed.', 'More types of websites and bigger clients.', 'More office upgrades and team roles.', 'Sound effects and more events.'],
   },
 ];
