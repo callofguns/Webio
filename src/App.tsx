@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useGame } from './game/store';
 import { Sidebar, type ScreenId } from './ui/Sidebar';
@@ -17,17 +17,25 @@ import { fadeUp } from './ui/motion';
 export default function App() {
   const profile = useGame((s) => s.profile);
   const [screen, setScreen] = useState<ScreenId>('dashboard');
+  // Tapping the tab you're already on takes you back to that screen's main page.
+  const [resets, setResets] = useState(0);
+  const mainRef = useRef<HTMLElement>(null);
+  const go = (next: ScreenId) => {
+    if (next !== screen) return setScreen(next);
+    setResets((n) => n + 1);
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (!profile) return <StartScreen />;
 
   return (
     <div className="app">
-      <Sidebar current={screen} onChange={setScreen} />
+      <Sidebar current={screen} onChange={go} />
       <TopBar />
-      <main className="main">
+      <main className="main" ref={mainRef}>
         <AnimatePresence mode="wait">
-          <motion.div key={screen} data-section={screen} {...fadeUp}>
-            {screen === 'dashboard' && <Dashboard onNavigate={setScreen} />}
+          <motion.div key={`${screen}-${resets}`} data-section={screen} {...fadeUp}>
+            {screen === 'dashboard' && <Dashboard onNavigate={go} />}
             {screen === 'phone' && <PhoneScreen />}
             {screen === 'skills' && <SkillsScreen />}
             {screen === 'messages' && <MessagesScreen />}

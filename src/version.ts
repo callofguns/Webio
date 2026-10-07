@@ -10,6 +10,10 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Tabs go back to the main page',
+    notes: ['Tap the tab you are already on to go back to its main page, like back to the contacts list on Phone or the list of chats on Texts.'],
+  },
+  {
     title: 'Closers',
     notes: [
       'Sales people at level 4 and up now close deals on their own: they text the client, ask what they need, send a quote and negotiate.',
