@@ -1,7 +1,7 @@
 {
   "name": "webio",
   "private": true,
-  "version": "3.0.0-beta",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,8 +1,8 @@
 // The game's version and what's changed in it. The settings menu reads this.
 
-export const VERSION = 'Beta-v3';
+export const VERSION = 'v1.0';
 /** A line about this release, shown under the version in settings. */
-export const VERSION_NOTE = 'This is the final beta. Thanks for playing! Things may still change a little before the full release.';
+export const VERSION_NOTE = 'The first full release. Thanks for playing! Balance and details may still get tweaks.';
 
 export interface ChangeEntry {
   title: string;
@@ -11,6 +11,14 @@ export interface ChangeEntry {
 
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
+  {
+    title: 'v1.0 · The first full release',
+    notes: [
+      'The beta is over: this is the first full release of Webio.',
+      'Everything from the betas is in: cold calling, texting and quotes, building sites, hiring, offices, courses, closers, price plans and the Claude subscription.',
+      'Designers now plan new projects too: they ask the client what style they like, pick a matching design and start the project.',
+    ],
+  },
   {
     title: 'Beta-v3 · The final beta',
     notes: [
@@ -83,7 +91,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
 /** Ideas for later. Nothing here is promised. */
 export const UPCOMING: ChangeEntry[] = [
   {
-    title: 'After the beta',
-    notes: ['The full release, once the last bugs are fixed.', 'More types of websites and bigger clients.', 'More office upgrades and team roles.', 'Sound effects and more events.'],
+    title: 'After v1.0',
+    notes: ['More types of websites and bigger clients.', 'More office upgrades and team roles.', 'Sound effects and more events.'],
   },
 ];

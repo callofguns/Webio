@@ -132,7 +132,7 @@ Sales callers at **level 4 and up** don't just bring in a lead. They carry on by
 
 ## Version and update log
 
-The game is at **Beta-v3, the final beta**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
+The game is at **v1.0, the first full release**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
 
 ## What designers do
 
