@@ -11,6 +11,7 @@ import { useIsMobile } from '../useIsMobile';
 import { BackButton } from '../components/BackButton';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
+import { useListScroll } from '../useListScroll';
 
 const ORDER: Record<DealStatus, number> = { your_turn: 0, waiting: 1, won: 2, lost: 3 };
 
@@ -29,6 +30,7 @@ export function MessagesScreen() {
   // On a big screen, open the top conversation. On a phone, start on the list.
   const selected = deals.find((d) => d.id === selectedId) ?? (mobile ? null : sorted[0]) ?? null;
   const biz = selected ? businesses.find((b) => b.id === selected.businessId)! : null;
+  useListScroll(mobile && !!selected);
   const yourTurn = deals.filter((d) => dealStatus(d, now) === 'your_turn').length;
   const lost = deals.filter((d) => dealStatus(d, now) === 'lost');
 

@@ -10,6 +10,7 @@ import { LeadDetail } from './LeadDetail';
 import { CallView } from './CallView';
 import { useIsMobile } from '../useIsMobile';
 import { BackButton } from '../components/BackButton';
+import { useListScroll } from '../useListScroll';
 
 export function PhoneScreen() {
   const { businesses, activeCall, day, minute, money, searchDirectory, buyLeadList } = useGame();
@@ -24,6 +25,7 @@ export function PhoneScreen() {
   const showDetail = !mobile || !!selected;
   const showList = !mobile || !selected;
   const midCall = !!activeCall && activeCall.phase !== 'ended';
+  useListScroll(mobile && !!selected);
 
   // After a call, jump straight to the next business you can call: first in
   // this list, then in the "To call" list if this one has nobody left.

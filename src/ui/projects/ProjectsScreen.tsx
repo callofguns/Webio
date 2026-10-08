@@ -10,6 +10,7 @@ import { Tabs } from '../components/Tabs';
 import { money } from '../components/AnimatedNumber';
 import { fadeUp, softSpring, spring } from '../motion';
 import { ProjectDetail } from './ProjectDetail';
+import { useListScroll } from '../useListScroll';
 
 export const STATUS_LABEL: Record<Project['status'], { text: string; tone: string }> = {
   not_started: { text: 'Planning', tone: 'accent' },
@@ -30,6 +31,7 @@ export function ProjectsScreen() {
   const [tab, setTab] = useState<'active' | 'portfolio'>('active');
   const [openId, setOpenId] = useState<string | null>(null);
   const open = projects.find((p) => p.id === openId);
+  useListScroll(!!open);
 
   const active = projects.filter((p) => p.status !== 'delivered');
   const delivered = projects.filter((p) => p.status === 'delivered');
