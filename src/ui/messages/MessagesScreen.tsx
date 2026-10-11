@@ -12,7 +12,9 @@ import { BackButton } from '../components/BackButton';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
 import { useListScroll } from '../useListScroll';
+import { Tabs } from '../components/Tabs';
 
+type Filter = 'all' | DealStatus;
 const ORDER: Record<DealStatus, number> = { your_turn: 0, waiting: 1, won: 2, lost: 3 };
 
 export function MessagesScreen() {
@@ -27,8 +29,11 @@ export function MessagesScreen() {
     const byStatus = ORDER[dealStatus(a, now)] - ORDER[dealStatus(b, now)];
     return byStatus || unreadCount(b, now) - unreadCount(a, now);
   });
+  const [filter, setFilter] = useState<Filter>('all');
+  const count = (f: Filter) => (f === 'all' ? deals.length : deals.filter((d) => dealStatus(d, now) === f).length);
+  const shown = filter === 'all' ? sorted : sorted.filter((d) => dealStatus(d, now) === filter);
   // On a big screen, open the top conversation. On a phone, start on the list.
-  const selected = deals.find((d) => d.id === selectedId) ?? (mobile ? null : sorted[0]) ?? null;
+  const selected = deals.find((d) => d.id === selectedId) ?? (mobile ? null : shown[0]) ?? null;
   const biz = selected ? businesses.find((b) => b.id === selected.businessId)! : null;
   useListScroll(mobile && !!selected);
   const yourTurn = deals.filter((d) => dealStatus(d, now) === 'your_turn').length;
@@ -80,8 +85,29 @@ export function MessagesScreen() {
           <p style={{ marginTop: 10 }}>No conversations yet. Get someone interested on the phone first.</p>
         </div>
       ) : (
+        <>
+        <Tabs
+          id="msg-filter"
+          value={filter}
+          onChange={(f) => {
+            setFilter(f);
+            setSelectedId(null);
+          }}
+          options={[
+            { value: 'all', label: `All (${count('all')})` },
+            { value: 'your_turn', label: `Pending (${count('your_turn')})` },
+            { value: 'waiting', label: `Waiting (${count('waiting')})` },
+            { value: 'won', label: `Signed (${count('won')})` },
+            { value: 'lost', label: `Lost (${count('lost')})` },
+          ]}
+        />
+        {shown.length === 0 ? (
+          <div className="card empty" style={{ padding: 48 }}>
+            {filter === 'your_turn' ? 'Nobody is waiting on you.' : filter === 'waiting' ? 'Nobody is replying right now.' : filter === 'won' ? 'No signed clients yet.' : 'No lost conversations.'}
+          </div>
+        ) : (
         <div className="messages-layout">
-          <ThreadList deals={sorted} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+          <ThreadList deals={shown} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
           <AnimatePresence mode="wait">
             {!mobile && selected && biz && (
               <motion.div key={selected.id} {...fadeUp}>
@@ -91,6 +117,8 @@ export function MessagesScreen() {
           </AnimatePresence>
           {!mobile && selected && biz && <ClientNotes deal={selected} biz={biz} />}
         </div>
+        )}
+        </>
       )}
 
       <Modal open={confirmClear} onClose={() => setConfirmClear(false)}>

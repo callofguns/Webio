@@ -16,6 +16,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
     notes: [
       'The beta is over: this is the first full release of Webio.',
       'Everything from the betas is in: cold calling, texting and quotes, building sites, hiring, offices, courses, closers, price plans and the Claude subscription.',
+      'Messages can be filtered: All, Pending (waiting on you), Waiting (for a reply), Signed and Lost.',
       'Going back from a business, chat or project puts you back where you were scrolled in the list.',
       'Designers now plan new projects too: they ask the client what style they like, pick a matching design and start the project.',
     ],
