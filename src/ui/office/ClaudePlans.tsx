@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
-import { useGame } from '../../game/store';
-import { CLAUDE_ORDER, CLAUDE_PLANS, planBlocker, type ClaudePlan } from '../../game/claude';
+import { developerCount, useGame } from '../../game/store';
+import { CLAUDE_ORDER, CLAUDE_PLANS, claudeCost, planBlocker, seatsFor, type ClaudePlan } from '../../game/claude';
 import { dailyBurn } from '../../game/team';
 import { OFFICES } from '../../game/office';
 import { Button } from '../components/Button';
@@ -11,7 +11,8 @@ import { spring } from '../motion';
 export function ClaudePlans() {
   const { claude, money: cash, employees, office, setClaudePlan } = useGame();
   const rent = OFFICES[office].rent;
-  const burnWith = (plan: ClaudePlan) => dailyBurn(employees, rent, CLAUDE_PLANS[plan].price);
+  const devs = developerCount(employees);
+  const burnWith = (plan: ClaudePlan) => dailyBurn(employees, rent, claudeCost(plan, devs));
   const current = CLAUDE_PLANS[claude];
 
   return (
@@ -22,7 +23,7 @@ export function ClaudePlans() {
           <p className="small muted" style={{ marginTop: 4 }}>
             {claude === 'none'
               ? 'An AI helper that builds sites with you. Billed every evening, weekends too. Cancel any time.'
-              : `You’re on ${current.name}: ${money(current.price)}/day, taken every evening.`}
+              : `You’re on ${current.name}: ${money(claudeCost(claude, devs))}/day, taken every evening.`}
           </p>
         </div>
         {claude !== 'none' && (
@@ -36,7 +37,7 @@ export function ClaudePlans() {
         {CLAUDE_ORDER.map((id, i) => {
           const plan = CLAUDE_PLANS[id];
           const isCurrent = id === claude;
-          const blocker = planBlocker(id, claude, cash);
+          const blocker = planBlocker(id, claude, cash, devs);
           const change = Math.round(burnWith(id) - burnWith(claude));
           return (
             <motion.div
@@ -56,8 +57,13 @@ export function ClaudePlans() {
               </div>
               <p className="num" style={{ fontSize: 20, fontWeight: 700 }}>
                 {money(plan.price)}
-                <span className="small muted" style={{ fontWeight: 500 }}> /day</span>
+                <span className="small muted" style={{ fontWeight: 500 }}> /day{plan.perSeat ? ' per developer' : ''}</span>
               </p>
+              {plan.perSeat && (
+                <p className="small muted" style={{ marginTop: -6 }}>
+                  You and {devs} developer{devs === 1 ? '' : 's'} = {seatsFor(id, devs)} seats, {money(claudeCost(id, devs))}/day{devs + 1 < (plan.minSeats ?? 1) ? ' (minimum seats)' : ''}.
+                </p>
+              )}
               <ul className="perk-list">
                 {plan.perks.map((p) => (
                   <li key={p}>{p}</li>
@@ -69,7 +75,7 @@ export function ClaudePlans() {
                     {change >= 0 ? `Your costs go up by ${money(change)}/day.` : `Your costs go down by ${money(-change)}/day.`}
                   </p>
                   <Button size="sm" variant={blocker ? 'default' : 'primary'} disabled={!!blocker} onClick={() => setClaudePlan(id)}>
-                    {blocker ?? (claude === 'none' ? `Subscribe · ${money(plan.price)}/day` : `Switch to ${plan.name.replace('Claude ', '')}`)}
+                    {blocker ?? (claude === 'none' ? `Subscribe · ${money(claudeCost(id, devs))}/day` : `Switch to ${plan.name.replace('Claude ', '')}`)}
                   </Button>
                 </>
               )}

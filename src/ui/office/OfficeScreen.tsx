@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { useGame } from '../../game/store';
+import { developerCount, useGame } from '../../game/store';
 import {
   buyBlocker,
   FURNITURE,
@@ -21,7 +21,7 @@ import { money } from '../components/AnimatedNumber';
 import { spring } from '../motion';
 import { FloorPlan } from './FloorPlan';
 import { ClaudePlans } from './ClaudePlans';
-import { CLAUDE_PLANS } from '../../game/claude';
+import { CLAUDE_PLANS, claudeCost } from '../../game/claude';
 
 const pct = (mult: number) => Math.round((mult - 1) * 100);
 
@@ -41,6 +41,7 @@ function perkList(office: OfficeId, furniture: Parameters<typeof officeEffects>[
   if (claude !== 'none') {
     out.push(`${CLAUDE_PLANS[claude].name}: you build ${pct(CLAUDE_PLANS[claude].build)}% faster`);
     if (CLAUDE_PLANS[claude].testMinutes < 60) out.push('Bug tests take half the time');
+    if (CLAUDE_PLANS[claude].teamBuild) out.push(`Your developers build ${pct(CLAUDE_PLANS[claude].teamBuild!)}% faster`);
   }
   if (out.length === 1) out.push('No bonuses yet. Clients can tell you work from home.');
   return out;
@@ -54,7 +55,7 @@ export function OfficeScreen() {
   const working = (s.day - 1) % 7 < 5 && s.minute >= WORKDAY_START && s.minute < WORKDAY_END;
   const active = new Set(activeFurniture(s.office, s.furniture));
   const target = moving ? OFFICES[moving] : null;
-  const burnAfterMove = target ? dailyBurn(s.employees, target.rent, CLAUDE_PLANS[s.claude].price) : 0;
+  const burnAfterMove = target ? dailyBurn(s.employees, target.rent, claudeCost(s.claude, developerCount(s.employees))) : 0;
 
   return (
     <div className="screen">

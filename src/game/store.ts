@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { buyBlocker, FURNITURE, moveBlocker, OFFICES, officeEffects, type FurnitureId, type OfficeId } from './office';
-import { CLAUDE_PLANS, claudeEffects, planBlocker, type ClaudePlan } from './claude';
+import { CLAUDE_PLANS, claudeCost, claudeEffects, planBlocker, type ClaudePlan } from './claude';
 import { RETAINER_DAYS, retainerFee } from './pricing';
 import { CLOSER_LEVEL, closeDeal, pipelineCap } from './closer';
 import {
@@ -94,6 +94,9 @@ import {
 } from './team';
 import { chance, pick, randInt, uid } from './rng';
 import { formatHour, isBusinessHours } from './time';
+
+/** How many developers are on your team. */
+export const developerCount = (employees: Employee[]) => employees.filter((e) => e.role === 'developer').length;
 
 export const SAVE_VERSION = 7;
 export { DAY_HARD_END };
@@ -489,7 +492,7 @@ export const useGame = create<Store>()(
                 devLevel: e.level,
                 only: e.role === 'designer' ? 'design' : 'development',
                 events: false,
-                speedMult: productivity(e, s.day) * fx.teamSpeed * (e.role === 'designer' ? fx.designSpeed : 1),
+                speedMult: productivity(e, s.day) * fx.teamSpeed * (e.role === 'designer' ? fx.designSpeed : 1) * (e.role === 'developer' ? claudeEffects(s.claude).teamBuild : 1),
                 qualityBonus: qualityBonus(e),
                 bugMult: bugMult(e),
               });
@@ -551,7 +554,7 @@ export const useGame = create<Store>()(
         if ((s.day - 1) % 7 === 4 && payrollDue > 0) {
           payroll = payrollDue;
           payrollDue = 0;
-          if (s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent - CLAUDE_PLANS[s.claude].price < 0) {
+          if (s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent - claudeCost(s.claude, developerCount(s.employees)) < 0) {
             // Nobody likes a bounced paycheck.
             employees = employees.map((e) => ({ ...e, morale: Math.max(0, e.morale - 25) }));
           }
@@ -567,7 +570,7 @@ export const useGame = create<Store>()(
         set({ employees, payrollDue, jobPosts, applicants: [...staying, ...fresh] });
         for (const q of quitters) log(`${q.name} quit. They weren\u2019t happy here.`, 'bad');
         if (payroll) log(`Payday: paid your team $${payroll.toLocaleString()}.`, 'bad');
-        if (payroll && s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent - CLAUDE_PLANS[s.claude].price < 0) log('You couldn\u2019t cover payroll. Your team is upset.', 'bad');
+        if (payroll && s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent - claudeCost(s.claude, developerCount(s.employees)) < 0) log('You couldn\u2019t cover payroll. Your team is upset.', 'bad');
         if (expiredPosts) log(`${expiredPosts} job post${expiredPosts > 1 ? 's' : ''} ended.`);
         if (gone) log(`${gone} applicant${gone > 1 ? 's' : ''} took another job.`, 'bad');
         if (fresh.length) log(`${fresh.length} new job applicant${fresh.length > 1 ? 's' : ''}. Check the Team screen.`, 'good');
@@ -1006,10 +1009,10 @@ export const useGame = create<Store>()(
         setClaudePlan: (plan) => {
           const s = get();
           if (s.activeCall && s.activeCall.phase !== 'ended') return;
-          if (planBlocker(plan, s.claude, s.money)) return;
+          if (planBlocker(plan, s.claude, s.money, developerCount(s.employees))) return;
           set({ claude: plan });
           if (plan === 'none') log(`Cancelled ${CLAUDE_PLANS[s.claude].name}. You\u2019re building on your own again.`);
-          else log(`Subscribed to ${CLAUDE_PLANS[plan].name}. $${CLAUDE_PLANS[plan].price}/day, charged each evening.`, 'good');
+          else log(`Subscribed to ${CLAUDE_PLANS[plan].name}. $${claudeCost(plan, developerCount(s.employees))}/day, charged each evening.`, 'good');
         },
 
         buyFurniture: (item) => {
@@ -1039,7 +1042,7 @@ export const useGame = create<Store>()(
           const teamDay = closeTeamDay();
           const s = get();
           const rent = OFFICES[s.office].rent;
-          const claude = CLAUDE_PLANS[s.claude].price;
+          const claude = claudeCost(s.claude, developerCount(s.employees));
           const expenses = DAILY_LIVING_COST + rent + claude + teamDay.payroll;
           const nextDay = s.day + 1;
           const summary = { ...s.today, moneyOut: s.today.moneyOut + expenses, day: s.day, expenses, payroll: teamDay.payroll, rent, claude, team: teamDay.team };

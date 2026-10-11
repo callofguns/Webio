@@ -1,7 +1,7 @@
-import { useGame } from '../../game/store';
+import { developerCount, useGame } from '../../game/store';
 import { dailyBurn } from '../../game/team';
 import { OFFICES } from '../../game/office';
-import { CLAUDE_PLANS } from '../../game/claude';
+import { claudeCost } from '../../game/claude';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { money } from '../components/AnimatedNumber';
@@ -12,7 +12,7 @@ export function DaySummary() {
   const dismiss = useGame((s) => s.dismissSummary);
   const employees = useGame((s) => s.employees);
   const rent = useGame((s) => OFFICES[s.office].rent);
-  const sub = useGame((s) => CLAUDE_PLANS[s.claude].price);
+  const sub = useGame((s) => claudeCost(s.claude, developerCount(s.employees)));
   const burn = dailyBurn(employees, rent, sub);
   const runway = Math.floor(cash / burn);
 

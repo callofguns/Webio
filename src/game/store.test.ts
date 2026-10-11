@@ -717,3 +717,58 @@ describe('designers plan new projects', () => {
     expect(useGame.getState().employees[1].assignedProjectId).toBe(useGame.getState().projects[0].id);
   });
 });
+
+describe('Claude Enterprise', () => {
+  const person = (id: string, role: 'developer' | 'designer') => ({
+    id,
+    name: `Person ${id}`,
+    role,
+    level: 2,
+    xp: 0,
+    pay: 100,
+    traits: [],
+    knownTraits: [],
+    morale: 80,
+    hiredDay: 1,
+    assignedProjectId: null as string | null,
+    carryMinutes: 0,
+    lowMoraleDays: 0,
+    today: { dials: 0, leads: 0, hours: 0, note: '' },
+  });
+
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  it('is billed per developer every evening and follows your team size', () => {
+    useGame.setState({ employees: [person('v1', 'developer'), person('v2', 'developer'), person('v3', 'developer'), person('d1', 'designer')] });
+    useGame.getState().setClaudePlan('enterprise');
+    expect(useGame.getState().claude).toBe('enterprise');
+    // You and three developers: 4 seats at $40.
+    const before = useGame.getState().money;
+    useGame.getState().endDay();
+    expect(useGame.getState().lastDaySummary?.claude).toBe(160);
+    expect(useGame.getState().money).toBeLessThan(before - 160);
+    // One developer leaves. Still 3 seats (minimum), then it stays 3 until you have 3 developers again.
+    useGame.setState({ employees: [person('v1', 'developer')] });
+    useGame.getState().endDay();
+    expect(useGame.getState().lastDaySummary?.claude).toBe(120);
+  });
+
+  it('developers on your team build faster with it', () => {
+    const progress = (plan: 'none' | 'enterprise') => {
+      useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+      const s = useGame.getState();
+      const biz = { ...s.businesses[0], status: 'client' as const };
+      const deal = { ...createDeal(biz, 80, toGameTime(1, 600)), stage: 'won' as const, settled: true, agreedPrice: 1200, quote: { pages: 3, features: [], price: 1200, days: 14, depositPct: 0 } };
+      const project = { ...createProject(deal, biz, 1), status: 'in_progress' as const };
+      const dev = person('v1', 'developer');
+      dev.assignedProjectId = project.id;
+      useGame.setState({ businesses: [biz, ...s.businesses.slice(1)], deals: [deal], projects: [project], employees: [dev], claude: plan });
+      useGame.getState().wait(60);
+      return useGame.getState().projects[0].tasks.find((t) => t.skill === 'development')!.done;
+    };
+    const plain = progress('none');
+    const boosted = progress('enterprise');
+    expect(plain).toBeGreaterThan(0);
+    expect(boosted / plain).toBeCloseTo(1.5, 1);
+  });
+});

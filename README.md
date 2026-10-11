@@ -146,8 +146,9 @@ In the **Office** tab you can subscribe to Claude. It is charged every evening, 
 | --- | --- | --- |
 | Claude Pro | $20/day | You build sites 50% faster. You still test for bugs yourself. |
 | Claude Max | $45/day | You build 75% faster, and a bug test takes 30 min instead of an hour. |
+| Claude Enterprise | $40/day per developer (you count as one, minimum 3 seats) | Everything in Max for you, and every developer on your team builds 50% faster. |
 
-It only speeds up your own work, not your team's. The prices are explained in `src/game/claude.ts`.
+Pro and Max only speed up your own work. The prices are explained in `src/game/claude.ts`.
 
 ## Look and feel
 

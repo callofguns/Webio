@@ -12,6 +12,13 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Claude Enterprise',
+    notes: [
+      'New Claude Enterprise plan in the Office tab: $40 a day for every developer on your team, and you count as one (minimum 3 seats).',
+      'You get everything in Max, and every developer on your team builds 50% faster.',
+    ],
+  },
+  {
     title: 'Latest changes',
     notes: [
       'Many more business names: thousands of different ones, and new businesses never repeat a name you already have.',
