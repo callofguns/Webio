@@ -173,6 +173,21 @@ describe('deals', () => {
     expect(retainerWins).toBeLessThan(buyoutWins);
   });
 
+  it('text conversations vary a lot and never show a placeholder', () => {
+    const rand = seeded(21);
+    const lines = new Set<string>();
+    for (let i = 0; i < 400; i++) {
+      const biz = generateBusiness(rand);
+      const d = askEverything(createDeal(biz, 60, START, rand), biz, rand);
+      const sent = sendQuote(d, biz, { ...fairQuote(d, 0.9, biz), plan: 'either' }, ctxAt(afterReplies(d)), rand);
+      for (const m of sent.messages) {
+        expect(m.text).not.toMatch(/[{}]/);
+        if (m.from === 'them') lines.add(m.text.replace(/\$[\d,–$]+/g, '$X'));
+      }
+    }
+    expect(lines.size).toBeGreaterThan(60);
+  });
+
   it('replies never land in the middle of the night', () => {
     const rand = seeded(4);
     for (let i = 0; i < 200; i++) {

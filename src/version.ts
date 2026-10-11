@@ -12,6 +12,13 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Latest changes',
+    notes: [
+      'Many more business names: thousands of different ones, and new businesses never repeat a name you already have.',
+      'Conversations are more varied: clients answer your questions, react to quotes and negotiate in many different ways, depending on their mood. Rushed owners now sound like their job, and friendly owners greet you for the time of day.',
+    ],
+  },
+  {
     title: 'v1.0.1',
     notes: [
       'Messages can be filtered: All, Pending (waiting on you), Waiting (for a reply), Signed and Lost. The filter you pick is remembered.',

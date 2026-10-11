@@ -390,7 +390,7 @@ export const useGame = create<Store>()(
               e.today.note = 'Calling businesses';
               if (r.dials === 0) {
                 // Nobody left to call, so they look for more businesses.
-                businesses = [...businesses, ...generateBusinesses(2)];
+                businesses = [...businesses, ...generateBusinesses(2, Math.random, businesses)];
                 e.today.note = 'Ran out of businesses to call, so searched the directory';
               }
               for (const lead of r.leads) {
@@ -693,7 +693,7 @@ export const useGame = create<Store>()(
           const s = get();
           if (s.minute + DIRECTORY_SEARCH_MINUTES > DAY_HARD_END || s.activeCall) return;
           spendTime(DIRECTORY_SEARCH_MINUTES);
-          const found = generateBusinesses(DIRECTORY_SEARCH_RESULTS);
+          const found = generateBusinesses(DIRECTORY_SEARCH_RESULTS, Math.random, get().businesses);
           set({ businesses: [...get().businesses, ...found] });
           log(`Found ${found.length} new businesses in the local directory.`);
         },
@@ -701,7 +701,7 @@ export const useGame = create<Store>()(
         buyLeadList: () => {
           const s = get();
           if (s.money < LEAD_LIST_COST || s.activeCall) return;
-          const found = generateBusinesses(LEAD_LIST_SIZE);
+          const found = generateBusinesses(LEAD_LIST_SIZE, Math.random, s.businesses);
           set({
             money: s.money - LEAD_LIST_COST,
             businesses: [...s.businesses, ...found],

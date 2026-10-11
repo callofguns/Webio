@@ -82,6 +82,7 @@ describe('cold calls', () => {
       calls++;
       const them = call.lines.filter((l) => l.speaker === 'them').map((l) => l.text);
       for (const l of call.lines) expect(l.text).not.toContain('\u2014');
+      for (const l of call.lines) expect(l.text).not.toMatch(/[{}]/);
       // Nobody says the exact same thing twice in one call.
       expect(new Set(them).size).toBe(them.length);
       for (const t of them) {

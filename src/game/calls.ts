@@ -10,7 +10,7 @@
 // These functions never change their inputs. They return a new CallState,
 // which keeps the logic easy to test.
 
-import type { Business, Temperament } from './types';
+import type { Business, Industry, Temperament } from './types';
 import { chance, clamp, pick, randInt, shuffle, uid, weighted, type Rand, defaultRand } from './rng';
 import { pickupMultiplier } from './time';
 import { SILENCE_INTEREST_LOSS } from './balance';
@@ -160,6 +160,20 @@ const GREETINGS: Record<Temperament, string[]> = {
   ],
 };
 
+/** What a rushed owner says, depending on what they do all day. */
+const INDUSTRY_BUSY: Record<Industry, string[]> = {
+  plumbing: ['{first} here, I’m halfway under a sink. Make it quick.', '{biz}. Sorry, I’m on a job site, what’s up?'],
+  restaurant: ['{biz}, {first} speaking. We’re mid-lunch rush, so make it fast.', 'Yeah, {first}. The kitchen is going crazy, what do you need?'],
+  salon: ['{biz}, {first} here. I’ve got someone in the chair, so quick please.', 'Hi, {first} speaking. I’m in the middle of a color, can you be quick?'],
+  dentist: ['{biz}, {first} speaking. I’ve got a patient waiting, so just a moment.', 'Yes? I’m between appointments, you’ve got about a minute.'],
+  landscaping: ['{first} here, I’m out on a mower. Hold on... okay, go ahead, quickly.', '{biz}. We’re out on a job, so make it quick.'],
+  auto: ['{biz}, {first}. I’ve got a car up on the lift, so make it quick.', 'Yeah, {first} here. Hands full of grease, what do you need?'],
+  bakery: ['{biz}, {first} speaking. I’ve got a tray coming out of the oven, so quickly.', 'Hi, {first}. The morning line is out the door, what’s up?'],
+  fitness: ['{biz}, {first} here. I’ve got a class starting in two minutes.', 'Yeah, {first} speaking. I’m on the floor with a client, make it quick.'],
+  law: ['{biz}, {first} speaking. I’m due in a meeting, so briefly please.', 'Yes, {first} here. I’m between calls with a client, what is it?'],
+  realestate: ['{first} here, I’m on my way to a showing. Quick, what’s up?', '{biz}, {first} speaking. I’ve got a client waiting, so briefly.'],
+};
+
 const CALLBACK_GREETINGS = [
   '{first} here. Oh, you’re the web person, right? Go ahead.',
   'Hey, {first} here. You said you’d call back. What have you got?',
@@ -197,9 +211,16 @@ function basePatience(t: Temperament): number {
 }
 
 function ownerPicksUp(call: CallState, biz: Business, ctx: CallContext, rand: Rand, greetingOverride?: string): CallState {
-  const greeting =
-    greetingOverride ??
-    fill(pick(GREETINGS[biz.temperament], rand), { biz: biz.name, first: firstName(biz.ownerName) });
+  const vars = { biz: biz.name, first: firstName(biz.ownerName) };
+  const partOfDay = ctx.minute < 12 * 60 ? 'morning' : ctx.minute < 17 * 60 ? 'afternoon' : 'evening';
+  let options = GREETINGS[biz.temperament];
+  // Friendly owners often greet you for the time of day. Rushed ones sound like their job.
+  if (biz.temperament === 'friendly') {
+    options = [...options, `Good ${partOfDay}, {biz}, this is {first}! How can I help?`, `Good ${partOfDay}! {biz}, {first} speaking.`];
+  } else if (biz.temperament === 'busy') {
+    options = [...options, ...INDUSTRY_BUSY[biz.industry], ...INDUSTRY_BUSY[biz.industry]];
+  }
+  const greeting = greetingOverride ?? fill(pick(options, rand), vars);
   return withLines(
     {
       ...call,
