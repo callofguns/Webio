@@ -15,6 +15,8 @@ import { useListScroll } from '../useListScroll';
 import { Tabs } from '../components/Tabs';
 
 type Filter = 'all' | DealStatus;
+/** The filter you last picked. It survives tapping the tab again, which rebuilds the screen. */
+let rememberedFilter: Filter = 'all';
 const ORDER: Record<DealStatus, number> = { your_turn: 0, waiting: 1, won: 2, lost: 3 };
 
 export function MessagesScreen() {
@@ -29,7 +31,7 @@ export function MessagesScreen() {
     const byStatus = ORDER[dealStatus(a, now)] - ORDER[dealStatus(b, now)];
     return byStatus || unreadCount(b, now) - unreadCount(a, now);
   });
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<Filter>(rememberedFilter);
   const count = (f: Filter) => (f === 'all' ? deals.length : deals.filter((d) => dealStatus(d, now) === f).length);
   const shown = filter === 'all' ? sorted : sorted.filter((d) => dealStatus(d, now) === filter);
   // On a big screen, open the top conversation. On a phone, start on the list.
@@ -90,6 +92,7 @@ export function MessagesScreen() {
           id="msg-filter"
           value={filter}
           onChange={(f) => {
+            rememberedFilter = f;
             setFilter(f);
             setSelectedId(null);
           }}
