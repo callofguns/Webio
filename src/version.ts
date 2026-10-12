@@ -12,6 +12,10 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Latest changes',
+    notes: ['The menu icons wiggle when you tap them on a phone or tablet, not only when you hover with a mouse. The settings gear spins when you press it too.'],
+  },
+  {
     title: 'v1.2.0 · Big League',
     notes: [
       'Big companies and chains start taking your calls once you have reputation 25 and a small office or bigger. Look for the Big client tag on your call list. The Dashboard shows how close you are.',

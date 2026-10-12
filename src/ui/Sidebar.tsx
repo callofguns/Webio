@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { motion } from 'motion/react';
+import { motion, useAnimationControls } from 'motion/react';
 import { useGame } from '../game/store';
 import { dealStatus, toGameTime } from '../game/deals';
 import { Icon, type IconName } from './components/Icon';
@@ -46,33 +46,40 @@ export function Sidebar({ current, onChange }: { current: ScreenId; onChange: (s
         </div>
       </div>
       {ITEMS.map((item) => (
-        <motion.button
-          key={item.id}
-          className={`nav-item ${current === item.id ? 'active' : ''}`}
-          style={{ '--hue-item': SECTION_COLOR[item.id] } as CSSProperties}
-          onClick={() => onChange(item.id)}
-          aria-current={current === item.id ? 'page' : undefined}
-          whileHover="wiggle"
-          whileTap={{ scale: 0.96 }}
-        >
-          {current === item.id && <motion.div layoutId="nav-pill" className="nav-bg frame-sel" transition={spring} />}
-          <motion.span
-            className="nav-icon"
-            variants={{ wiggle: { rotate: [0, -12, 9, -4, 0], transition: { duration: 0.5 } } }}
-          >
-            <Icon name={item.icon} />
-          </motion.span>
-          <span className="nav-label">{item.label}</span>
-          <span className="nav-short">{item.short ?? item.label}</span>
-          {counts[item.id] ? (
-            <motion.span key={counts[item.id]} className="count" initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 600, damping: 14 }}>
-              {counts[item.id]}
-            </motion.span>
-          ) : (
-            item.soon && <span className="soon">Soon</span>
-          )}
-        </motion.button>
+        <NavItem key={item.id} item={item} active={current === item.id} count={counts[item.id]} onChange={onChange} />
       ))}
     </nav>
+  );
+}
+
+const wiggle = { rotate: [0, -12, 9, -4, 0], transition: { duration: 0.5 } };
+
+function NavItem({ item, active, count, onChange }: { item: (typeof ITEMS)[number]; active: boolean; count?: number; onChange: (s: ScreenId) => void }) {
+  // Phones can't hover, so the icon wiggles when you tap it too.
+  const icon = useAnimationControls();
+  return (
+    <motion.button
+      className={`nav-item ${active ? 'active' : ''}`}
+      style={{ '--hue-item': SECTION_COLOR[item.id] } as CSSProperties}
+      onClick={() => onChange(item.id)}
+      onHoverStart={() => icon.start(wiggle)}
+      onTapStart={() => icon.start(wiggle)}
+      aria-current={active ? 'page' : undefined}
+      whileTap={{ scale: 0.96 }}
+    >
+      {active && <motion.div layoutId="nav-pill" className="nav-bg frame-sel" transition={spring} />}
+      <motion.span className="nav-icon" animate={icon}>
+        <Icon name={item.icon} />
+      </motion.span>
+      <span className="nav-label">{item.label}</span>
+      <span className="nav-short">{item.short ?? item.label}</span>
+      {count ? (
+        <motion.span key={count} className="count" initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 600, damping: 14 }}>
+          {count}
+        </motion.span>
+      ) : (
+        item.soon && <span className="soon">Soon</span>
+      )}
+    </motion.button>
   );
 }
