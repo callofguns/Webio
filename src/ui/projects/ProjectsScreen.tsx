@@ -10,6 +10,7 @@ import { Tabs } from '../components/Tabs';
 import { money } from '../components/AnimatedNumber';
 import { fadeUp, softSpring, spring } from '../motion';
 import { ProjectDetail } from './ProjectDetail';
+import { WorkerChips } from './WorkerChips';
 import { useListScroll } from '../useListScroll';
 
 export const STATUS_LABEL: Record<Project['status'], { text: string; tone: string }> = {
@@ -104,6 +105,7 @@ export function ProjectsScreen() {
                       <h2>{biz.name}</h2>
                       <span className={`badge ${status.tone}`}>{status.text}</span>
                     </div>
+                    {p.status !== 'delivered' && <WorkerChips projectId={p.id} showEmpty={p.status === 'in_progress'} />}
                     <div className="chip-list">
                       <span className="badge">{p.pages} pages</span>
                       {p.features.map((f) => (

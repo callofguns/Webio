@@ -10,6 +10,7 @@ import { DesignPanel } from './DesignPanel';
 import { BuildPanel } from './BuildPanel';
 import { SitePreview } from './SitePreview';
 import { Stars } from './ProjectsScreen';
+import { WorkerChips } from './WorkerChips';
 import { useIsMobile } from '../useIsMobile';
 
 const STEPS: { status: Project['status']; label: string }[] = [
@@ -68,6 +69,7 @@ export function ProjectDetail({ project, onBack }: { project: Project; onBack: (
         </div>
         <Steps status={project.status} />
       </div>
+      {project.status !== 'delivered' && <WorkerChips projectId={project.id} />}
 
       <div className="project-layout">
         <div className="stack" style={{ gap: 16 }}>

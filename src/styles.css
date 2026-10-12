@@ -943,3 +943,16 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
   .course-row { flex-wrap: wrap; }
   .course-row .btn { width: 100%; align-self: stretch; }
 }
+
+/* ---- Who's working on a project ---- */
+.worker-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.worker-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; font-size: 12px; font-weight: 600;
+}
+.worker-chip em { font-style: normal; font-weight: 500; color: var(--text-3); }
+.worker-chip .avatar { font-size: 11px; }
+.worker-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); opacity: 0.45; }
+.worker-chip.busy .dot { background: var(--good); opacity: 1; animation: worker-pulse 1.4s ease-in-out infinite; }
+@keyframes worker-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 55%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
+@media (prefers-reduced-motion: reduce) { .worker-chip.busy .dot { animation: none; } }

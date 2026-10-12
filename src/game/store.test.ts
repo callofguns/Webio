@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { callBlocker, useGame } from './store';
 import { DAILY_LIVING_COST, RESEARCH_MINUTES, START_MONEY, WORKDAY_START } from './balance';
 import { createDeal, toGameTime } from './deals';
-import { allTasksDone, createProject, designFit, isDefaultDesign } from './projects';
+import { allTasksDone, createProject, designFit, isDefaultDesign, MAX_POLISH } from './projects';
 import { CLAUDE_PLANS } from './claude';
 import { COURSES } from './training';
 import { pipelineCap } from './closer';
@@ -405,7 +405,6 @@ describe('designers and developers find their own work', () => {
     useGame.setState({ employees: [person('d1', 'designer')] });
     useGame.getState().wait(60);
     const e = useGame.getState().employees[0];
-    expect(e.assignedProjectId).toBeNull();
     // Their hour went on asking the client about style, not on building.
     expect(e.today.note).toMatch(/style/i);
     expect(useGame.getState().projects.find((p) => p.id === a.id)!.tasks.every((t) => t.done === 0)).toBe(true);
@@ -452,8 +451,7 @@ describe('designers and developers find their own work', () => {
     expect(useGame.getState().employees[0].assignedProjectId).toBe(b.id);
   });
 
-  it('a developer with no started projects waits', () => {
-    twoProjects([false, false]);
+  it('a developer with nothing to do says so', () => {
     useGame.setState({ employees: [person('v1', 'developer')] });
     useGame.getState().wait(60);
     const e = useGame.getState().employees[0];
@@ -770,5 +768,116 @@ describe('Claude Enterprise', () => {
     const boosted = progress('enterprise');
     expect(plain).toBeGreaterThan(0);
     expect(boosted / plain).toBeCloseTo(1.5, 1);
+  });
+});
+
+describe('employees keep themselves busy', () => {
+  const person = (id: string, role: 'designer' | 'developer', extra: Record<string, unknown> = {}) => ({
+    id,
+    name: `Person ${id}`,
+    role,
+    level: 2,
+    xp: 0,
+    pay: 100,
+    traits: [],
+    knownTraits: [],
+    morale: 90,
+    hiredDay: 1,
+    assignedProjectId: null as string | null,
+    carryMinutes: 0,
+    lowMoraleDays: 0,
+    today: { dials: 0, leads: 0, hours: 0, note: '' },
+    ...extra,
+  });
+
+  /** Two client sites ready to work on. `built` makes the first one fully built. */
+  function sites(opts: { started?: boolean; built?: boolean } = {}) {
+    const { started = true, built = false } = opts;
+    const s = useGame.getState();
+    const bizList = s.businesses.slice(0, 2).map((b) => ({ ...b, status: 'client' as const }));
+    const make = (i: number, due: number) => {
+      const deal = { ...createDeal(bizList[i], 80, toGameTime(1, 600)), stage: 'won' as const, settled: true, agreedPrice: 1200, quote: { pages: 3, features: [], price: 1200, days: due, depositPct: 0 } };
+      return { deal, project: { ...createProject(deal, bizList[i], 1), status: started ? ('in_progress' as const) : ('not_started' as const) } };
+    };
+    const a = make(0, 10);
+    const b = make(1, 20);
+    if (built) a.project = { ...a.project, tasks: a.project.tasks.map((t) => ({ ...t, done: t.hours, quality: 70 })) };
+    useGame.setState({ businesses: [...bizList, ...s.businesses.slice(2)], deals: [a.deal, b.deal], projects: [a.project, b.project] });
+    return [a.project, b.project];
+  }
+
+  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+
+  it('people who picked their own project spread out when it gets crowded', () => {
+    const [a, b] = sites();
+    useGame.setState({
+      employees: [person('v1', 'developer', { assignedProjectId: a.id, autoAssigned: true }), person('v2', 'developer', { assignedProjectId: a.id, autoAssigned: true })],
+    });
+    useGame.getState().wait(60);
+    const ids = useGame.getState().employees.map((e) => e.assignedProjectId);
+    expect(new Set(ids)).toEqual(new Set([a.id, b.id]));
+  });
+
+  it('but someone you assigned by hand stays put', () => {
+    const [a] = sites();
+    useGame.setState({
+      employees: [person('v1', 'developer', { assignedProjectId: a.id, autoAssigned: false }), person('v2', 'developer', { assignedProjectId: a.id, autoAssigned: false })],
+    });
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees.every((e) => e.assignedProjectId === a.id)).toBe(true);
+  });
+
+  it('developers test a built site, then fix the bugs they find', () => {
+    const [a] = sites({ built: true });
+    useGame.setState({ projects: [{ ...a, hiddenBugs: 4 }, { ...useGame.getState().projects[1], status: 'review' as const }], employees: [person('v1', 'developer')] });
+    for (let i = 0; i < 6; i++) useGame.getState().wait(60);
+    const p = useGame.getState().projects[0];
+    expect(p.autoTests).toBeGreaterThanOrEqual(1);
+    // Bugs they found get fixed, and fewer are left hiding than before.
+    expect(p.hiddenBugs + p.foundBugs).toBeLessThan(4);
+    expect(useGame.getState().employees[0].assignedProjectId).toBe(a.id);
+  });
+
+  it('designers polish a built site up to the limit', () => {
+    const [a] = sites({ built: true });
+    useGame.setState({ projects: [a, { ...useGame.getState().projects[1], status: 'review' as const }], employees: [person('d1', 'designer', { assignedProjectId: a.id })] });
+    for (let i = 0; i < 8; i++) {
+      if (useGame.getState().minute >= 17 * 60) useGame.getState().endDay();
+      else useGame.getState().wait(60);
+    }
+    expect(useGame.getState().projects[0].polish).toBe(MAX_POLISH);
+  });
+
+  it('you are told when a site is built, tested and polished', () => {
+    const [a] = sites({ built: true });
+    useGame.setState({
+      projects: [{ ...a, hiddenBugs: 0, polish: MAX_POLISH - 1, autoTests: 1 }, { ...useGame.getState().projects[1], status: 'review' as const }],
+      employees: [person('d1', 'designer', { assignedProjectId: a.id }), person('v1', 'developer', { assignedProjectId: a.id })],
+    });
+    for (let i = 0; i < 4; i++) useGame.getState().wait(60);
+    expect(useGame.getState().log.some((l) => l.text.includes('built, tested and polished'))).toBe(true);
+  });
+
+  it('with no designer, a developer starts new projects with the starting design', () => {
+    sites({ started: false });
+    useGame.setState({ employees: [person('v1', 'developer')] });
+    useGame.getState().wait(60);
+    expect(useGame.getState().projects[0].status).toBe('in_progress');
+    expect(useGame.getState().employees[0].assignedProjectId).toBe(useGame.getState().projects[0].id);
+  });
+
+  it('with a designer on the team, developers leave the planning to them', () => {
+    sites({ started: false });
+    useGame.setState({ employees: [person('v1', 'developer'), person('d1', 'designer')] });
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees[0].today.note).toMatch(/planned/i);
+    expect(useGame.getState().projects[0].status).toBe('not_started');
+  });
+
+  it('a designer planning a project shows as being on it', () => {
+    const [a] = sites({ started: false });
+    useGame.setState({ employees: [person('d1', 'designer')] });
+    useGame.getState().wait(60);
+    expect(useGame.getState().employees[0].assignedProjectId).toBe(a.id);
   });
 });

@@ -60,6 +60,7 @@ import {
   evaluateSite,
   findWork,
   fixBugs,
+  AUTO_TESTS,
   hasWorkLeft,
   isDefaultDesign,
   MAX_POLISH,
@@ -450,7 +451,25 @@ export const useGame = create<Store>()(
                     messages.push([`${e.name} planned ${name}'s site and started the project.`, 'good']);
                     gainXp(10);
                   }
+                  e.assignedProjectId = toPlan.id;
+                  e.autoAssigned = true;
                   e.today.hours += 1;
+                  continue;
+                }
+              }
+
+              // With no designer on the team, developers start new projects with the starting design.
+              if (e.role === 'developer' && !s.employees.some((x) => x.role === 'designer')) {
+                const toStart = projects.find((p) => p.status === 'not_started' && isDefaultDesign(p.design));
+                if (toStart) {
+                  const name = businesses.find((b) => b.id === toStart.businessId)?.name ?? 'a project';
+                  projects = projects.map((p) => (p.id === toStart.id ? { ...p, status: 'in_progress' as const } : p));
+                  e.today.note = `Started ${name}'s project`;
+                  e.assignedProjectId = toStart.id;
+                  e.autoAssigned = true;
+                  e.today.hours += 1;
+                  messages.push([`${e.name} started ${name}'s project, since there's no designer to plan it.`, 'neutral']);
+                  gainXp(4);
                   continue;
                 }
               }
@@ -458,16 +477,61 @@ export const useGame = create<Store>()(
               let project = projects.find((p) => p.id === e.assignedProjectId);
               // Designers and developers look for work of their own kind when they have none.
               const skill = e.role === 'designer' ? 'design' : 'development';
+              const crowd = crowds[e.role === 'designer' ? 'designer' : 'developer'];
+              // Someone who picked their own project helps out elsewhere if it's much more crowded than another one.
+              if (project && e.autoAssigned && hasWorkLeft(project, skill)) {
+                const other = findWork(projects, skill, crowd);
+                if (other && other.id !== project.id && (crowd.get(project.id) ?? 0) >= (crowd.get(other.id) ?? 0) + 2) {
+                  crowd.set(project.id, (crowd.get(project.id) ?? 1) - 1);
+                  crowd.set(other.id, (crowd.get(other.id) ?? 0) + 1);
+                  project = other;
+                  e.assignedProjectId = other.id;
+                  const name = businesses.find((b) => b.id === other.businessId)?.name ?? 'a project';
+                  messages.push([`${e.name} moved over to help with ${name}.`, 'neutral']);
+                }
+              }
               if (!(project && hasWorkLeft(project, skill))) {
-                const crowd = crowds[e.role === 'designer' ? 'designer' : 'developer'];
                 const found = findWork(projects, skill, crowd);
                 if (found && found.id !== project?.id) {
                   if (project) crowd.set(project.id, Math.max(0, (crowd.get(project.id) ?? 1) - 1));
                   crowd.set(found.id, (crowd.get(found.id) ?? 0) + 1);
                   project = found;
                   e.assignedProjectId = found.id;
+                  e.autoAssigned = true;
                   const name = businesses.find((b) => b.id === found.businessId)?.name ?? 'a project';
                   messages.push([`${e.name} found ${skill} work to do on ${name} and got started.`, 'neutral']);
+                }
+              }
+              // Nothing left to build: help finish what's already built. Developers test and fix
+              // bugs, designers polish.
+              if (!(project && hasWorkLeft(project, skill))) {
+                const needsFinishing = (p: Project) =>
+                  p.status === 'in_progress' && allTasksDone(p) && (e.role === 'developer' ? p.foundBugs > 0 || (p.autoTests ?? 0) < AUTO_TESTS : p.polish < MAX_POLISH);
+                const mine = projects.find((p) => p.id === e.assignedProjectId);
+                const target = mine && needsFinishing(mine) ? mine : projects.find(needsFinishing);
+                if (target) {
+                  const name = businesses.find((b) => b.id === target.businessId)?.name ?? 'a project';
+                  let next: Project;
+                  if (e.role === 'developer') {
+                    if (target.foundBugs > 0) {
+                      next = fixBugs(target, 60).project;
+                      e.today.note = `Fixing bugs on ${name}`;
+                    } else {
+                      next = { ...testSite(target, e.level).project, autoTests: (target.autoTests ?? 0) + 1 };
+                      e.today.note = `Testing ${name}'s site for bugs`;
+                    }
+                  } else {
+                    next = polishSite(target);
+                    e.today.note = `Polishing ${name}'s site`;
+                  }
+                  const ready = (p: Project) => allTasksDone(p) && p.polish >= MAX_POLISH && p.foundBugs === 0 && (p.autoTests ?? 0) >= AUTO_TESTS;
+                  if (!ready(target) && ready(next)) messages.push([`${name}'s site is built, tested and polished. You can send it to the client from Projects.`, 'good']);
+                  projects = projects.map((p) => (p.id === target.id ? next : p));
+                  e.assignedProjectId = target.id;
+                  e.autoAssigned = true;
+                  e.today.hours += 1;
+                  gainXp(6);
+                  continue;
                 }
               }
               if (!project) {
@@ -957,7 +1021,7 @@ export const useGame = create<Store>()(
         rejectApplicant: (applicantId) => set({ applicants: get().applicants.filter((x) => x.id !== applicantId) }),
 
         assignEmployee: (employeeId, projectId) => {
-          set({ employees: get().employees.map((e) => (e.id === employeeId ? { ...e, assignedProjectId: projectId } : e)) });
+          set({ employees: get().employees.map((e) => (e.id === employeeId ? { ...e, assignedProjectId: projectId, autoAssigned: false } : e)) });
         },
 
         giveBonus: (employeeId) => {

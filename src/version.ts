@@ -12,6 +12,15 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Teamwork on projects',
+    notes: [
+      'Project cards (and the project page) now show who on your team is working on them, with a green dot while they are at it.',
+      'Employees find work more reliably: people spread out between projects instead of piling onto one.',
+      'When a site is fully built, developers test it and fix bugs, and designers polish it, then you are told it is ready to send to the client.',
+      'With no designer on the team, developers start new projects themselves.',
+    ],
+  },
+  {
     title: 'Claude Enterprise',
     notes: [
       'New Claude Enterprise plan in the Office tab: $40 a day for every developer on your team, and you count as one (minimum 3 seats).',

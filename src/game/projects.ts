@@ -138,6 +138,8 @@ export function siteQuality(p: Project): number {
 }
 
 export const MAX_POLISH = 4;
+/** How many rounds of bug testing a developer does on a finished site before calling it tested. */
+export const AUTO_TESTS = 2;
 
 // ---------------------------------------------------------------------------
 // Design fit

@@ -225,6 +225,8 @@ export interface Project {
   plan?: PricePlan;
   /** Monthly payments, once a retainer site goes live. */
   retainer?: { monthly: number; nextBillDay: number; paid: number; months: number };
+  /** Rounds of bug testing your developers have done on their own. */
+  autoTests?: number;
 
   // --- Part 3: building ---
   design: Design;
@@ -313,6 +315,8 @@ export interface Employee {
   hiredDay: number;
   /** Designers and developers work on this project. */
   assignedProjectId: string | null;
+  /** True when they picked this project themselves, so they can move on or help elsewhere. */
+  autoAssigned?: boolean;
   /** Work time that hasn't added up to a full hour yet. */
   carryMinutes: number;
   /** A course they're on. They don't work until it's done. */
