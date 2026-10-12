@@ -14,6 +14,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
   {
     title: 'Latest changes',
     notes: [
+      'Random events: about once a week, something unexpected happens at the start of a day and you decide what to do. A client’s site goes viral (free referral leads and reputation), an employee calls in sick (let them rest or have them work from home), a rival agency undercuts one of your deals (match their price or hold firm), or a monthly client’s site goes down (fix it now or leave it).',
       'New quotes start on "Client picks" for how they pay, so the client chooses between buying the site outright and the monthly plan. You can still change it.',
       'Give someone a day off from their card on the Team screen. Paid: you still pay them and morale goes up 20. Unpaid: you save their wage and morale goes up 12. One day off per person a week.',
       'Every salesperson now does the texting after the call: they ask what the client needs, send the quote, negotiate and sign the deal. Better salespeople win more deals (about 30% at level 1, 60% at level 3, 90% at level 5), so training them pays off.',
@@ -132,6 +133,6 @@ export const UPDATE_LOG: ChangeEntry[] = [
 export const UPCOMING: ChangeEntry[] = [
   {
     title: 'Coming up',
-    notes: ['Random events: viral clients, sick days, rival agencies.', 'Goals and milestones with rewards.', 'More office upgrades and team roles.', 'Sound effects.'],
+    notes: ['Goals and milestones with rewards.', 'More random events.', 'More office upgrades and team roles.', 'Sound effects.'],
   },
 ];

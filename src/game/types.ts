@@ -3,6 +3,7 @@ import type { ClaudePlan } from './claude';
 import type { PricePlan, QuotePlan } from './pricing';
 import type { CourseId } from './training';
 import type { FurnitureId, OfficeId } from './office';
+import type { GameEvent } from './events';
 
 // Core data shapes for the whole game. Everything saved to the player's
 // browser is built out of these types.
@@ -336,6 +337,8 @@ export interface Employee {
   dayOff?: { day: number; paid: boolean };
   /** The day of their last day off. */
   lastDayOff?: number;
+  /** Off sick (a random event): resting, or working from home at half speed. */
+  sick?: { day: number; mode: 'rest' | 'wfh' };
   lowMoraleDays: number;
   /** What they did today, for the Team screen. */
   today: { dials: number; leads: number; hours: number; note: string };
@@ -368,6 +371,10 @@ export interface GameState {
   lastCourseDay: number;
   /** True once big companies have started taking your calls. */
   bigClients?: boolean;
+  /** A random event waiting for you to decide what to do. */
+  event?: GameEvent | null;
+  /** The day the last random event happened. */
+  lastEventDay?: number;
   log: LogEntry[];
   today: DayStats;
   lifetime: DayStats;

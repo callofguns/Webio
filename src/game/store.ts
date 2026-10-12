@@ -38,6 +38,7 @@ import {
 import { generateBusinesses } from './businesses';
 import { bigChance, bigClientsOpen, comebackDay, returnDeal } from './bigclients';
 import { dayOffBlocker, dayOffDate, dayOffMorale } from './dayoff';
+import { cancelsAfterOutage, OUTAGE_FIX_HOURS, rollEvent, sickHourWorks, VIRAL_LEADS } from './events';
 import { chooseOption, startCall, timeoutCall, type CallContext, type CallState } from './calls';
 import {
   createDeal,
@@ -187,6 +188,8 @@ interface Store extends GameState {
   giveBonus: (employeeId: string) => void;
   /** Give someone the day off (today if work hasn't started, otherwise the next workday). */
   giveDayOff: (employeeId: string, paid: boolean) => void;
+  /** Answer the random event that popped up today. */
+  resolveEvent: (choice: string) => void;
   fireEmployee: (employeeId: string) => void;
   // Office (part 5)
   moveOffice: (to: OfficeId) => void;
@@ -410,6 +413,11 @@ export const useGame = create<Store>()(
             // Someone with the day off doesn't work.
             if (e.dayOff?.day === s.day) {
               e.today.note = e.dayOff.paid ? 'Day off (paid)' : 'Day off (unpaid)';
+              continue;
+            }
+            // Off sick: resting, or working from home for about half the hours.
+            if (e.sick?.day === s.day && (e.sick.mode === 'rest' || !sickHourWorks())) {
+              e.today.note = e.sick.mode === 'rest' ? 'Off sick, resting' : 'Sick, working from home';
               continue;
             }
             // Someone on a course learns instead of working.
@@ -665,7 +673,7 @@ export const useGame = create<Store>()(
             employees = employees.map((e) => ({ ...e, morale: Math.max(0, e.morale - 25) }));
           }
         }
-        employees = employees.map((e) => ({ ...e, carryMinutes: 0, today: { dials: 0, leads: 0, hours: 0, note: '' } }));
+        employees = employees.map((e) => ({ ...e, carryMinutes: 0, sick: undefined, today: { dials: 0, leads: 0, hours: 0, note: '' } }));
 
         const jobPosts = s.jobPosts.filter((p) => p.endsDay >= nextDay);
         const expiredPosts = s.jobPosts.length - jobPosts.length;
@@ -1086,6 +1094,88 @@ export const useGame = create<Store>()(
           log(`${e.name} has ${day === s.day ? 'today' : `Day ${day}`} off${paid ? ', paid' : ', unpaid'}.`);
         },
 
+        resolveEvent: (choice) => {
+          const s = get();
+          const ev = s.event;
+          if (!ev) return;
+          set({ event: null });
+          const t = now();
+          const project = s.projects.find((p) => p.id === ev.targetId);
+          const deal = s.deals.find((d) => d.id === ev.targetId);
+          const employee = s.employees.find((e) => e.id === ev.targetId);
+          const biz = s.businesses.find((b) => b.id === (project ?? deal)?.businessId);
+          switch (ev.kind) {
+            case 'viral': {
+              if (!biz) return;
+              // People who saw the site text you about one of their own.
+              const found = generateBusinesses(VIRAL_LEADS, Math.random, s.businesses, bigChance(s.reputation, s.office)).map((b) => ({ ...b, status: 'interested' as const, warmth: 70 }));
+              const deals = found.map((b) => {
+                const d = createDeal(b, 70, t);
+                const intro = textMessage('system', `Referred by ${biz.name}. ${b.ownerName.split(' ')[0]} saw their site and texted you about a website.`, t);
+                return { ...d, messages: [intro] };
+              });
+              set({ reputation: s.reputation + 3, businesses: [...s.businesses, ...found], deals: [...s.deals, ...deals] });
+              log(`${biz.name}\u2019s site went viral! +3 reputation, and ${found.length} businesses texted you about a website.`, 'good');
+              return;
+            }
+            case 'sick': {
+              if (!employee) return;
+              const rest = choice === 'rest';
+              set({
+                employees: s.employees.map((e) =>
+                  e.id === employee.id ? { ...e, sick: { day: s.day, mode: rest ? 'rest' : 'wfh' }, morale: Math.max(0, Math.min(100, e.morale + (rest ? 5 : -10))) } : e,
+                ),
+              });
+              log(rest ? `${employee.name} is resting today. They appreciate it.` : `${employee.name} is working from home today, sick and grumpy.`, rest ? 'neutral' : 'bad');
+              return;
+            }
+            case 'rival': {
+              if (!deal || !biz || deal.stage === 'won' || deal.stage === 'lost') return;
+              const first = biz.ownerName.split(' ')[0];
+              if (choice === 'match') {
+                const budget = Math.round(((deal.budget ?? biz.budget) * 0.85) / 50) * 50;
+                const you = textMessage('you', `Hi ${first}, I heard you got another offer. We\u2019ll make sure our price is competitive.`, t);
+                const them = textMessage('them', pick(['Good to hear! Send me your best price then.', 'Great, I\u2019d rather go with you anyway. What can you do?', 'Okay! Their price was pretty low, just so you know.']), replyTime(t, biz.temperament, Math.random));
+                postToThread(deal.id, you, them);
+                set({ deals: get().deals.map((d) => (d.id === deal.id ? { ...d, budget, warmth: Math.min(100, d.warmth + 10) } : d)) });
+                log(`You promised ${biz.name} a better price than ${ev.rival ?? 'the rival'}. They now expect to pay about 15% less.`);
+              } else {
+                const warmth = deal.warmth - 18;
+                if (warmth < 25) {
+                  const at = replyTime(t, biz.temperament, Math.random);
+                  const them = textMessage('them', pick(['We\u2019ve decided to go with another agency. Thanks anyway.', 'Sorry, the other offer was too good to pass up. Thanks for your time.']), at);
+                  set({ deals: get().deals.map((d) => (d.id === deal.id ? { ...d, warmth, stage: 'lost', closedAt: at, messages: [...d.messages, them] } : d)) });
+                  log(`${biz.name} went with ${ev.rival ?? 'a rival agency'}.`, 'bad');
+                } else {
+                  const them = textMessage('them', pick(['Okay. Their offer is tempting though, so don\u2019t take too long.', 'Fair enough. I\u2019ll think about it.']), replyTime(t, biz.temperament, Math.random));
+                  set({ deals: get().deals.map((d) => (d.id === deal.id ? { ...d, warmth, messages: [...d.messages, them] } : d)) });
+                  log(`You held firm with ${biz.name}. They cooled off a bit.`);
+                }
+              }
+              return;
+            }
+            case 'outage': {
+              if (!project || !biz) return;
+              if (choice === 'fix') {
+                spendTime(OUTAGE_FIX_HOURS * 60);
+                set({ reputation: get().reputation + 1 });
+                postToThread(project.dealId, textMessage('them', 'It\u2019s back up! Thank you so much for jumping on that.', now()));
+                log(`You fixed ${biz.name}\u2019s site. They\u2019re grateful. +1 reputation.`, 'good');
+              } else if (cancelsAfterOutage()) {
+                updateProject(project.id, (p) => ({ ...p, retainer: undefined }));
+                set({ reputation: Math.max(0, get().reputation - 3) });
+                postToThread(project.dealId, textMessage('them', 'Our site was down all day and nobody helped. We\u2019re cancelling the monthly plan.', t + 240));
+                log(`${biz.name} cancelled their monthly plan after their site stayed down. \u22123 reputation.`, 'bad');
+              } else {
+                set({ reputation: Math.max(0, get().reputation - 2) });
+                postToThread(project.dealId, textMessage('them', 'It came back on its own eventually. Not happy about this, though.', t + 240));
+                log(`${biz.name} is upset their site was down. \u22122 reputation.`, 'bad');
+              }
+              return;
+            }
+          }
+        },
+
         moveOffice: (to) => {
           const s = get();
           if (s.activeCall && s.activeCall.phase !== 'ended') return;
@@ -1222,6 +1312,9 @@ export const useGame = create<Store>()(
           settleProjects();
           collectRetainers();
           welcomeBack();
+          // Now and then, something unexpected happens.
+          const ev = get().event ? null : rollEvent(get());
+          if (ev) set({ event: ev, lastEventDay: ev.day });
           for (const id of returned) {
             const b = get().businesses.find((x) => x.id === id)!;
             log(`${b.name} returned your voicemail! Call back today around ${formatHour(b.callback!.hour)}.`, 'good');

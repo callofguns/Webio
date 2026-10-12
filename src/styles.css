@@ -973,3 +973,8 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
   font-weight: 700;
   vertical-align: 1px;
 }
+
+/* Random event popup. */
+.event-icon { font-size: 40px; line-height: 1; margin-bottom: 10px; display: inline-block; animation: event-pop 0.5s var(--ease, ease-out); }
+@keyframes event-pop { 0% { transform: scale(0.4) rotate(-12deg); opacity: 0; } 70% { transform: scale(1.15) rotate(4deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .event-icon { animation: none; } }

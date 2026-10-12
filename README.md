@@ -121,6 +121,15 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
   Better employees will want to be paid more, so watch their pay
 - Salespeople learn sales, designers learn design, developers learn development
 
+## Random events
+
+About once a week (never in your first few days, and at least 4 days apart), something happens at the start of a day. A popup tells you what, and you choose what to do:
+
+- **A site goes viral**: +3 reputation and 2 referral leads text you
+- **Someone calls in sick**: let them rest (no work, morale +5) or have them work from home (about half the work, morale −10)
+- **A rival agency undercuts a deal**: promise a better price (they stay keen but expect about 15% less) or hold firm (they cool off and might walk away)
+- **A monthly client's site goes down**: fix it now (2 hours of your day, +1 reputation) or leave it (−2 reputation, and a 50% chance they cancel their monthly plan)
+
 ## Days off
 
 Tap **Day off** on an employee's card in the Team screen. Pick a **paid** day off (you still pay them, morale +20) or an **unpaid** one (you save their wage, morale +12). They skip that workday (today if work hasn't started yet, otherwise the next workday). Each person can have one day off a week.

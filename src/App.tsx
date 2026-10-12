@@ -12,6 +12,7 @@ import { MessagesScreen } from './ui/messages/MessagesScreen';
 import { ProjectsScreen } from './ui/projects/ProjectsScreen';
 import { TeamScreen } from './ui/team/TeamScreen';
 import { DaySummary } from './ui/screens/DaySummary';
+import { EventPopup } from './ui/screens/EventPopup';
 import { fadeUp } from './ui/motion';
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
         </AnimatePresence>
       </main>
       <DaySummary />
+      <EventPopup />
     </div>
   );
 }
