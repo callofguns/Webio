@@ -121,6 +121,10 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
   Better employees will want to be paid more, so watch their pay
 - Salespeople learn sales, designers learn design, developers learn development
 
+## Days off
+
+Tap **Day off** on an employee's card in the Team screen. Pick a **paid** day off (you still pay them, morale +20) or an **unpaid** one (you save their wage, morale +12). They skip that workday (today if work hasn't started yet, otherwise the next workday). Each person can have one day off a week.
+
 ## Sales closers
 
 Every sales caller doesn't just bring in a lead. They carry on by text themselves: say hello, ask what the client needs and their budget, send a quote, negotiate, and sign the deal. A signed deal turns into a project in **Projects** and pays its deposit, with no help from you. You can read the whole conversation in Messages, and it plays out over the following days like a real one.

@@ -332,6 +332,10 @@ export interface Employee {
   carryMinutes: number;
   /** A course they're on. They don't work until it's done. */
   training?: { course: CourseId; hoursLeft: number };
+  /** A day off you gave them. They don't work that day. */
+  dayOff?: { day: number; paid: boolean };
+  /** The day of their last day off. */
+  lastDayOff?: number;
   lowMoraleDays: number;
   /** What they did today, for the Team screen. */
   today: { dials: number; leads: number; hours: number; note: string };

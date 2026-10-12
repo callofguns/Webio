@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { BONUS_AMOUNT, marketPay, ROLES } from '../../game/team';
+import { dayOffBlocker, dayOffDate, PAID_DAY_OFF_MORALE, UNPAID_DAY_OFF_MORALE } from '../../game/dayoff';
 import type { Employee } from '../../game/types';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
@@ -18,8 +19,11 @@ function moraleLabel(m: number): { text: string; tone: string } {
 }
 
 export function EmployeeCard({ e }: { e: Employee }) {
-  const { projects, businesses, day, money: cash, assignEmployee, giveBonus, fireEmployee } = useGame();
+  const { projects, businesses, day, minute, money: cash, assignEmployee, giveBonus, giveDayOff, fireEmployee } = useGame();
   const [confirmFire, setConfirmFire] = useState(false);
+  const [askDayOff, setAskDayOff] = useState(false);
+  const offBlocker = dayOffBlocker(e, day);
+  const offDay = dayOffDate(day, minute);
   const mood = moraleLabel(e.morale);
   const market = marketPay(e.role, e.level);
   // After a week you know what they're really like.
@@ -72,7 +76,17 @@ export function EmployeeCard({ e }: { e: Employee }) {
       </div>
 
       <div className="small" style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '8px 10px' }}>
-        <div className="muted">{e.today.note || ((day - 1) % 7 >= 5 ? 'Off for the weekend' : day - e.hiredDay < 1 ? 'Starts today' : 'Starts at 9 AM')}</div>
+        <div className="muted">
+          {e.today.note ||
+            (e.dayOff?.day === day
+              ? 'Day off today'
+              : (day - 1) % 7 >= 5
+                ? 'Off for the weekend'
+                : day - e.hiredDay < 1
+                  ? 'Starts today'
+                  : 'Starts at 9 AM')}
+        </div>
+        {e.dayOff && e.dayOff.day > day && <div className="faint" style={{ marginTop: 2 }}>Day off on Day {e.dayOff.day} ({e.dayOff.paid ? 'paid' : 'unpaid'})</div>}
         <div className="faint num" style={{ marginTop: 2 }}>
           Today: {e.role === 'sales' ? `${e.today.dials} calls, ${e.today.leads} leads` : `${e.today.hours} hrs of work`}
         </div>
@@ -106,10 +120,49 @@ export function EmployeeCard({ e }: { e: Employee }) {
         <Button size="sm" disabled={cash < BONUS_AMOUNT} onClick={() => giveBonus(e.id)} title="Makes them happier">
           Give {money(BONUS_AMOUNT)} bonus
         </Button>
+        <Button size="sm" disabled={!!offBlocker} onClick={() => setAskDayOff(true)} title={offBlocker ?? 'A day off makes them happier'}>
+          Day off
+        </Button>
         <Button size="sm" variant="ghost" style={{ color: 'var(--bad)' }} onClick={() => setConfirmFire(true)}>
           Let go
         </Button>
       </div>
+
+      {offBlocker && !e.dayOff && <p className="small faint" style={{ marginTop: -4 }}>{offBlocker}</p>}
+
+      <Modal open={askDayOff} onClose={() => setAskDayOff(false)}>
+        <h2>Give {e.name.split(' ')[0]} a day off?</h2>
+        <p className="muted" style={{ marginTop: 8 }}>
+          They won&rsquo;t work {offDay === day ? 'today' : `on Day ${offDay}`} and come back happier. You can give each person one day off a week.
+        </p>
+        <div className="stack" style={{ gap: 10, marginTop: 16 }}>
+          <button
+            className="option"
+            style={{ padding: '12px 14px' }}
+            onClick={() => {
+              setAskDayOff(false);
+              giveDayOff(e.id, true);
+            }}
+          >
+            <span className="o-name" style={{ fontSize: 15 }}>Paid day off</span>
+            <span className="o-sub" style={{ fontSize: 13 }}>You still pay their {money(e.pay)}. Morale +{PAID_DAY_OFF_MORALE}.</span>
+          </button>
+          <button
+            className="option"
+            style={{ padding: '12px 14px' }}
+            onClick={() => {
+              setAskDayOff(false);
+              giveDayOff(e.id, false);
+            }}
+          >
+            <span className="o-name" style={{ fontSize: 15 }}>Unpaid day off</span>
+            <span className="o-sub" style={{ fontSize: 13 }}>You save their {money(e.pay)} wage. Morale +{UNPAID_DAY_OFF_MORALE}.</span>
+          </button>
+        </div>
+        <div className="row" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
+          <Button onClick={() => setAskDayOff(false)}>Cancel</Button>
+        </div>
+      </Modal>
 
       <Modal open={confirmFire} onClose={() => setConfirmFire(false)}>
         <h2>Let {e.name} go?</h2>

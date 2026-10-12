@@ -37,6 +37,7 @@ import {
 } from './balance';
 import { generateBusinesses } from './businesses';
 import { bigChance, bigClientsOpen, comebackDay, returnDeal } from './bigclients';
+import { dayOffBlocker, dayOffDate, dayOffMorale } from './dayoff';
 import { chooseOption, startCall, timeoutCall, type CallContext, type CallState } from './calls';
 import {
   createDeal,
@@ -184,6 +185,8 @@ interface Store extends GameState {
   rejectApplicant: (applicantId: string) => void;
   assignEmployee: (employeeId: string, projectId: string | null) => void;
   giveBonus: (employeeId: string) => void;
+  /** Give someone the day off (today if work hasn't started, otherwise the next workday). */
+  giveDayOff: (employeeId: string, paid: boolean) => void;
   fireEmployee: (employeeId: string) => void;
   // Office (part 5)
   moveOffice: (to: OfficeId) => void;
@@ -404,6 +407,11 @@ export const useGame = create<Store>()(
           };
           while (e.carryMinutes >= 60) {
             e.carryMinutes -= 60;
+            // Someone with the day off doesn't work.
+            if (e.dayOff?.day === s.day) {
+              e.today.note = e.dayOff.paid ? 'Day off (paid)' : 'Day off (unpaid)';
+              continue;
+            }
             // Someone on a course learns instead of working.
             if (e.training) {
               const { course: courseId, hoursLeft } = e.training;
@@ -629,9 +637,16 @@ export const useGame = create<Store>()(
         let payrollDue = s.payrollDue;
         let employees = s.employees;
         const quitters: Employee[] = [];
+        const rested: Employee[] = [];
         if (workday) {
-          payrollDue += employees.reduce((n, e) => n + e.pay, 0);
-          employees = employees.flatMap((e) => {
+          // An unpaid day off isn't paid.
+          payrollDue += employees.reduce((n, e) => n + (e.dayOff?.day === s.day && !e.dayOff.paid ? 0 : e.pay), 0);
+          employees = employees.flatMap((original) => {
+            let e = original;
+            if (e.dayOff?.day === s.day) {
+              rested.push(e);
+              e = { ...e, morale: Math.min(100, e.morale + dayOffMorale(e.dayOff!.paid)), lowMoraleDays: 0, dayOff: undefined };
+            }
             const r = endOfDayMorale(e, Math.random, officeEffects(s.office, s.furniture).morale);
             if (r.quit) {
               quitters.push(e);
@@ -660,6 +675,7 @@ export const useGame = create<Store>()(
 
         set({ employees, payrollDue, jobPosts, applicants: [...staying, ...fresh] });
         for (const q of quitters) log(`${q.name} quit. They weren\u2019t happy here.`, 'bad');
+        for (const r of rested) log(`${r.name} enjoyed their day off and will be back tomorrow feeling refreshed.`, 'good');
         if (payroll) log(`Payday: paid your team $${payroll.toLocaleString()}.`, 'bad');
         if (payroll && s.money - payroll - DAILY_LIVING_COST - OFFICES[s.office].rent - claudeCost(s.claude, developerCount(s.employees)) < 0) log('You couldn\u2019t cover payroll. Your team is upset.', 'bad');
         if (expiredPosts) log(`${expiredPosts} job post${expiredPosts > 1 ? 's' : ''} ended.`);
@@ -1059,6 +1075,15 @@ export const useGame = create<Store>()(
             today: { ...s.today, moneyOut: s.today.moneyOut + BONUS_AMOUNT },
             employees: s.employees.map((e) => (e.id === employeeId ? { ...e, morale: Math.min(100, e.morale + 15), lowMoraleDays: 0 } : e)),
           });
+        },
+
+        giveDayOff: (employeeId, paid) => {
+          const s = get();
+          const e = s.employees.find((x) => x.id === employeeId);
+          if (!e || dayOffBlocker(e, s.day)) return;
+          const day = dayOffDate(s.day, s.minute);
+          set({ employees: s.employees.map((x) => (x.id === employeeId ? { ...x, dayOff: { day, paid }, lastDayOff: day } : x)) });
+          log(`${e.name} has ${day === s.day ? 'today' : `Day ${day}`} off${paid ? ', paid' : ', unpaid'}.`);
         },
 
         moveOffice: (to) => {

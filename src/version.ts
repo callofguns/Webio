@@ -14,6 +14,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
   {
     title: 'Latest changes',
     notes: [
+      'Give someone a day off from their card on the Team screen. Paid: you still pay them and morale goes up 20. Unpaid: you save their wage and morale goes up 12. One day off per person a week.',
       'Every salesperson now does the texting after the call: they ask what the client needs, send the quote, negotiate and sign the deal. Better salespeople win more deals (about 30% at level 1, 60% at level 3, 90% at level 5), so training them pays off.',
       'The menu icons wiggle when you tap them on a phone or tablet, not only when you hover with a mouse. The settings gear spins when you press it too.',
     ],
