@@ -1,8 +1,8 @@
 // The game's version and what's changed in it. The settings menu reads this.
 
-export const VERSION = 'v1.1.0';
+export const VERSION = 'v1.2.0';
 /** A line about this release, shown under the version in settings. */
-export const VERSION_NOTE = 'Team Players: your team works together, and your salespeople close smarter. Thanks for playing!';
+export const VERSION_NOTE = 'Big League: big companies, bigger sites, and clients who come back for more. Thanks for playing!';
 
 export interface ChangeEntry {
   title: string;
@@ -12,7 +12,7 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
-    title: 'Big clients',
+    title: 'v1.2.0 · Big League',
     notes: [
       'Big companies and chains start taking your calls once you have reputation 25 and a small office or bigger. Look for the Big client tag on your call list. The Dashboard shows how close you are.',
       'They want big sites (10 to 14 pages) and pay a lot more, often $4,000 to $8,000, with longer deadlines.',
