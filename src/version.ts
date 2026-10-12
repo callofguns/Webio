@@ -1,8 +1,8 @@
 // The game's version and what's changed in it. The settings menu reads this.
 
-export const VERSION = 'v1.2.0';
+export const VERSION = 'v1.3.0';
 /** A line about this release, shown under the version in settings. */
-export const VERSION_NOTE = 'Big League: big companies, bigger sites, and clients who come back for more. Thanks for playing!';
+export const VERSION_NOTE = 'Plot Twists: random events, goals to chase, and a team that handles more on its own. Thanks for playing!';
 
 export interface ChangeEntry {
   title: string;
@@ -12,7 +12,7 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
-    title: 'Latest changes',
+    title: 'v1.3.0 · Plot Twists',
     notes: [
       'Goals: 21 milestones from your first call to a $50,000 agency, each with a cash reward ($50 to $1,500) paid the moment you reach it. Your next 3 goals are on the Home screen, and the full list is in Settings.',
       'Random events: about once a week, something unexpected happens at the start of a day and you decide what to do. A client’s site goes viral (free referral leads and reputation), an employee calls in sick (let them rest or have them work from home), a rival agency undercuts one of your deals (match their price or hold firm), or a monthly client’s site goes down (fix it now or leave it).',

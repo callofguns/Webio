@@ -157,7 +157,7 @@ Every sales caller doesn't just bring in a lead. They carry on by text themselve
 
 ## Version and update log
 
-The game is at **v1.2.0**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
+The game is at **v1.3.0**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.
 
 ## What designers do
 
