@@ -30,8 +30,8 @@ export interface Closer {
 }
 
 /** How many sites you can have on the go before your closers stop signing new ones. */
-export function pipelineCap(builders: number): number {
-  return 3 + 2 * builders;
+export function pipelineCap(developers: number): number {
+  return 4 + 3 * developers;
 }
 
 export type CloserOutcome = 'won' | 'lost' | 'handoff';

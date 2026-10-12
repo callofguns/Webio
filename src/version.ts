@@ -12,6 +12,12 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Closer limit',
+    notes: [
+      'Your best salespeople now keep signing sites until you have 4 on the go, plus 3 more for each developer you hire (it used to be 3, plus 2 for each designer or developer).',
+    ],
+  },
+  {
     title: 'Teamwork on projects',
     notes: [
       'Project cards (and the project page) now show who on your team is working on them, with a green dot while they are at it.',
