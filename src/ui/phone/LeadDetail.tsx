@@ -23,6 +23,7 @@ export function LeadDetail({ biz }: { biz: Business }) {
           <div>
             <h2>{biz.name}</h2>
             <p className="small muted num">
+              {biz.size === 'large' && <span className="tag-big">Big client</span>}
               {INDUSTRIES[biz.industry].label} &middot; {biz.phone}
             </p>
           </div>
@@ -37,7 +38,7 @@ export function LeadDetail({ biz }: { biz: Business }) {
         </div>
         <div>
           <dt>Size</dt>
-          <dd>{biz.researched ? SIZE_LABELS[biz.size] : <Unknown />}</dd>
+          <dd>{biz.researched || biz.size === 'large' ? SIZE_LABELS[biz.size] : <Unknown />}</dd>
         </div>
         <div>
           <dt>Website</dt>

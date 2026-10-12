@@ -92,7 +92,7 @@ function QuoteForm({ deal, biz, onClose }: Props) {
               <div style={{ fontWeight: 500 }}>Pages</div>
               {known.features && <div className="small faint">They mentioned about {deal.needs.pages}</div>}
             </div>
-            <Stepper value={pages} min={1} max={12} onChange={setPages} />
+            <Stepper value={pages} min={1} max={16} onChange={setPages} />
           </div>
 
           <div style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
@@ -125,7 +125,7 @@ function QuoteForm({ deal, biz, onClose }: Props) {
                 {known.deadline && ` · they want it within ${deal.needs.deadlineDays}`}
               </div>
             </div>
-            <Stepper value={days} min={2} max={60} onChange={setDays} suffix="d" />
+            <Stepper value={days} min={2} max={90} onChange={setDays} suffix="d" />
           </div>
 
           <div className="form-row">

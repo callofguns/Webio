@@ -19,7 +19,8 @@ export type Industry =
   | 'law'
   | 'realestate';
 
-export type BusinessSize = 'solo' | 'small' | 'medium';
+/** 'large' is a big company or chain. They only show up once your agency is established. */
+export type BusinessSize = 'solo' | 'small' | 'medium' | 'large';
 
 /** How good the business's current website is. */
 export type WebsiteState = 'none' | 'outdated' | 'basic' | 'good';
@@ -111,6 +112,10 @@ export type Feature =
   | 'booking'
   | 'listings'
   | 'online_store'
+  | 'accounts'
+  | 'locations'
+  | 'delivery'
+  | 'multilang'
   | 'copywriting';
 
 /** A point in game time: minutes since day 1, 00:00. */
@@ -179,6 +184,10 @@ export interface Deal {
   readAt: GameTime;
   /** Full days in a row you left them waiting. */
   idleDays: number;
+  /** What they'll spend on this job, when it isn't their usual budget (returning clients). */
+  budget?: number;
+  /** Set when a happy client came back for more: new features added on, or a redesign. */
+  returning?: 'addon' | 'redesign';
 }
 
 export type ProjectStatus = 'not_started' | 'in_progress' | 'review' | 'delivered';
@@ -255,6 +264,8 @@ export interface Project {
   stars: number | null;
   deliveredDay: number | null;
   lastNudgeDay: number | null;
+  /** The day this happy client will text you about more work. Missing or null = they won't. */
+  comebackDay?: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -351,6 +362,8 @@ export interface GameState {
   claude: ClaudePlan;
   /** The last day you took a course yourself. You can take one a day. */
   lastCourseDay: number;
+  /** True once big companies have started taking your calls. */
+  bigClients?: boolean;
   log: LogEntry[];
   today: DayStats;
   lifetime: DayStats;

@@ -40,14 +40,20 @@ export const FEATURES: Record<Feature, FeatureInfo> = {
   booking: { label: 'Online booking', price: 400, days: 3, devLevel: 2, phrase: 'book appointments online' },
   listings: { label: 'Property listings', price: 500, days: 4, devLevel: 2, phrase: 'browse the homes we’re selling' },
   online_store: { label: 'Online store', price: 900, days: 6, devLevel: 3, phrase: 'order and pay online' },
+  // Big jobs. Mostly big clients ask for these.
+  accounts: { label: 'Member accounts', price: 1400, days: 7, devLevel: 3, phrase: 'log in to their own account' },
+  locations: { label: 'Many locations', price: 900, days: 4, devLevel: 2, phrase: 'find the location nearest them' },
+  delivery: { label: 'Delivery ordering', price: 1500, days: 7, devLevel: 3, phrase: 'order delivery and track it' },
+  multilang: { label: 'Multi-language', price: 800, days: 4, devLevel: 1, phrase: 'read the site in their own language' },
   copywriting: { label: 'Copywriting & photos', price: 250, days: 2, devLevel: 1, phrase: '' },
 };
 
 export const FEATURE_ORDER: Feature[] = [
-  'contact_form', 'gallery', 'maps', 'reviews', 'menu', 'blog', 'booking', 'listings', 'online_store', 'copywriting',
+  'contact_form', 'gallery', 'maps', 'reviews', 'menu', 'blog', 'booking', 'listings', 'online_store',
+  'accounts', 'locations', 'delivery', 'multilang', 'copywriting',
 ];
 
-const INDUSTRY_NEEDS: Record<Industry, { core: Feature[]; extra: Feature[] }> = {
+export const INDUSTRY_NEEDS: Record<Industry, { core: Feature[]; extra: Feature[] }> = {
   plumbing: { core: ['contact_form', 'reviews'], extra: ['maps'] },
   restaurant: { core: ['menu', 'maps'], extra: ['gallery', 'online_store'] },
   salon: { core: ['booking', 'gallery'], extra: ['reviews'] },
@@ -58,6 +64,20 @@ const INDUSTRY_NEEDS: Record<Industry, { core: Feature[]; extra: Feature[] }> = 
   fitness: { core: ['booking', 'gallery'], extra: ['blog'] },
   law: { core: ['contact_form', 'blog'], extra: ['reviews'] },
   realestate: { core: ['listings', 'contact_form'], extra: ['gallery'] },
+};
+
+/** Big extras that big clients in each industry often want, on top of many locations. */
+export const BIG_EXTRAS: Record<Industry, Feature[]> = {
+  plumbing: [],
+  restaurant: ['delivery'],
+  salon: ['accounts'],
+  dentist: ['accounts'],
+  landscaping: [],
+  auto: [],
+  bakery: ['delivery'],
+  fitness: ['accounts'],
+  law: ['accounts'],
+  realestate: ['accounts'],
 };
 
 export const BASE_PRICE = 250;
@@ -130,9 +150,16 @@ export function textMessage(from: TextMessage['from'], text: string, t: GameTime
 export function rollNeeds(biz: Business, rand: Rand = defaultRand): ClientNeeds {
   const { core, extra } = INDUSTRY_NEEDS[biz.industry];
   const hasContent = chance(0.55, rand);
+  if (biz.size === 'large') {
+    // A chain or company: every branch on the site, more pages and bigger features, but more time to build it.
+    const features: Feature[] = [...core, ...extra.filter(() => chance(0.6, rand)), 'locations', ...BIG_EXTRAS[biz.industry].filter(() => chance(0.75, rand))];
+    if (chance(0.4, rand)) features.push('multilang');
+    if (!hasContent) features.push('copywriting');
+    return { features, pages: randInt(10, 14, rand), deadlineDays: randInt(25, 50, rand), hasContent };
+  }
   const features = [...core, ...extra.filter(() => chance(0.4, rand))];
   if (!hasContent) features.push('copywriting');
-  const pages = { solo: randInt(3, 4, rand), small: randInt(4, 6, rand), medium: randInt(6, 9, rand) }[biz.size];
+  const pages = { solo: randInt(3, 4, rand), small: randInt(4, 6, rand), medium: randInt(6, 9, rand) }[biz.size as 'solo' | 'small' | 'medium'];
   return { features, pages, deadlineDays: randInt(10, 35, rand), hasContent };
 }
 
@@ -455,7 +482,7 @@ export type QuoteVerdict =
 /** How likely a client is to choose a monthly plan when you offer both. */
 function retainerLean(biz: Business): number {
   const base = { friendly: 0.5, busy: 0.55, skeptical: 0.2, grumpy: 0.25 }[biz.temperament];
-  const size = { solo: 0.1, small: 0, medium: -0.1 }[biz.size];
+  const size = { solo: 0.1, small: 0, medium: -0.1, large: -0.15 }[biz.size];
   return clamp(base + size + (biz.website === 'none' ? 0.1 : 0), 0.05, 0.9);
 }
 
@@ -492,7 +519,9 @@ export function evaluateQuote(
   if (quote.plan === 'either') planFit += 3; // they like having a choice
   score += planFit;
 
-  const r = (plan === 'retainer' ? quote.price * 0.85 : quote.price) / biz.budget;
+  // A returning client has a budget for this job, not their whole site.
+  const budget = deal.budget ?? biz.budget;
+  const r = (plan === 'retainer' ? quote.price * 0.85 : quote.price) / budget;
   if (r <= 0.6) score += 18;
   else if (r <= 0.85) score += 12;
   else if (r <= 1) score += 5;
@@ -516,7 +545,7 @@ export function evaluateQuote(
   if (score >= 38) return { kind: 'accept' };
   if (missing.length > 0 && score >= 12 && !deal.quote) return { kind: 'revise', missing };
   if (score >= 18 && r > 0.7) {
-    const counter = round50(Math.min(quote.price * 0.88, biz.budget * (0.85 + rand() * 0.15)));
+    const counter = round50(Math.min(quote.price * 0.88, budget * (0.85 + rand() * 0.15)));
     return { kind: 'counter', counter };
   }
   // If only the monthly plan put them off, say so.

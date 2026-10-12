@@ -956,3 +956,16 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
 .worker-chip.busy .dot { background: var(--good); opacity: 1; animation: worker-pulse 1.4s ease-in-out infinite; }
 @keyframes worker-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 55%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
 @media (prefers-reduced-motion: reduce) { .worker-chip.busy .dot { animation: none; } }
+
+/* Big clients and returning clients: a small marker before the line. */
+.tag-big {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--hi);
+  color: var(--hi-ink);
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: 1px;
+}

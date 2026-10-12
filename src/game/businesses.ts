@@ -239,6 +239,7 @@ export const SIZE_LABELS: Record<BusinessSize, string> = {
   solo: 'Owner-run',
   small: '2–10 staff',
   medium: '10–40 staff',
+  large: 'Big company, several locations',
 };
 
 function painFor(website: WebsiteState, rand: Rand): PainPoint {
@@ -258,7 +259,8 @@ function phoneNumber(rand: Rand): string {
   return `(555) ${randInt(200, 989, rand)}-${randInt(1000, 9999, rand)}`;
 }
 
-export function generateBusiness(rand: Rand = defaultRand): Business {
+/** `big` makes a big company or chain (see bigclients.ts). */
+export function generateBusiness(rand: Rand = defaultRand, big = false): Business {
   const industry = pick(Object.keys(INDUSTRIES) as Industry[], rand);
   const info = INDUSTRIES[industry];
   const first = pick(FIRST, rand);
@@ -271,12 +273,13 @@ export function generateBusiness(rand: Rand = defaultRand): Business {
     .replace('{place}', pick(PLACES, rand))
     .replace('{word}', pick(info.words, rand));
 
-  const size = weighted<BusinessSize>({ solo: 5, small: 4, medium: 1.5 }, rand);
+  const size: BusinessSize = big ? 'large' : weighted<BusinessSize>({ solo: 5, small: 4, medium: 1.5, large: 0 }, rand);
   const website = weighted<WebsiteState>({ none: 2.5, outdated: 3.5, basic: 3, good: 1.5 }, rand);
   const temperament = weighted<Temperament>({ friendly: 2.5, busy: 3, skeptical: 3, grumpy: 1.5 }, rand);
 
   const sizeMult = size === 'solo' ? 0.7 : size === 'small' ? 1 : 1.6;
-  const budget = Math.round((randInt(info.budget[0], info.budget[1], rand) * sizeMult) / 50) * 50;
+  // Big companies have real money for a big site, whatever they do.
+  const budget = Math.round((size === 'large' ? randInt(4000, 9500, rand) : randInt(info.budget[0], info.budget[1], rand) * sizeMult) / 50) * 50;
 
   return {
     id: uid('biz'),
@@ -300,13 +303,16 @@ export function generateBusiness(rand: Rand = defaultRand): Business {
   };
 }
 
-/** Makes `count` businesses with names that are unique, also compared to the ones you already have. */
-export function generateBusinesses(count: number, rand: Rand = defaultRand, existing: Business[] = []): Business[] {
+/**
+ * Makes `count` businesses with names that are unique, also compared to the ones you already have.
+ * `bigChance` is how likely each one is to be a big company.
+ */
+export function generateBusinesses(count: number, rand: Rand = defaultRand, existing: Business[] = [], bigChance = 0): Business[] {
   const out: Business[] = [];
   const names = new Set<string>(existing.map((b) => b.name));
   let guard = 0;
   while (out.length < count && guard++ < count * 10) {
-    const b = generateBusiness(rand);
+    const b = generateBusiness(rand, bigChance > 0 && rand() < bigChance);
     if (names.has(b.name)) continue;
     names.add(b.name);
     out.push(b);

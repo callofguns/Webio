@@ -36,6 +36,7 @@ import {
   xpForLevel,
 } from './balance';
 import { generateBusinesses } from './businesses';
+import { bigChance, bigClientsOpen, comebackDay, returnDeal } from './bigclients';
 import { chooseOption, startCall, timeoutCall, type CallContext, type CallState } from './calls';
 import {
   createDeal,
@@ -300,6 +301,8 @@ export const useGame = create<Store>()(
               status: 'delivered',
               stars: x.review!.stars,
               deliveredDay: get().day,
+              // Happy clients may come back with more work later.
+              comebackDay: comebackDay(x.review!.stars, get().day),
               ...(retainer ? { retainer: { monthly: owed, nextBillDay: get().day + RETAINER_DAYS, paid: owed, months: 1 } } : {}),
             }));
             set({ employees: get().employees.map((e) => (e.assignedProjectId === p.id ? { ...e, assignedProjectId: null } : e)) });
@@ -313,6 +316,35 @@ export const useGame = create<Store>()(
             updateProject(p.id, applyRevision);
             log(`${biz.name} asked for changes to their site.`, 'bad');
           }
+        }
+      };
+
+      /** Happy clients who come back with a new job, and big companies noticing you. Called at the start of each day. */
+      const welcomeBack = () => {
+        const s = get();
+        const t = now();
+        const newDeals: Deal[] = [];
+        const projects = s.projects.map((p) => {
+          if (p.status !== 'delivered' || p.comebackDay == null || p.comebackDay > s.day) return p;
+          // Wait if you're already talking to them about something.
+          if (s.deals.some((d) => d.businessId === p.businessId && d.stage !== 'won' && d.stage !== 'lost')) return { ...p, comebackDay: s.day + 3 };
+          const biz = s.businesses.find((b) => b.id === p.businessId);
+          if (!biz) return { ...p, comebackDay: null };
+          newDeals.push(returnDeal(biz, p, t, s.skills.development.level));
+          return { ...p, comebackDay: null };
+        });
+        if (newDeals.length) {
+          set({ projects, deals: [...s.deals, ...newDeals] });
+          for (const d of newDeals) {
+            const biz = s.businesses.find((b) => b.id === d.businessId)!;
+            log(`${biz.name} loved their site and wants more work! Check Messages.`, 'good');
+          }
+        }
+        if (!s.bigClients && bigClientsOpen(s.reputation, s.office)) {
+          // A few big companies show up right away, so you notice.
+          const found = generateBusinesses(3, Math.random, get().businesses, 1);
+          set({ bigClients: true, businesses: [...get().businesses, ...found] });
+          log('Big companies have started noticing your agency! Look for big clients on your call list. They want bigger sites and pay a lot more.', 'good');
         }
       };
 
@@ -394,7 +426,7 @@ export const useGame = create<Store>()(
               e.today.note = 'Calling businesses';
               if (r.dials === 0) {
                 // Nobody left to call, so they look for more businesses.
-                businesses = [...businesses, ...generateBusinesses(2, Math.random, businesses)];
+                businesses = [...businesses, ...generateBusinesses(2, Math.random, businesses, bigChance(s.reputation, s.office))];
                 e.today.note = 'Ran out of businesses to call, so searched the directory';
               }
               for (const lead of r.leads) {
@@ -760,7 +792,7 @@ export const useGame = create<Store>()(
           const s = get();
           if (s.minute + DIRECTORY_SEARCH_MINUTES > DAY_HARD_END || s.activeCall) return;
           spendTime(DIRECTORY_SEARCH_MINUTES);
-          const found = generateBusinesses(DIRECTORY_SEARCH_RESULTS, Math.random, get().businesses);
+          const found = generateBusinesses(DIRECTORY_SEARCH_RESULTS, Math.random, get().businesses, bigChance(s.reputation, s.office));
           set({ businesses: [...get().businesses, ...found] });
           log(`Found ${found.length} new businesses in the local directory.`);
         },
@@ -768,7 +800,7 @@ export const useGame = create<Store>()(
         buyLeadList: () => {
           const s = get();
           if (s.money < LEAD_LIST_COST || s.activeCall) return;
-          const found = generateBusinesses(LEAD_LIST_SIZE, Math.random, s.businesses);
+          const found = generateBusinesses(LEAD_LIST_SIZE, Math.random, s.businesses, bigChance(s.reputation, s.office));
           set({
             money: s.money - LEAD_LIST_COST,
             businesses: [...s.businesses, ...found],
@@ -1169,6 +1201,7 @@ export const useGame = create<Store>()(
           settleDeals();
           settleProjects();
           collectRetainers();
+          welcomeBack();
           for (const id of returned) {
             const b = get().businesses.find((x) => x.id === id)!;
             log(`${b.name} returned your voicemail! Call back today around ${formatHour(b.callback!.hour)}.`, 'good');

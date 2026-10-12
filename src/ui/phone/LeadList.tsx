@@ -11,7 +11,8 @@ export type LeadFilter = 'todo' | 'callbacks' | 'interested' | 'all';
 
 function sortScore(b: Business, day: number): number {
   if (b.status === 'callback' && b.callback?.day === day) return 0;
-  if (b.status === 'new') return 1;
+  // New big clients go to the top so you notice them.
+  if (b.status === 'new') return b.size === 'large' ? 0.5 : 1;
   if (b.status === 'callback') return 2;
   if (b.status === 'contacted') return 3;
   if (b.status === 'interested') return 4;
@@ -92,6 +93,7 @@ export function LeadList(props: {
                   <span className={`badge ${badge.tone}`}>{badge.text}</span>
                 </div>
                 <span className="small muted">
+                  {b.size === 'large' && <span className="tag-big">Big client</span>}
                   {INDUSTRIES[b.industry].label}
                   {b.researched && ` · ${WEBSITE_LABELS[b.website]}`}
                 </span>

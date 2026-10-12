@@ -290,6 +290,50 @@ export function SitePreview({ biz, design, features, built, placeholderContent }
         </div>
       </Block>
     ));
+  if (has('delivery'))
+    add('delivery', 'Delivery', (bg) => (
+      <Block title="Order for delivery" p={p} bg={bg}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {['Ordered', 'Cooking', 'On the way', 'Delivered'].map((step, i) => (
+            <div key={step} style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ height: 10, borderRadius: 5, background: i <= 2 ? p.primary : `${p.text}22` }} />
+              <div style={{ marginTop: 10, fontSize: 15, color: i <= 2 ? p.text : p.muted, fontWeight: i === 2 ? 700 : 400 }}>{step}</div>
+            </div>
+          ))}
+        </div>
+        <span style={{ ...btn, marginTop: 24 }}>Order now</span>
+      </Block>
+    ));
+  if (has('accounts'))
+    add('accounts', 'Members', (bg) => (
+      <Block title="Member login" p={p} bg={bg}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, alignItems: 'center' }}>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {['Email', 'Password'].map((l) => (
+              <div key={l} style={{ height: 44, borderRadius: 10, border: `2px solid ${p.text}22`, background: p.bg, padding: '10px 14px', color: p.muted }}>{l}</div>
+            ))}
+            <span style={{ ...btn, justifySelf: 'start' }}>Log in</span>
+          </div>
+          <div style={{ color: p.text, fontSize: 18, lineHeight: 1.6 }}>
+            <Lines n={3} color={p.text} />
+          </div>
+        </div>
+      </Block>
+    ));
+  if (has('locations'))
+    add('locations', 'Locations', (bg) => (
+      <Block title="Our locations" p={p} bg={bg}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
+          {['Downtown', 'Northside', 'Riverside'].map((place) => (
+            <div key={place} style={{ borderRadius: 14, padding: 18, background: bg === p.bg ? p.surface : p.bg }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', background: p.primary, marginBottom: 14 }} />
+              <div style={{ fontWeight: 700, color: p.text, fontSize: 18 }}>{place}</div>
+              <div style={{ color: p.muted, fontSize: 15, marginTop: 6 }}>Open 9–6</div>
+            </div>
+          ))}
+        </div>
+      </Block>
+    ));
   if (has('blog'))
     add('blog', 'Blog', (bg) => (
       <Block title="Latest news" p={p} bg={bg}>
@@ -366,6 +410,7 @@ export function SitePreview({ biz, design, features, built, placeholderContent }
                   {design.sections.slice(0, 4).map((s) => (
                     <span key={s}>{SECTIONS[s].name}</span>
                   ))}
+                  {has('multilang') && <span style={{ fontWeight: 700 }}>EN · ES · FR</span>}
                 </div>
               </nav>
               {heroes[design.layout]}

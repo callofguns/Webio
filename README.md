@@ -131,6 +131,13 @@ Sales callers at **level 4 and up** don't just bring in a lead. They carry on by
 - They set deadlines from how many sites are already waiting (about 4 days each, shared between you and your developers), so they promise dates the team can hit
 - Lower level callers still just hand you the lead. Send them on a course to reach level 4
 
+## Big clients
+
+- Big companies and chains start showing up on your call list once you have **reputation 25** and a **small office or bigger** (the Dashboard shows what's missing)
+- They want 10 to 14 page sites with every branch on them, and pay about $4,000 to $8,000
+- New big features: member accounts, many locations, delivery ordering and multi-language (translating is design work)
+- Happy clients (4 or 5 stars) sometimes text you a few weeks later with a paid add-on or a redesign. They already tell you what they want, so you can quote straight away
+
 ## Version and update log
 
 The game is at **v1.1.0**. Click the settings button in the top right of the Dashboard to see the version number, the update log and what is coming next. The text lives in `src/version.ts`, so update that file whenever you ship something new.

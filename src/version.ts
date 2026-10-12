@@ -12,6 +12,16 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Big clients',
+    notes: [
+      'Big companies and chains start taking your calls once you have reputation 25 and a small office or bigger. Look for the Big client tag on your call list. The Dashboard shows how close you are.',
+      'They want big sites (10 to 14 pages) and pay a lot more, often $4,000 to $8,000, with longer deadlines.',
+      'Four new big features: member accounts, many locations, delivery ordering and multi-language. Designers handle the translating.',
+      'Happy clients come back: after a 4 or 5 star site, they may text you a few weeks later with a paid add-on or a redesign. They tell you exactly what they want, so you can quote right away.',
+      'Your best salespeople count the whole team sharing a site when they set deadlines, so big jobs get fair dates.',
+    ],
+  },
+  {
     title: 'v1.1.0 · Team Players',
     notes: [
       'Project cards (and the project page) show who on your team is working on them, with a green dot while they are at it.',
@@ -112,7 +122,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
 /** Ideas for later. Nothing here is promised. */
 export const UPCOMING: ChangeEntry[] = [
   {
-    title: 'After v1.0',
-    notes: ['More types of websites and bigger clients.', 'More office upgrades and team roles.', 'Sound effects and more events.'],
+    title: 'Coming up',
+    notes: ['Random events: viral clients, sick days, rival agencies.', 'Goals and milestones with rewards.', 'More office upgrades and team roles.', 'Sound effects.'],
   },
 ];

@@ -36,6 +36,8 @@ export function buildTasks(pages: number, features: Feature[]): BuildTask[] {
   if (pages > 1) tasks.push(task(`Build the other ${pages - 1} page${pages > 2 ? 's' : ''}`, 'design', 2.5 * (pages - 1)));
   for (const f of features) {
     if (f === 'copywriting') tasks.push(task('Write the text and find photos', 'design', 8, f));
+    // Translating is content work, so designers do it.
+    else if (f === 'multilang') tasks.push(task('Translate the site', 'design', FEATURES[f].days * 5, f));
     else tasks.push(task(`Build the ${FEATURES[f].label.toLowerCase()}`, 'development', FEATURES[f].days * 5, f));
   }
   tasks.push(task('Connect the domain and go live', 'development', 1));

@@ -100,7 +100,7 @@ describe('closer deadlines', () => {
   });
 
   it('developers share the waiting work, so the date comes sooner', () => {
-    expect(promisedDays(8, 3, 2)).toBe(14);
+    expect(promisedDays(8, 3, 2)).toBe(9);
     expect(promisedDays(8, 3, 2)).toBeLessThan(promisedDays(8, 3, 0));
   });
 

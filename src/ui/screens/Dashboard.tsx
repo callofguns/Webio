@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { developerCount, useGame } from '../../game/store';
+import { bigClientsMissing } from '../../game/bigclients';
 import { formatClock } from '../../game/time';
 import { dealStatus, toGameTime } from '../../game/deals';
 import { dailyBurn } from '../../game/team';
@@ -120,6 +121,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
 
         <div className="stack" style={{ gap: 16 }}>
           <InstallCard />
+          <BigClientsCard />
           <div className="card">
             <div className="card-title">
               <h2>Tip of the day</h2>
@@ -156,6 +158,33 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
           </Button>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+/** How close you are to big clients, or a reminder to look for them. */
+function BigClientsCard() {
+  const reputation = useGame((s) => s.reputation);
+  const office = useGame((s) => s.office);
+  const missing = bigClientsMissing(reputation, office);
+  return (
+    <div className="card">
+      <div className="card-title">
+        <h2>Big clients</h2>
+        {missing.length === 0 && <span className="badge good">Unlocked</span>}
+      </div>
+      {missing.length === 0 ? (
+        <p className="muted">Big companies take your calls now. Look for the <span className="tag-big">Big client</span> tag on your call list. They want bigger sites and pay a lot more.</p>
+      ) : (
+        <>
+          <p className="muted">Big companies want bigger sites and pay a lot more. They start taking your calls once you have:</p>
+          <ul className="muted" style={{ margin: '6px 0 0', paddingLeft: 18, display: 'grid', gap: 4 }}>
+            {missing.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

@@ -60,11 +60,11 @@ export const DAYS_PER_QUEUED_SITE = 4;
  * The deadline a salesperson promises. They look at how many sites are already
  * waiting and how many people can build them (you count as one, plus each
  * developer), and give the client a date the team can actually hit, even if
- * the client hoped for sooner.
+ * the client hoped for sooner. The team shares the new site's work too.
  */
 export function promisedDays(build: number, queue: number, developers: number): number {
-  const wait = Math.ceil((queue * DAYS_PER_QUEUED_SITE) / (1 + developers));
-  return Math.max(3, build + 2 + wait);
+  const work = build + queue * DAYS_PER_QUEUED_SITE;
+  return Math.max(3, Math.ceil(work / (1 + developers)) + 2);
 }
 
 function buildQuote(deal: Deal, biz: Business, devLevel: number, level: number, queue: number, developers: number, rand: Rand): Quote {

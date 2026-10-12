@@ -277,7 +277,7 @@ export function startCall(biz: Business, ctx: CallContext, rand: Rand = defaultR
     return end(withLines(call, line('system', pick(NO_ANSWER_LINES, rand))), 'no_answer');
   }
 
-  const gatekeeperChance = { solo: 0.1, small: 0.45, medium: 0.8 }[biz.size];
+  const gatekeeperChance = { solo: 0.1, small: 0.45, medium: 0.8, large: 0.95 }[biz.size];
   if (chance(gatekeeperChance, rand)) {
     const gk = pick(GATEKEEPER_NAMES, rand);
     return withLines(
@@ -456,7 +456,7 @@ const OBJECTIONS: Record<ObjectionId, Objection> = {
       'My daughter does our online stuff. She’s pretty good with it.',
       'A friend of ours built it for free, so we’re covered.',
     ],
-    applies: (b) => b.size !== 'medium' && b.website !== 'good',
+    applies: (b) => b.size !== 'medium' && b.size !== 'large' && b.website !== 'good',
     // This one used to come up all the time. Keep it rare.
     weight: 0.8,
     replies: [
@@ -499,7 +499,7 @@ const OBJECTIONS: Record<ObjectionId, Objection> = {
       'Can’t I just build one myself online for free?',
       'People keep telling me I can do it myself with one of those drag and drop things.',
     ],
-    applies: (b) => b.size !== 'medium',
+    applies: (b) => b.size !== 'medium' && b.size !== 'large',
     weight: 2,
     replies: [
       'You could, and some people do a nice job. Most of my clients just don’t want to spend their evenings on it.',

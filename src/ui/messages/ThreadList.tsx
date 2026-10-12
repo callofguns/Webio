@@ -35,6 +35,7 @@ export function ThreadList({ deals, selectedId, onSelect }: { deals: Deal[]; sel
                   <span className={`badge ${status.tone}`}>{status.text}</span>
                 </div>
                 <div className="preview">
+                  {d.returning ? <span className="tag-big">Returning</span> : biz.size === 'large' && <span className="tag-big">Big client</span>}
                   {last?.from === 'you' && 'You: '}
                   {last?.quote ? 'Sent a quote' : last?.text}
                 </div>
