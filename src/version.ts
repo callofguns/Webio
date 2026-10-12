@@ -1,8 +1,8 @@
 // The game's version and what's changed in it. The settings menu reads this.
 
-export const VERSION = 'v1.0.1';
+export const VERSION = 'v1.1.0';
 /** A line about this release, shown under the version in settings. */
-export const VERSION_NOTE = 'The first full release. Thanks for playing! Balance and details may still get tweaks.';
+export const VERSION_NOTE = 'Team Players: your team works together, and your salespeople close smarter. Thanks for playing!';
 
 export interface ChangeEntry {
   title: string;
@@ -12,33 +12,17 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
-    title: 'Smarter closers',
+    title: 'v1.1.0 · Team Players',
     notes: [
-      'Your best salespeople now keep signing sites until you have 4 on the go, plus 3 more for each developer you hire (it used to be 3, plus 2 for each designer or developer).',
-      'They set the deadline from how many sites are already waiting: each one adds about 4 days, shared between you and your developers. They promise a date the team can actually hit instead of whatever the client hoped for.',
-    ],
-  },
-  {
-    title: 'Teamwork on projects',
-    notes: [
-      'Project cards (and the project page) now show who on your team is working on them, with a green dot while they are at it.',
-      'Employees find work more reliably: people spread out between projects instead of piling onto one.',
+      'Project cards (and the project page) show who on your team is working on them, with a green dot while they are at it.',
+      'Employees find work more reliably: they spread out between projects instead of piling onto one.',
       'When a site is fully built, developers test it and fix bugs, and designers polish it, then you are told it is ready to send to the client.',
       'With no designer on the team, developers start new projects themselves.',
-    ],
-  },
-  {
-    title: 'Claude Enterprise',
-    notes: [
-      'New Claude Enterprise plan in the Office tab: $40 a day for every developer on your team, and you count as one (minimum 3 seats).',
-      'You get everything in Max, and every developer on your team builds 50% faster.',
-    ],
-  },
-  {
-    title: 'Latest changes',
-    notes: [
-      'Many more business names: thousands of different ones, and new businesses never repeat a name you already have.',
-      'Conversations are more varied: clients answer your questions, react to quotes and negotiate in many different ways, depending on their mood. Rushed owners now sound like their job, and friendly owners greet you for the time of day.',
+      'New Claude Enterprise plan in the Office tab: $40 a day for every developer on your team, and you count as one (minimum 3 seats). Everything in Max, and every developer builds 50% faster.',
+      'Your best salespeople keep signing sites until you have 4 on the go, plus 3 more for each developer (it used to be 3, plus 2 for each designer or developer).',
+      'They set deadlines from how many sites are already waiting, shared between you and your developers, and promise dates the team can actually hit.',
+      'Thousands of different business names, and new businesses never repeat a name you already have.',
+      'Conversations are more varied: clients answer, react to quotes and negotiate in many different ways depending on their mood. Rushed owners sound like their job, and friendly ones greet you for the time of day.',
     ],
   },
   {
