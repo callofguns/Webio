@@ -21,8 +21,6 @@ import {
   type TextContext,
 } from './deals';
 
-/** Sales people at this level or above close deals on their own. */
-export const CLOSER_LEVEL = 4;
 
 export interface Closer {
   name: string;

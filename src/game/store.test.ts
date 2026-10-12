@@ -595,12 +595,11 @@ describe('sales people closing deals on their own', () => {
     }
   });
 
-  it('a lower level caller only hands you the lead', () => {
-    useGame.setState({ employees: [caller(3)] });
+  it('a level 1 caller texts the client too', () => {
+    useGame.setState({ employees: [caller(1)] });
     const deal = untilLead();
-    expect(deal.stage).toBe('intro');
-    // Nobody has texted the client for you. (They might have nudged you if the lead came in late in the day.)
-    expect(deal.messages.some((m) => m.from === 'you' || m.text.includes('is handling the texts'))).toBe(false);
+    expect(deal.messages.some((m) => m.text.includes('is handling the texts'))).toBe(true);
+    expect(deal.messages.some((m) => m.quote)).toBe(true);
   });
 
   it('closers stop signing when you already have too many sites on the go', () => {

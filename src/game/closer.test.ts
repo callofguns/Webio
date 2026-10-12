@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateBusiness } from './businesses';
-import { closeDeal, CLOSER_LEVEL, promisedDays, type CloserOutcome } from './closer';
+import { closeDeal, promisedDays, type CloserOutcome } from './closer';
 import { createDeal, dealStatus, toGameTime, fromGameTime } from './deals';
 import { WORKDAY_END, WORKDAY_START } from './balance';
 
@@ -31,8 +31,11 @@ function run(level: number, n: number, seed: number) {
 }
 
 describe('sales people who close deals themselves', () => {
-  it('only the best sales people do it', () => {
-    expect(CLOSER_LEVEL).toBe(4);
+  it('every level does it, and better sales people win more', () => {
+    const low = run(1, 800, 11).counts;
+    const high = run(5, 800, 12).counts;
+    expect(low.won).toBeGreaterThan(80);
+    expect(high.won).toBeGreaterThan(low.won * 1.8);
   });
 
   it('they play out the whole conversation, and a good share of deals get signed', () => {

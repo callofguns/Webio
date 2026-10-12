@@ -6,7 +6,7 @@ import { persist } from 'zustand/middleware';
 import { buyBlocker, FURNITURE, moveBlocker, OFFICES, officeEffects, type FurnitureId, type OfficeId } from './office';
 import { CLAUDE_PLANS, claudeCost, claudeEffects, planBlocker, type ClaudePlan } from './claude';
 import { RETAINER_DAYS, retainerFee } from './pricing';
-import { CLOSER_LEVEL, closeDeal, pipelineCap } from './closer';
+import { closeDeal, pipelineCap } from './closer';
 import {
   COURSE_NAMES,
   COURSES,
@@ -435,8 +435,8 @@ export const useGame = create<Store>()(
                 // Sites you're building or about to start. Closers stop signing when you have too many.
                 const queue = projects.filter((p) => p.status !== 'delivered').length + [...s.deals, ...newDeals].filter((d) => d.stage === 'won' && !d.settled).length;
                 const developers = developerCount(s.employees);
-                if (e.level >= CLOSER_LEVEL && queue < pipelineCap(developers)) {
-                  // The best callers carry on by text themselves, all the way to a signed deal.
+                if (queue < pipelineCap(developers)) {
+                  // Callers carry on by text themselves, all the way to a signed deal. Better ones win more.
                   const res = closeDeal(
                     deal,
                     lead.biz,
@@ -449,12 +449,7 @@ export const useGame = create<Store>()(
                   messages.push([`${e.name} got ${lead.biz.name} interested and is texting them to close the deal.`, 'good']);
                 } else {
                   newDeals.push(deal);
-                  messages.push([
-                    e.level >= CLOSER_LEVEL
-                      ? `${e.name} got ${lead.biz.name} interested, but you already have plenty of sites on the go. Text them in Messages.`
-                      : `${e.name} got ${lead.biz.name} interested! Text them in Messages.`,
-                    'good',
-                  ]);
+                  messages.push([`${e.name} got ${lead.biz.name} interested, but you already have plenty of sites on the go. Text them in Messages.`, 'good']);
                 }
               }
               gainXp(5);

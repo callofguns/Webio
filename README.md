@@ -123,13 +123,13 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
 
 ## Sales closers
 
-Sales callers at **level 4 and up** don't just bring in a lead. They carry on by text themselves: say hello, ask what the client needs and their budget, send a quote, negotiate, and sign the deal. A signed deal turns into a project in **Projects** and pays its deposit, with no help from you. You can read the whole conversation in Messages, and it plays out over the following days like a real one.
+Every sales caller doesn't just bring in a lead. They carry on by text themselves: say hello, ask what the client needs and their budget, send a quote, negotiate, and sign the deal. A signed deal turns into a project in **Projects** and pays its deposit, with no help from you. You can read the whole conversation in Messages, and it plays out over the following days like a real one.
 
 - They only quote features you can build, and promise delivery dates that allow for the sites already in your queue
-- Better closers price closer to what the client can afford (level 5 asks for too much less often than level 4)
+- Better closers price closer to what the client can afford and ask for too much less often, so they win more (roughly 30% of deals at level 1, 60% at level 3, 90% at level 5)
 - They stop signing new sites once you have too many on the go (4, plus 3 for each developer) and hand those leads to you instead
 - They set deadlines from how many sites are already waiting (about 4 days each, shared between you and your developers), so they promise dates the team can hit
-- Lower level callers still just hand you the lead. Send them on a course to reach level 4
+- Send weaker callers on a course so they lose fewer deals
 
 ## Big clients
 

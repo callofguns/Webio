@@ -162,7 +162,8 @@ describe('team in the game', () => {
   });
 
   it('wages are paid on Friday', () => {
-    addEmployee('sales', 100);
+    // A designer with nothing to build, so no deal money muddles the numbers.
+    addEmployee('designer', 100);
     for (let i = 0; i < 4; i++) useGame.getState().endDay(); // Mon-Thu
     expect(useGame.getState().payrollDue).toBe(400);
     const before = useGame.getState().money;

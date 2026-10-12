@@ -13,7 +13,10 @@ export interface ChangeEntry {
 export const UPDATE_LOG: ChangeEntry[] = [
   {
     title: 'Latest changes',
-    notes: ['The menu icons wiggle when you tap them on a phone or tablet, not only when you hover with a mouse. The settings gear spins when you press it too.'],
+    notes: [
+      'Every salesperson now does the texting after the call: they ask what the client needs, send the quote, negotiate and sign the deal. Better salespeople win more deals (about 30% at level 1, 60% at level 3, 90% at level 5), so training them pays off.',
+      'The menu icons wiggle when you tap them on a phone or tablet, not only when you hover with a mouse. The settings gear spins when you press it too.',
+    ],
   },
   {
     title: 'v1.2.0 · Big League',
