@@ -53,7 +53,7 @@ function QuoteForm({ deal, biz, onClose }: Props) {
       ),
   );
   const [days, setDays] = useState(start?.days ?? 10);
-  const [plan, setPlan] = useState<QuotePlan>(start?.plan ?? 'buyout');
+  const [plan, setPlan] = useState<QuotePlan>(start?.plan ?? 'either');
   const [deposit, setDeposit] = useState<'0' | '25' | '50'>(String(start?.depositPct ?? 50) as '0' | '25' | '50');
   const suggested = marketPrice(pages, features);
   const [price, setPrice] = useState(start?.price ?? suggested);
