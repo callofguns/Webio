@@ -402,13 +402,14 @@ export const useGame = create<Store>()(
                 e.today.leads++;
                 // Sites you're building or about to start. Closers stop signing when you have too many.
                 const queue = projects.filter((p) => p.status !== 'delivered').length + [...s.deals, ...newDeals].filter((d) => d.stage === 'won' && !d.settled).length;
-                if (e.level >= CLOSER_LEVEL && queue < pipelineCap(developerCount(s.employees))) {
+                const developers = developerCount(s.employees);
+                if (e.level >= CLOSER_LEVEL && queue < pipelineCap(developers)) {
                   // The best callers carry on by text themselves, all the way to a signed deal.
                   const res = closeDeal(
                     deal,
                     lead.biz,
                     { name: e.name, level: e.level },
-                    { agencyName: s.profile?.agencyName ?? 'my agency', reputation: s.reputation, devLevel: s.skills.development.level, queue },
+                    { agencyName: s.profile?.agencyName ?? 'my agency', reputation: s.reputation, devLevel: s.skills.development.level, queue, developers },
                     at,
                     Math.random,
                   );

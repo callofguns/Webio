@@ -12,9 +12,10 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
-    title: 'Closer limit',
+    title: 'Smarter closers',
     notes: [
       'Your best salespeople now keep signing sites until you have 4 on the go, plus 3 more for each developer you hire (it used to be 3, plus 2 for each designer or developer).',
+      'They set the deadline from how many sites are already waiting: each one adds about 4 days, shared between you and your developers. They promise a date the team can actually hit instead of whatever the client hoped for.',
     ],
   },
   {

@@ -53,7 +53,21 @@ function nextWorkTime(t: GameTime, rand: Rand): GameTime {
  * Nobody prices it perfectly. Better people guess closer to what the client
  * can afford, and are less likely to ask for too much.
  */
-function buildQuote(deal: Deal, biz: Business, devLevel: number, level: number, queue: number, rand: Rand): Quote {
+/** Days of work each site waiting ahead of this one adds, for one person building. */
+export const DAYS_PER_QUEUED_SITE = 4;
+
+/**
+ * The deadline a salesperson promises. They look at how many sites are already
+ * waiting and how many people can build them (you count as one, plus each
+ * developer), and give the client a date the team can actually hit, even if
+ * the client hoped for sooner.
+ */
+export function promisedDays(build: number, queue: number, developers: number): number {
+  const wait = Math.ceil((queue * DAYS_PER_QUEUED_SITE) / (1 + developers));
+  return Math.max(3, build + 2 + wait);
+}
+
+function buildQuote(deal: Deal, biz: Business, devLevel: number, level: number, queue: number, developers: number, rand: Rand): Quote {
   const n = deal.needs;
   // They only offer what you can actually build.
   const features: Feature[] = n.features.filter((f) => FEATURES[f].devLevel <= devLevel);
@@ -65,8 +79,7 @@ function buildQuote(deal: Deal, biz: Business, devLevel: number, level: number, 
   const fumble = rand() < 0.9 - 0.16 * level; // level 4: 26%, level 5: 10%
   const price = base * (fumble ? 1.6 : 0.95 + rand() * looseness * 2);
   // Promise a date that allows for the sites already in the queue.
-  const estimate = buildDays(n.pages, features) + 2 + queue * 4;
-  const days = Math.max(3, deal.known.deadline ? Math.min(n.deadlineDays, estimate) : estimate);
+  const days = promisedDays(buildDays(n.pages, features), queue, developers);
   const picky = biz.temperament === 'skeptical' || biz.temperament === 'grumpy';
   return {
     pages: n.pages,
@@ -91,6 +104,8 @@ export function closeDeal(
   ctx: Omit<TextContext, 'now' | 'playerName'> & {
     /** Sites you are already building or about to start. */
     queue?: number;
+    /** Developers on the team. They share the queued work. */
+    developers?: number;
   },
   now: GameTime,
   rand: Rand = defaultRand,
@@ -131,7 +146,7 @@ export function closeDeal(
 
   // Quote, then deal with what comes back.
   next();
-  let sent = sendQuote(d, biz, buildQuote(d, biz, ctx.devLevel, closer.level, ctx.queue ?? 0, rand), at(t), rand);
+  let sent = sendQuote(d, biz, buildQuote(d, biz, ctx.devLevel, closer.level, ctx.queue ?? 0, ctx.developers ?? 0, rand), at(t), rand);
   if (sent === d) return hand();
   d = sent;
 
@@ -148,7 +163,7 @@ export function closeDeal(
       d = after;
     } else if (d.stage === 'discovery') {
       // They wanted something that was left out. Send an updated quote.
-      sent = sendQuote(d, biz, buildQuote(d, biz, ctx.devLevel, closer.level, ctx.queue ?? 0, rand), at(t), rand);
+      sent = sendQuote(d, biz, buildQuote(d, biz, ctx.devLevel, closer.level, ctx.queue ?? 0, ctx.developers ?? 0, rand), at(t), rand);
       if (sent === d) return hand();
       d = sent;
     } else {

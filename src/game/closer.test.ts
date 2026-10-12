@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateBusiness } from './businesses';
-import { closeDeal, CLOSER_LEVEL, type CloserOutcome } from './closer';
+import { closeDeal, CLOSER_LEVEL, promisedDays, type CloserOutcome } from './closer';
 import { createDeal, dealStatus, toGameTime, fromGameTime } from './deals';
 import { WORKDAY_END, WORKDAY_START } from './balance';
 
@@ -89,5 +89,28 @@ describe('sales people who close deals themselves', () => {
       const { deal } = closeDeal(createDeal(biz, 60, NOW, rand, 'Leo'), biz, { name: 'Leo Silva', level: 5 }, { ...ctx, devLevel: 1 }, NOW, rand);
       for (const f of deal.quote?.features ?? []) expect(['booking', 'listings', 'online_store']).not.toContain(f);
     }
+  });
+});
+
+describe('closer deadlines', () => {
+  it('promise more time when more sites are waiting', () => {
+    expect(promisedDays(8, 0, 0)).toBe(10);
+    expect(promisedDays(8, 3, 0)).toBe(22);
+    expect(promisedDays(8, 6, 0)).toBeGreaterThan(promisedDays(8, 3, 0));
+  });
+
+  it('developers share the waiting work, so the date comes sooner', () => {
+    expect(promisedDays(8, 3, 2)).toBe(14);
+    expect(promisedDays(8, 3, 2)).toBeLessThan(promisedDays(8, 3, 0));
+  });
+
+  it('a busy queue shows up in the quote they send', () => {
+    const quoteDays = (queue: number) => {
+      const biz = generateBusiness(seeded(7));
+      const deal = createDeal(biz, 0.8, NOW, seeded(8));
+      const res = closeDeal(deal, biz, { name: 'Sam Lee', level: 5 }, { ...ctx, queue }, NOW, seeded(9));
+      return res.deal.quote?.days ?? 0;
+    };
+    expect(quoteDays(5)).toBeGreaterThan(quoteDays(0));
   });
 });
