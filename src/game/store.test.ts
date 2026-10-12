@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { GOALS } from './goals';
 import { callBlocker, useGame } from './store';
 import { DAILY_LIVING_COST, RESEARCH_MINUTES, START_MONEY, WORKDAY_START } from './balance';
 import { createDeal, toGameTime } from './deals';
@@ -8,7 +9,11 @@ import { COURSES } from './training';
 import { pipelineCap } from './closer';
 
 describe('game store', () => {
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('starts a fresh game on day 1 at 9 AM', () => {
     const s = useGame.getState();
@@ -80,7 +85,11 @@ describe('game store', () => {
 });
 
 describe('texting clients', () => {
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   /** Puts a warm deal into the game, as if a call just went well. */
   function addWarmDeal() {
@@ -132,7 +141,11 @@ describe('texting clients', () => {
 });
 
 describe('building a site', () => {
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('build, submit and get paid (or asked for changes) once the review arrives', () => {
     const s = useGame.getState();
@@ -198,7 +211,11 @@ describe('Claude subscription', () => {
     return project.id;
   }
 
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('starts with no plan and can subscribe, switch and cancel', () => {
     expect(useGame.getState().claude).toBe('none');
@@ -258,7 +275,11 @@ describe('Claude subscription', () => {
 });
 
 describe('monthly retainers', () => {
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('pay nothing up front, pay the first month when the site goes live, then every 30 days', () => {
     const s = useGame.getState();
@@ -372,7 +393,11 @@ describe('designers and developers find their own work', () => {
     return [a.project, b.project];
   }
 
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('a designer with nothing assigned picks up design work, soonest due first', () => {
     const [a] = twoProjects();
@@ -461,7 +486,11 @@ describe('designers and developers find their own work', () => {
 });
 
 describe('courses', () => {
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   const person = (role: 'sales' | 'designer' | 'developer', level = 2) => ({
     id: 'e1',
@@ -574,7 +603,11 @@ describe('sales people closing deals on their own', () => {
     return useGame.getState().deals[0];
   }
 
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('a level 5 caller carries a lead all the way through the texts', () => {
     useGame.setState({ employees: [caller(5)] });
@@ -664,7 +697,11 @@ describe('designers plan new projects', () => {
     }
   }
 
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('a designer asks the client about their style first', () => {
     const { deal } = unplanned();
@@ -733,7 +770,11 @@ describe('Claude Enterprise', () => {
     today: { dials: 0, leads: 0, hours: 0, note: '' },
   });
 
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('is billed per developer every evening and follows your team size', () => {
     useGame.setState({ employees: [person('v1', 'developer'), person('v2', 'developer'), person('v3', 'developer'), person('d1', 'designer')] });
@@ -805,7 +846,11 @@ describe('employees keep themselves busy', () => {
     return [a.project, b.project];
   }
 
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('people who picked their own project spread out when it gets crowded', () => {
     const [a, b] = sites();

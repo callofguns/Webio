@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { GOALS } from './goals';
 import { activeFurniture, buyBlocker, moveBlocker, OFFICES, officeEffects } from './office';
 import { useGame } from './store';
 import { DAILY_LIVING_COST, START_MONEY } from './balance';
@@ -58,7 +59,11 @@ describe('offices', () => {
 });
 
 describe('office in the game', () => {
-  beforeEach(() => useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' }));
+  beforeEach(() => {
+    useGame.getState().newGame({ playerName: 'Alex', agencyName: 'Pixel Co' });
+    // Goals pay cash rewards, which would throw off the money checked here.
+    useGame.setState({ goalsDone: GOALS.map((g) => g.id) });
+  });
 
   it('moving costs money and rent is charged every day', () => {
     useGame.setState({ reputation: 10 });

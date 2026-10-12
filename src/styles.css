@@ -978,3 +978,15 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
 .event-icon { font-size: 40px; line-height: 1; margin-bottom: 10px; display: inline-block; animation: event-pop 0.5s var(--ease, ease-out); }
 @keyframes event-pop { 0% { transform: scale(0.4) rotate(-12deg); opacity: 0; } 70% { transform: scale(1.15) rotate(4deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .event-icon { animation: none; } }
+
+/* Goals */
+.goal-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.goal-row:last-child { border-bottom: none; }
+.goal-check {
+  flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 6px;
+  border: 1.5px solid var(--border-strong, var(--border)); display: grid; place-items: center;
+  font-size: 12px; font-weight: 800; color: #fff;
+}
+.goal-row.done .goal-check { background: var(--good); border-color: var(--good); }
+.goal-row.done { opacity: 0.6; }
+.goal-reward { color: var(--good); }

@@ -375,6 +375,10 @@ export interface GameState {
   event?: GameEvent | null;
   /** The day the last random event happened. */
   lastEventDay?: number;
+  /** Goals you've reached (and been paid for). */
+  goalsDone?: string[];
+  /** Goals you just reached, waiting to be celebrated in a popup. */
+  goalQueue?: string[];
   log: LogEntry[];
   today: DayStats;
   lifetime: DayStats;

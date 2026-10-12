@@ -38,6 +38,7 @@ import {
 import { generateBusinesses } from './businesses';
 import { bigChance, bigClientsOpen, comebackDay, returnDeal } from './bigclients';
 import { dayOffBlocker, dayOffDate, dayOffMorale } from './dayoff';
+import { GOAL_BY_ID, newlyDone } from './goals';
 import { cancelsAfterOutage, OUTAGE_FIX_HOURS, rollEvent, sickHourWorks, VIRAL_LEADS } from './events';
 import { chooseOption, startCall, timeoutCall, type CallContext, type CallState } from './calls';
 import {
@@ -136,6 +137,8 @@ function newGameState(): GameState {
     today: emptyStats(),
     lifetime: emptyStats(),
     lastDaySummary: null,
+    goalsDone: [],
+    goalQueue: [],
   };
 }
 
@@ -190,6 +193,10 @@ interface Store extends GameState {
   giveDayOff: (employeeId: string, paid: boolean) => void;
   /** Answer the random event that popped up today. */
   resolveEvent: (choice: string) => void;
+  /** Pay out goals you just reached and queue them for the celebration popup. */
+  completeGoals: (ids: string[]) => void;
+  /** Close the goal popup. */
+  dismissGoals: () => void;
   fireEmployee: (employeeId: string) => void;
   // Office (part 5)
   moveOffice: (to: OfficeId) => void;
@@ -1094,6 +1101,17 @@ export const useGame = create<Store>()(
           log(`${e.name} has ${day === s.day ? 'today' : `Day ${day}`} off${paid ? ', paid' : ', unpaid'}.`);
         },
 
+        completeGoals: (ids) => {
+          const s = get();
+          const fresh = ids.filter((id) => GOAL_BY_ID[id] && !(s.goalsDone ?? []).includes(id));
+          if (!fresh.length) return;
+          const reward = fresh.reduce((n, id) => n + GOAL_BY_ID[id].reward, 0);
+          set({ goalsDone: [...(s.goalsDone ?? []), ...fresh], goalQueue: [...(s.goalQueue ?? []), ...fresh], money: s.money + reward });
+          for (const id of fresh) log(`Goal reached: ${GOAL_BY_ID[id].title}! +$${GOAL_BY_ID[id].reward.toLocaleString()}`, 'good');
+        },
+
+        dismissGoals: () => set({ goalQueue: [] }),
+
         resolveEvent: (choice) => {
           const s = get();
           const ev = s.event;
@@ -1369,3 +1387,14 @@ export const useGame = create<Store>()(
     },
   ),
 );
+
+// Pay out goals the moment you reach them, whatever you did to get there.
+const checkGoals = (s: Store) => {
+  if (!s.profile) return;
+  const fresh = newlyDone(s, s.goalsDone ?? []);
+  if (fresh.length) s.completeGoals(fresh.map((g) => g.id));
+};
+useGame.subscribe(checkGoals);
+// The save loads before the line above runs, so check it once too.
+checkGoals(useGame.getState());
+useGame.persist.onFinishHydration((s) => checkGoals(s as Store));

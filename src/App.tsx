@@ -13,6 +13,7 @@ import { ProjectsScreen } from './ui/projects/ProjectsScreen';
 import { TeamScreen } from './ui/team/TeamScreen';
 import { DaySummary } from './ui/screens/DaySummary';
 import { EventPopup } from './ui/screens/EventPopup';
+import { GoalPopup } from './ui/goals/Goals';
 import { fadeUp } from './ui/motion';
 
 export default function App() {
@@ -48,6 +49,7 @@ export default function App() {
       </main>
       <DaySummary />
       <EventPopup />
+      <GoalPopup />
     </div>
   );
 }

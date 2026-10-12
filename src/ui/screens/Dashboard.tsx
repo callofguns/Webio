@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { developerCount, useGame } from '../../game/store';
 import { bigClientsMissing } from '../../game/bigclients';
+import { GoalsCard } from '../goals/Goals';
 import { formatClock } from '../../game/time';
 import { dealStatus, toGameTime } from '../../game/deals';
 import { dailyBurn } from '../../game/team';
@@ -121,6 +122,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (s: ScreenId) => void })
 
         <div className="stack" style={{ gap: 16 }}>
           <InstallCard />
+          <GoalsCard />
           <BigClientsCard />
           <div className="card">
             <div className="card-title">

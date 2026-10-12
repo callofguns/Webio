@@ -121,6 +121,10 @@ Later on: **hire** employees to automate the work *(done — part 4)*, **upgrade
   Better employees will want to be paid more, so watch their pay
 - Salespeople learn sales, designers learn design, developers learn development
 
+## Goals
+
+21 milestones, from your first call to earning $50,000. Each one pays a cash reward ($50 to $1,500) the moment you reach it, and a popup celebrates it. Your next 3 goals are on the Home screen with progress bars. The full list is behind "See all goals" and in the Goals tab of Settings. If you load an older save, any goals you've already reached are paid out together.
+
 ## Random events
 
 About once a week (never in your first few days, and at least 4 days apart), something happens at the start of a day. A popup tells you what, and you choose what to do:

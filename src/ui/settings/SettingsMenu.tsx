@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
 import { Tabs } from '../components/Tabs';
+import { GoalList } from '../goals/Goals';
 import { UPCOMING, UPDATE_LOG, VERSION, VERSION_NOTE, type ChangeEntry } from '../../version';
 
-type Page = 'log' | 'next';
+type Page = 'log' | 'next' | 'goals';
 
 function Entries({ entries }: { entries: ChangeEntry[] }) {
   return (
@@ -43,11 +44,12 @@ export function SettingsMenu({ open, onClose }: { open: boolean; onClose: () => 
           options={[
             { value: 'log', label: 'Update log' },
             { value: 'next', label: 'Coming soon' },
+            { value: 'goals', label: 'Goals' },
           ]}
         />
       </div>
       <div className="modal-body">
-        <Entries entries={page === 'log' ? UPDATE_LOG : UPCOMING} />
+        {page === 'goals' ? <GoalList /> : <Entries entries={page === 'log' ? UPDATE_LOG : UPCOMING} />}
       </div>
       <div className="row modal-foot" style={{ justifyContent: 'flex-end' }}>
         <Button variant="primary" onClick={onClose}>

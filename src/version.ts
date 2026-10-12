@@ -14,6 +14,7 @@ export const UPDATE_LOG: ChangeEntry[] = [
   {
     title: 'Latest changes',
     notes: [
+      'Goals: 21 milestones from your first call to a $50,000 agency, each with a cash reward ($50 to $1,500) paid the moment you reach it. Your next 3 goals are on the Home screen, and the full list is in Settings.',
       'Random events: about once a week, something unexpected happens at the start of a day and you decide what to do. A client’s site goes viral (free referral leads and reputation), an employee calls in sick (let them rest or have them work from home), a rival agency undercuts one of your deals (match their price or hold firm), or a monthly client’s site goes down (fix it now or leave it).',
       'New quotes start on "Client picks" for how they pay, so the client chooses between buying the site outright and the monthly plan. You can still change it.',
       'Give someone a day off from their card on the Team screen. Paid: you still pay them and morale goes up 20. Unpaid: you save their wage and morale goes up 12. One day off per person a week.',
@@ -133,6 +134,6 @@ export const UPDATE_LOG: ChangeEntry[] = [
 export const UPCOMING: ChangeEntry[] = [
   {
     title: 'Coming up',
-    notes: ['Goals and milestones with rewards.', 'More random events.', 'More office upgrades and team roles.', 'Sound effects.'],
+    notes: ['More random events.', 'More office upgrades and team roles.', 'Sound effects.'],
   },
 ];
