@@ -1397,4 +1397,5 @@ const checkGoals = (s: Store) => {
 useGame.subscribe(checkGoals);
 // The save loads before the line above runs, so check it once too.
 checkGoals(useGame.getState());
-useGame.persist.onFinishHydration((s) => checkGoals(s as Store));
+// (No saving in tests, so `persist` may be missing there.)
+useGame.persist?.onFinishHydration((s) => checkGoals(s as Store));
