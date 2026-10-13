@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { FEATURES } from '../../game/deals';
-import { progress } from '../../game/projects';
+import { progress, sortProjects, type ProjectSort } from '../../game/projects';
 import { retainerFee } from '../../game/pricing';
 import type { Project } from '../../game/types';
 import { Icon } from '../components/Icon';
@@ -27,17 +27,23 @@ export const Stars = ({ n }: { n: number }) => (
   </span>
 );
 
+/** Kept while you move between screens, so your sort stays the way you left it. */
+let rememberedSort: ProjectSort = 'due';
+
 export function ProjectsScreen() {
   const { projects, businesses, day, reputation } = useGame();
   const [tab, setTab] = useState<'active' | 'portfolio'>('active');
   const [openId, setOpenId] = useState<string | null>(null);
+  const [sort, setSort] = useState<ProjectSort>(rememberedSort);
   const open = projects.find((p) => p.id === openId);
   useListScroll(!!open);
 
   const active = projects.filter((p) => p.status !== 'delivered');
   const delivered = projects.filter((p) => p.status === 'delivered');
   const avgStars = delivered.length ? delivered.reduce((s, p) => s + (p.stars ?? 0), 0) / delivered.length : 0;
-  const shown = tab === 'active' ? active : delivered;
+  // Finished sites all have the same status, so that sort falls back to newest.
+  const by: ProjectSort = tab === 'portfolio' && sort === 'status' ? 'due' : sort;
+  const shown = sortProjects(tab === 'active' ? active : delivered, by);
   const retainers = delivered.filter((p) => p.retainer);
   const retainerIncome = retainers.reduce((sum, p) => sum + (p.retainer?.monthly ?? 0), 0);
 
@@ -78,6 +84,26 @@ export function ProjectsScreen() {
               ]}
             />
           </div>
+
+          {shown.length > 1 && (
+            <div className="row project-sort" style={{ gap: 10, marginBottom: 14 }}>
+              <span className="small muted">Sort by</span>
+              <Tabs
+                id="project-sort"
+                value={by}
+                onChange={(v) => {
+                  rememberedSort = v;
+                  setSort(v);
+                }}
+                options={[
+                  { value: 'due', label: tab === 'active' ? 'Due date' : 'Newest' },
+                  { value: 'value', label: 'Value' },
+                  ...(tab === 'active' ? [{ value: 'status' as const, label: 'Status' }] : []),
+                  { value: 'size', label: 'Size' },
+                ]}
+              />
+            </div>
+          )}
 
           {shown.length === 0 ? (
             <div className="card empty" style={{ padding: 64 }}>

@@ -524,3 +524,32 @@ export function applyRevision(p: Project): Project {
       return base;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Sorting the project list
+
+export type ProjectSort = 'due' | 'value' | 'status' | 'size';
+
+const STATUS_ORDER: Record<Project['status'], number> = { not_started: 0, in_progress: 1, review: 2, delivered: 3 };
+
+/** Total hours of work in a project, as a measure of how big it is. */
+export function projectSize(p: Project): number {
+  return p.tasks.reduce((n, t) => n + t.hours, 0);
+}
+
+/**
+ * Projects in the order you asked for. Ties fall back to the due date.
+ * Due date: soonest first (latest delivered first for finished sites). Value: highest price first.
+ * Status: planning, then building, then with the client. Size: most work first.
+ */
+export function sortProjects(list: Project[], by: ProjectSort): Project[] {
+  const due = (a: Project, b: Project) =>
+    a.status === 'delivered' && b.status === 'delivered' ? (b.deliveredDay ?? 0) - (a.deliveredDay ?? 0) : a.dueDay - b.dueDay;
+  const cmp: Record<ProjectSort, (a: Project, b: Project) => number> = {
+    due,
+    value: (a, b) => b.price - a.price,
+    status: (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status],
+    size: (a, b) => projectSize(b) - projectSize(a),
+  };
+  return [...list].sort((a, b) => cmp[by](a, b) || due(a, b));
+}

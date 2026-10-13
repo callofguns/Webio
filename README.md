@@ -134,6 +134,16 @@ About once a week (never in your first few days, and at least 4 days apart), som
 - **A rival agency undercuts a deal**: promise a better price (they stay keen but expect about 15% less) or hold firm (they cool off and might walk away)
 - **A monthly client's site goes down**: fix it now (2 hours of your day, +1 reputation) or leave it (−2 reputation, and a 50% chance they cancel their monthly plan)
 
+## Sorting projects
+
+On the Projects screen, **Sort by** puts your projects in order:
+- **Due date**: soonest deadline first (on the Portfolio tab this is **Newest**, latest finished first)
+- **Value**: highest price first
+- **Status**: planning, then building, then with the client
+- **Size**: most work first
+
+The sort you pick is remembered while you move around the game.
+
 ## Days off
 
 Tap **Day off** on an employee's card in the Team screen. Pick a **paid** day off (you still pay them, morale +20) or an **unpaid** one (you save their wage, morale +12). They skip that workday (today if work hasn't started yet, otherwise the next workday). Each person can have one day off a week.

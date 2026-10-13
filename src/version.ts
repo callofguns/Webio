@@ -13,7 +13,10 @@ export interface ChangeEntry {
 export const UPDATE_LOG: ChangeEntry[] = [
   {
     title: 'Latest changes',
-    notes: ['Pause your salespeople from the Team screen to stop new deals coming in while you catch up on projects. They still get paid, and chats they already started carry on. Tap again to start them calling.'],
+    notes: [
+      'Sort your projects by due date, value, status or size. On the Portfolio tab, "Newest" shows your latest finished sites first. The sort you pick is remembered.',
+      'Pause your salespeople from the Team screen to stop new deals coming in while you catch up on projects. They still get paid, and chats they already started carry on. Tap again to start them calling.',
+    ],
   },
   {
     title: 'v1.3.0 · Plot Twists',

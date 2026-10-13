@@ -15,6 +15,7 @@ import {
   siteQuality,
   testSite,
   work,
+  sortProjects,
 } from './projects';
 import { SECTION_ORDER } from './design';
 import { FONTS, INDUSTRY_VIBES, LAYOUTS, PALETTES, RECOMMENDED_SECTIONS, type Design } from './design';
@@ -221,5 +222,34 @@ describe('planning a design', () => {
       expect(sections).toEqual(SECTION_ORDER.filter((x) => sections.includes(x)));
       for (const r of RECOMMENDED_SECTIONS[biz.industry]) expect(sections).toContain(r);
     }
+  });
+});
+
+describe('sorting projects', () => {
+  const p = (id: string, over: Partial<import('./types').Project>) =>
+    ({ id, status: 'in_progress', price: 1000, dueDay: 10, deliveredDay: null, tasks: [{ hours: 10 }], ...over }) as unknown as import('./types').Project;
+  const ids = (list: import('./types').Project[]) => list.map((x) => x.id);
+
+  it('by due date, soonest first', () => {
+    expect(ids(sortProjects([p('a', { dueDay: 9 }), p('b', { dueDay: 3 }), p('c', { dueDay: 6 })], 'due'))).toEqual(['b', 'c', 'a']);
+  });
+
+  it('by value, highest first', () => {
+    expect(ids(sortProjects([p('a', { price: 900 }), p('b', { price: 5000 }), p('c', { price: 1500 })], 'value'))).toEqual(['b', 'c', 'a']);
+  });
+
+  it('by status: planning, building, then with the client', () => {
+    const list = [p('a', { status: 'review' }), p('b', { status: 'not_started' }), p('c', { status: 'in_progress' })];
+    expect(ids(sortProjects(list, 'status'))).toEqual(['b', 'c', 'a']);
+  });
+
+  it('by size, most work first, with ties by due date', () => {
+    const list = [p('a', { tasks: [{ hours: 5 }] as never }), p('b', { tasks: [{ hours: 40 }] as never, dueDay: 20 }), p('c', { tasks: [{ hours: 40 }] as never, dueDay: 4 })];
+    expect(ids(sortProjects(list, 'size'))).toEqual(['c', 'b', 'a']);
+  });
+
+  it('finished sites by newest first', () => {
+    const list = [p('a', { status: 'delivered', deliveredDay: 3 }), p('b', { status: 'delivered', deliveredDay: 9 })];
+    expect(ids(sortProjects(list, 'due'))).toEqual(['b', 'a']);
   });
 });
