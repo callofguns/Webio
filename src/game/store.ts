@@ -197,6 +197,8 @@ interface Store extends GameState {
   completeGoals: (ids: string[]) => void;
   /** Close the goal popup. */
   dismissGoals: () => void;
+  /** Stop (or restart) your salespeople calling, so you can catch up on projects. */
+  setSalesPaused: (paused: boolean) => void;
   fireEmployee: (employeeId: string) => void;
   // Office (part 5)
   moveOffice: (to: OfficeId) => void;
@@ -440,6 +442,11 @@ export const useGame = create<Store>()(
                 gainXp(COURSES[courseId].xp * EMPLOYEE_XP_MULT);
                 messages.push([`${e.name} finished the ${name} and is back to work.`, 'good']);
               }
+              continue;
+            }
+            if (e.role === 'sales' && s.salesPaused) {
+              // You asked them to hold off. They tidy up their lists instead.
+              e.today.note = 'Paused: not calling anyone';
               continue;
             }
             if (e.role === 'sales') {
@@ -1111,6 +1118,12 @@ export const useGame = create<Store>()(
         },
 
         dismissGoals: () => set({ goalQueue: [] }),
+
+        setSalesPaused: (paused) => {
+          if (!!get().salesPaused === paused) return;
+          set({ salesPaused: paused });
+          log(paused ? 'Your salespeople stopped calling so you can catch up on projects.' : 'Your salespeople are back on the phones.');
+        },
 
         resolveEvent: (choice) => {
           const s = get();

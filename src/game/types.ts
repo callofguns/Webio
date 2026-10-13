@@ -375,6 +375,8 @@ export interface GameState {
   event?: GameEvent | null;
   /** The day the last random event happened. */
   lastEventDay?: number;
+  /** True while you've told your salespeople to stop calling, so you can catch up on projects. */
+  salesPaused?: boolean;
   /** Goals you've reached (and been paid for). */
   goalsDone?: string[];
   /** Goals you just reached, waiting to be celebrated in a popup. */

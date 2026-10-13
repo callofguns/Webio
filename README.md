@@ -147,6 +147,7 @@ Every sales caller doesn't just bring in a lead. They carry on by text themselve
 - They stop signing new sites once you have too many on the go (4, plus 3 for each developer) and hand those leads to you instead
 - They set deadlines from how many sites are already waiting (about 4 days each, shared between you and your developers), so they promise dates the team can hit
 - Send weaker callers on a course so they lose fewer deals
+- Too busy? **Pause sales** on the Team screen. Your salespeople stop calling (they're still paid) until you turn it back on
 
 ## Big clients
 

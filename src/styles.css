@@ -990,3 +990,8 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
 .goal-row.done .goal-check { background: var(--good); border-color: var(--good); }
 .goal-row.done { opacity: 0.6; }
 .goal-reward { color: var(--good); }
+
+/* Pause sales switch on the Team screen. */
+.sales-pause { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.sales-pause.paused { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
+@media (max-width: 600px) { .sales-pause { flex-direction: column; align-items: stretch; } }

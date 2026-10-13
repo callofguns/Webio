@@ -12,6 +12,10 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
+    title: 'Latest changes',
+    notes: ['Pause your salespeople from the Team screen to stop new deals coming in while you catch up on projects. They still get paid, and chats they already started carry on. Tap again to start them calling.'],
+  },
+  {
     title: 'v1.3.0 · Plot Twists',
     notes: [
       'Goals: 21 milestones from your first call to a $50,000 agency, each with a cash reward ($50 to $1,500) paid the moment you reach it. Your next 3 goals are on the Home screen, and the full list is in Settings.',
