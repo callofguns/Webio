@@ -1,8 +1,8 @@
 // The game's version and what's changed in it. The settings menu reads this.
 
-export const VERSION = 'v1.3.0';
+export const VERSION = 'v1.4.0';
 /** A line about this release, shown under the version in settings. */
-export const VERSION_NOTE = 'Plot Twists: random events, goals to chase, and a team that handles more on its own. Thanks for playing!';
+export const VERSION_NOTE = 'Grow the Agency: new team roles, bigger offices, and tools to stay on top of your projects. Thanks for playing!';
 
 export interface ChangeEntry {
   title: string;
@@ -12,7 +12,7 @@ export interface ChangeEntry {
 /** Newest first. */
 export const UPDATE_LOG: ChangeEntry[] = [
   {
-    title: 'Latest changes',
+    title: 'v1.4.0 · Grow the Agency',
     notes: [
       'Three new roles to hire. Project managers make your designers and developers work faster (up to 25% with several) and warn you a couple of days before a site might be late. Support techs fix monthly clients’ crashed sites before anyone notices, and their monthly clients come back with more work more often. QA testers hunt for bugs better than developers, so your developers can keep building.',
       'Two bigger offices after the loft: a Full office floor (20 people, needs reputation 60) and Your own building (30 people, needs reputation 90).',
