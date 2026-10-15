@@ -995,3 +995,20 @@ button, a, .option, .choice { touch-action: manipulation; -webkit-tap-highlight-
 .sales-pause { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 .sales-pause.paused { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--surface)); }
 @media (max-width: 600px) { .sales-pause { flex-direction: column; align-items: stretch; } }
+
+/* The two biggest offices: more desks, so they're smaller. */
+.fp-floor { --floor: #c9ccd6; background: var(--grain), repeating-linear-gradient(90deg, #c4c8d3 0 40px, #ccd0da 40px 80px); }
+.fp-building { --floor: #a88a6c; --floor-2: #9a7d61; background: repeating-linear-gradient(90deg, var(--floor) 0 30px, var(--floor-2) 30px 32px); }
+.fp-floor .fp-desk, .fp-building .fp-desk { width: 44px; height: 32px; }
+.fp-floor .fp-desk-top, .fp-building .fp-desk-top { height: 16px; }
+.fp-floor .fp-desk-top i, .fp-building .fp-desk-top i { width: 18px; }
+@media (max-width: 900px) {
+  .fp-floor .fp-desk, .fp-building .fp-desk { width: 24px; height: 24px; }
+  .fp-floor .fp-desk-top, .fp-building .fp-desk-top { height: 10px; }
+  .fp-floor .fp-desk-top i, .fp-building .fp-desk-top i { width: 10px; height: 3px; top: 3px; }
+  /* Lots of people in a small drawing: smaller faces. */
+  .fp-floor .fp-person, .fp-building .fp-person { top: -4px; margin-left: -9px; }
+  .fp-floor .fp-person .avatar, .fp-building .fp-person .avatar { width: 18px !important; height: 18px !important; font-size: 8px; border-radius: 6px; }
+}
+.role-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 600px) { .role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

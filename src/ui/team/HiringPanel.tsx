@@ -8,7 +8,6 @@ import type { Applicant, JobBoard, Role } from '../../game/types';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { Avatar } from '../components/Avatar';
-import { Tabs } from '../components/Tabs';
 import { money } from '../components/AnimatedNumber';
 import { spring } from '../motion';
 import { initials, LEVEL_NAMES, LevelDots, TraitBadges } from './common';
@@ -36,15 +35,23 @@ function PostJob() {
       <div className="card-title">
         <h2>Post a job</h2>
       </div>
-      <Tabs
-        id="post-role"
-        value={role}
-        onChange={(r) => {
-          setRole(r);
-          setPay(marketPay(r, 2));
-        }}
-        options={(Object.keys(ROLES) as Role[]).map((r) => ({ value: r, label: ROLES[r].label }))}
-      />
+      <div className="option-grid role-grid" role="radiogroup" aria-label="Role">
+        {(Object.keys(ROLES) as Role[]).map((r) => (
+          <button
+            key={r}
+            role="radio"
+            aria-checked={role === r}
+            className={`option ${role === r ? 'on' : ''}`}
+            onClick={() => {
+              setRole(r);
+              setPay(marketPay(r, 2));
+            }}
+          >
+            <span className="o-name">{ROLES[r].label}</span>
+            <span className="o-sub">~{money(marketPay(r, 2))}/day</span>
+          </button>
+        ))}
+      </div>
       <p className="small muted" style={{ margin: '8px 0 14px' }}>{ROLES[role].does}</p>
 
       <div className="field-label">Where to post</div>

@@ -1,15 +1,17 @@
 import { useGame } from '../../game/store';
+import { isBuilder } from '../../game/roles';
 import { Avatar } from '../components/Avatar';
 
-const ROLE_WORD = { designer: 'design', developer: 'dev', sales: 'sales' } as const;
+const ROLE_WORD = { designer: 'design', developer: 'dev', sales: 'sales', pm: 'PM', support: 'support', qa: 'QA' } as const;
 
 /** Small badges for the people on your team who are working on a project, with a live dot while they're at it. */
 export function WorkerChips({ projectId, showEmpty }: { projectId: string; showEmpty?: boolean }) {
   const employees = useGame((s) => s.employees);
-  const crew = employees.filter((e) => e.role !== 'sales' && e.assignedProjectId === projectId);
+  // Builders and testers work on a specific project.
+  const crew = employees.filter((e) => (isBuilder(e.role) || e.role === 'qa') && e.assignedProjectId === projectId);
 
   if (crew.length === 0) {
-    return showEmpty && employees.some((e) => e.role !== 'sales') ? <span className="small faint">Nobody on your team is on this one</span> : null;
+    return showEmpty && employees.some((e) => isBuilder(e.role)) ? <span className="small faint">Nobody on your team is on this one</span> : null;
   }
   return (
     <div className="worker-chips" aria-label="Who is working on this">

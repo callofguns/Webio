@@ -43,8 +43,9 @@ export function bigChance(reputation: number, office: OfficeId): number {
 const COMEBACK_CHANCE: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0.45, 5: 0.7 };
 
 /** The day a happy client will text you again, or null if they won't. */
-export function comebackDay(stars: number, day: number, rand: Rand = defaultRand): number | null {
-  return chance(COMEBACK_CHANCE[stars] ?? 0, rand) ? day + randInt(8, 20, rand) : null;
+export function comebackDay(stars: number, day: number, rand: Rand = defaultRand, bonus = 0): number | null {
+  const base = COMEBACK_CHANCE[stars] ?? 0;
+  return base > 0 && chance(base + bonus, rand) ? day + randInt(8, 20, rand) : null;
 }
 
 /** New things a client could add to the site they already have, that you know how to build. */

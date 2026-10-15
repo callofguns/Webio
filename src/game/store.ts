@@ -39,6 +39,7 @@ import { generateBusinesses } from './businesses';
 import { bigChance, bigClientsOpen, comebackDay, returnDeal } from './bigclients';
 import { dayOffBlocker, dayOffDate, dayOffMorale } from './dayoff';
 import { GOAL_BY_ID, newlyDone } from './goals';
+import { atRisk, atWork, hasSupport, isBuilder, pmBoost, QA_FIND_BONUS, SUPPORT_COMEBACK_BONUS } from './roles';
 import { cancelsAfterOutage, OUTAGE_FIX_HOURS, rollEvent, sickHourWorks, VIRAL_LEADS } from './events';
 import { chooseOption, startCall, timeoutCall, type CallContext, type CallState } from './calls';
 import {
@@ -69,6 +70,7 @@ import {
   isDefaultDesign,
   MAX_POLISH,
   polishSite,
+  progress,
   REPUTATION_FOR_STARS,
   resolveEvent,
   reviewReply,
@@ -317,7 +319,7 @@ export const useGame = create<Store>()(
               stars: x.review!.stars,
               deliveredDay: get().day,
               // Happy clients may come back with more work later.
-              comebackDay: comebackDay(x.review!.stars, get().day),
+              comebackDay: comebackDay(x.review!.stars, get().day, Math.random, retainer && hasSupport(get().employees, get().day) ? SUPPORT_COMEBACK_BONUS : 0),
               ...(retainer ? { retainer: { monthly: owed, nextBillDay: get().day + RETAINER_DAYS, paid: owed, months: 1 } } : {}),
             }));
             set({ employees: get().employees.map((e) => (e.assignedProjectId === p.id ? { ...e, assignedProjectId: null } : e)) });
@@ -404,11 +406,17 @@ export const useGame = create<Store>()(
         // How many designers and developers are on each project, so free people spread out.
         const crowds = { designer: new Map<string, number>(), developer: new Map<string, number>() };
         for (const e of s.employees) {
-          if (e.role !== 'sales' && e.assignedProjectId) {
+          if (isBuilder(e.role) && e.assignedProjectId) {
             const c = crowds[e.role];
             c.set(e.assignedProjectId, (c.get(e.assignedProjectId) ?? 0) + 1);
           }
         }
+
+        // Project managers make the builders faster.
+        const managed = pmBoost(s.employees, s.day);
+        const nameOf = (p: Project) => businesses.find((b) => b.id === p.businessId)?.name ?? 'a project';
+        /** Built, tested and polished: ready to send to the client. */
+        const ready = (p: Project) => allTasksDone(p) && p.polish >= MAX_POLISH && p.foundBugs === 0 && (p.autoTests ?? 0) >= AUTO_TESTS;
 
         const employees = s.employees.map((original) => {
           let e: Employee = { ...original, today: { ...original.today }, carryMinutes: original.carryMinutes + minutes };
@@ -442,6 +450,56 @@ export const useGame = create<Store>()(
                 gainXp(COURSES[courseId].xp * EMPLOYEE_XP_MULT);
                 messages.push([`${e.name} finished the ${name} and is back to work.`, 'good']);
               }
+              continue;
+            }
+            // Project managers keep an eye on every deadline.
+            if (e.role === 'pm') {
+              const active = projects.filter((p) => p.status !== 'delivered');
+              for (const p of active) {
+                if (p.pmWarned || !atRisk(p, s.day)) continue;
+                const left = p.dueDay - s.day;
+                messages.push([
+                  `${e.name} (project manager): ${nameOf(p)}\u2019s site is due ${left === 0 ? 'today' : `in ${left} day${left > 1 ? 's' : ''}`} and is only ${Math.round(progress(p) * 100)}% done. Put more people on it.`,
+                  'bad',
+                ]);
+                projects = projects.map((x) => (x.id === p.id ? { ...x, pmWarned: true } : x));
+              }
+              e.today.note = active.length ? `Keeping ${active.length} project${active.length > 1 ? 's' : ''} on schedule` : 'No projects to manage right now';
+              if (active.length) {
+                e.today.hours += 1;
+                gainXp(8);
+              }
+              continue;
+            }
+            // Support techs look after monthly-plan clients.
+            if (e.role === 'support') {
+              const monthly = projects.filter((p) => p.retainer).length;
+              e.today.note = monthly ? `Looking after ${monthly} monthly client${monthly > 1 ? 's' : ''}` : 'No monthly-plan clients to look after yet';
+              if (monthly) {
+                e.today.hours += 1;
+                gainXp(6);
+              }
+              continue;
+            }
+            // QA testers hunt for bugs: built sites first, then sites still being built.
+            if (e.role === 'qa') {
+              const built = (p: Project) => p.status === 'in_progress' && allTasksDone(p) && ((p.autoTests ?? 0) < AUTO_TESTS || p.hiddenBugs > 0);
+              const building = (p: Project) => p.status === 'in_progress' && !allTasksDone(p) && p.hiddenBugs > 0;
+              const mine = projects.find((p) => p.id === e.assignedProjectId);
+              const target = mine && (built(mine) || building(mine)) ? mine : (projects.find(built) ?? projects.find(building));
+              if (!target) {
+                e.today.note = 'No sites to test right now';
+                continue;
+              }
+              const r = testSite(target, e.level + QA_FIND_BONUS);
+              const next = allTasksDone(target) ? { ...r.project, autoTests: (target.autoTests ?? 0) + 1 } : r.project;
+              if (!ready(target) && ready(next)) messages.push([`${nameOf(target)}'s site is built, tested and polished. You can send it to the client from Projects.`, 'good']);
+              projects = projects.map((p) => (p.id === target.id ? next : p));
+              e.assignedProjectId = target.id;
+              e.autoAssigned = true;
+              e.today.hours += 1;
+              e.today.note = `Testing ${nameOf(target)}'s site for bugs${r.found ? ` (found ${r.found})` : ''}`;
+              gainXp(8);
               continue;
             }
             if (e.role === 'sales' && s.salesPaused) {
@@ -581,7 +639,6 @@ export const useGame = create<Store>()(
                     next = polishSite(target);
                     e.today.note = `Polishing ${name}'s site`;
                   }
-                  const ready = (p: Project) => allTasksDone(p) && p.polish >= MAX_POLISH && p.foundBugs === 0 && (p.autoTests ?? 0) >= AUTO_TESTS;
                   if (!ready(target) && ready(next)) messages.push([`${name}'s site is built, tested and polished. You can send it to the client from Projects.`, 'good']);
                   projects = projects.map((p) => (p.id === target.id ? next : p));
                   e.assignedProjectId = target.id;
@@ -613,7 +670,8 @@ export const useGame = create<Store>()(
                 devLevel: e.level,
                 only: e.role === 'designer' ? 'design' : 'development',
                 events: false,
-                speedMult: productivity(e, s.day) * fx.teamSpeed * (e.role === 'designer' ? fx.designSpeed : 1) * (e.role === 'developer' ? claudeEffects(s.claude).teamBuild : 1),
+                speedMult:
+                  productivity(e, s.day) * fx.teamSpeed * fx.buildSpeed * managed * (e.role === 'designer' ? fx.designSpeed : 1) * (e.role === 'developer' ? claudeEffects(s.claude).teamBuild : 1),
                 qualityBonus: qualityBonus(e),
                 bugMult: bugMult(e),
               });
@@ -1344,7 +1402,22 @@ export const useGame = create<Store>()(
           collectRetainers();
           welcomeBack();
           // Now and then, something unexpected happens.
-          const ev = get().event ? null : rollEvent(get());
+          let ev = get().event ? null : rollEvent(get());
+          if (ev?.kind === 'outage') {
+            const now2 = get();
+            const project = now2.projects.find((p) => p.id === ev!.targetId);
+            const name = now2.businesses.find((b) => b.id === project?.businessId)?.name ?? 'A client';
+            const tech = now2.employees.find((e) => e.role === 'support' && atWork(e, now2.day));
+            if (officeEffects(now2.office, now2.furniture).outageGuard && chance(0.5)) {
+              // Your own server room kept the site up.
+              ev = null;
+            } else if (tech) {
+              // A support tech spots it and fixes it before anyone notices.
+              set({ lastEventDay: ev.day, reputation: now2.reputation + 1 });
+              log(`${tech.name} (support tech) spotted that ${name}\u2019s site was down and fixed it before anyone noticed. +1 reputation.`, 'good');
+              ev = null;
+            }
+          }
           if (ev) set({ event: ev, lastEventDay: ev.day });
           for (const id of returned) {
             const b = get().businesses.find((x) => x.id === id)!;

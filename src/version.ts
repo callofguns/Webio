@@ -14,6 +14,9 @@ export const UPDATE_LOG: ChangeEntry[] = [
   {
     title: 'Latest changes',
     notes: [
+      'Three new roles to hire. Project managers make your designers and developers work faster (up to 25% with several) and warn you a couple of days before a site might be late. Support techs fix monthly clients’ crashed sites before anyone notices, and their monthly clients come back with more work more often. QA testers hunt for bugs better than developers, so your developers can keep building.',
+      'Two bigger offices after the loft: a Full office floor (20 people, needs reputation 60) and Your own building (30 people, needs reputation 90).',
+      'Four new office upgrades: standing desks (designers and developers 5% faster), a meeting room (warmer leads), a game room (team morale +5) and a server room (monthly clients’ sites go down half as often).',
       'Sort your projects by due date, value, status or size. On the Portfolio tab, "Newest" shows your latest finished sites first. The sort you pick is remembered.',
       'Pause your salespeople from the Team screen to stop new deals coming in while you catch up on projects. They still get paid, and chats they already started carry on. Tap again to start them calling.',
     ],
@@ -141,6 +144,6 @@ export const UPDATE_LOG: ChangeEntry[] = [
 export const UPCOMING: ChangeEntry[] = [
   {
     title: 'Coming up',
-    notes: ['More random events.', 'More office upgrades and team roles.', 'Sound effects.'],
+    notes: ['More random events.', 'Sound effects.', 'More things for your new team roles to do.'],
   },
 ];

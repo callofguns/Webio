@@ -32,12 +32,14 @@ function perkList(office: OfficeId, furniture: Parameters<typeof officeEffects>[
   if (fx.morale) out.push(`Team morale +${fx.morale}`);
   if (fx.teamSpeed > 1) out.push(`Team works ${pct(fx.teamSpeed)}% faster`);
   if (fx.designSpeed > 1) out.push(`Designers work ${pct(fx.designSpeed)}% faster`);
+  if (fx.buildSpeed > 1) out.push(`Designers and developers work ${pct(fx.buildSpeed)}% faster`);
   if (fx.playerSpeed > 1) out.push(`You build ${pct(fx.playerSpeed)}% faster`);
   if (fx.presence) out.push(`Owners are friendlier on calls (+${fx.presence} interest)`);
   if (fx.prestige) out.push('Great applicants are more willing to join');
   if (fx.dialMult > 1) out.push(`Sales callers make ${pct(fx.dialMult)}% more calls`);
   if (fx.leadWarmth) out.push('New leads start out warmer');
   if (fx.latePenalty < 6) out.push('Late-night work is less sloppy');
+  if (fx.outageGuard) out.push('Monthly clients’ sites go down half as often');
   if (claude !== 'none') {
     out.push(`${CLAUDE_PLANS[claude].name}: you build ${pct(CLAUDE_PLANS[claude].build)}% faster`);
     if (CLAUDE_PLANS[claude].testMinutes < 60) out.push('Bug tests take half the time');

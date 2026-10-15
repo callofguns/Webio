@@ -15,14 +15,17 @@ import { DAILY_LIVING_COST, NOT_INTERESTED_COOLDOWN, WORKDAY_END, WORKDAY_START,
 // Roles, pay and traits
 
 export const ROLES: Record<Role, { label: string; plural: string; does: string }> = {
-  sales: { label: 'Sales caller', plural: 'Sales callers', does: 'Calls businesses for you and passes on the interested ones. At level 4 they text the clients and sign deals on their own.' },
+  sales: { label: 'Sales caller', plural: 'Sales callers', does: 'Calls businesses for you, then texts the interested ones, sends a quote and tries to sign the deal.' },
   designer: { label: 'Designer', plural: 'Designers', does: 'Plans new projects (asks the client about their style, picks a design and starts the project) and does the design tasks.' },
   developer: { label: 'Developer', plural: 'Developers', does: 'Does the coding tasks on the project you assign.' },
+  pm: { label: 'Project manager', plural: 'Project managers', does: 'Keeps sites on schedule: your designers and developers work faster, and they warn you a couple of days before a site might be late.' },
+  support: { label: 'Support tech', plural: 'Support techs', does: 'Looks after monthly-plan clients: fixes crashed sites before anyone notices, and happy monthly clients come back with more work more often.' },
+  qa: { label: 'QA tester', plural: 'QA testers', does: 'Tests sites for bugs (better than developers do), so your developers can keep building.' },
 };
 
 /** What someone at this level usually earns per day. */
 export function marketPay(role: Role, level: number): number {
-  const [base, perLevel] = { sales: [50, 15], designer: [60, 20], developer: [65, 25] }[role];
+  const [base, perLevel] = { sales: [50, 15], designer: [60, 20], developer: [65, 25], pm: [70, 25], support: [55, 18], qa: [55, 20] }[role];
   return base + perLevel * level;
 }
 

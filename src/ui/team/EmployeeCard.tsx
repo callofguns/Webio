@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useGame } from '../../game/store';
 import { BONUS_AMOUNT, marketPay, ROLES } from '../../game/team';
+import { isBuilder } from '../../game/roles';
 import { dayOffBlocker, dayOffDate, PAID_DAY_OFF_MORALE, UNPAID_DAY_OFF_MORALE } from '../../game/dayoff';
 import type { Employee } from '../../game/types';
 import { Button } from '../components/Button';
@@ -30,7 +31,7 @@ export function EmployeeCard({ e }: { e: Employee }) {
   const knowsAll = day - e.hiredDay >= 5;
   const traits = knowsAll ? e.traits : e.knownTraits;
   const openProjects = projects.filter((p) => p.status !== 'delivered');
-  const builder = e.role !== 'sales';
+  const builder = isBuilder(e.role);
 
   return (
     <div className="card stack" style={{ gap: 12 }}>
@@ -47,6 +48,11 @@ export function EmployeeCard({ e }: { e: Employee }) {
       </div>
 
       <LevelDots level={e.level} />
+      {(e.role === 'pm' || e.role === 'support' || e.role === 'qa') && (
+        <p className="small faint" style={{ marginTop: -4 }}>
+          {ROLES[e.role].does}
+        </p>
+      )}
       {e.role === 'sales' && (
         <p className="small faint" style={{ marginTop: -4 }}>
           {e.level >= 4

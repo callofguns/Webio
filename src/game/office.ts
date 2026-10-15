@@ -6,7 +6,7 @@
 
 import { MAX_TEAM } from './balance';
 
-export type OfficeId = 'bedroom' | 'coworking' | 'small' | 'loft';
+export type OfficeId = 'bedroom' | 'coworking' | 'small' | 'loft' | 'floor' | 'building';
 
 export interface OfficeInfo {
   name: string;
@@ -84,11 +84,49 @@ export const OFFICES: Record<OfficeId, OfficeInfo> = {
     prestige: 15,
     remote: false,
   },
+  floor: {
+    name: 'Full office floor',
+    description: 'A whole floor of a city building, with meeting rooms and a proper reception. Big clients feel at home.',
+    capacity: 20,
+    rent: 450,
+    moveIn: 12000,
+    reputation: 60,
+    morale: 10,
+    speed: 1.15,
+    presence: 13,
+    prestige: 20,
+    remote: false,
+  },
+  building: {
+    name: 'Your own building',
+    description: 'Your name on the front of the building. The best people want to work here, and everyone has heard of you.',
+    capacity: 30,
+    rent: 900,
+    moveIn: 30000,
+    reputation: 90,
+    morale: 12,
+    speed: 1.2,
+    presence: 16,
+    prestige: 28,
+    remote: false,
+  },
 };
 
-export const OFFICE_ORDER: OfficeId[] = ['bedroom', 'coworking', 'small', 'loft'];
+export const OFFICE_ORDER: OfficeId[] = ['bedroom', 'coworking', 'small', 'loft', 'floor', 'building'];
 
-export type FurnitureId = 'laptop' | 'monitor' | 'coffee' | 'plants' | 'headsets' | 'chairs' | 'whiteboard' | 'lounge';
+export type FurnitureId =
+  | 'laptop'
+  | 'monitor'
+  | 'coffee'
+  | 'plants'
+  | 'headsets'
+  | 'chairs'
+  | 'whiteboard'
+  | 'lounge'
+  | 'standing_desks'
+  | 'meeting_room'
+  | 'game_room'
+  | 'server_room';
 
 export interface FurnitureInfo {
   name: string;
@@ -109,9 +147,26 @@ export const FURNITURE: Record<FurnitureId, FurnitureInfo> = {
   chairs: { name: 'Good chairs', icon: '🪑', price: 450, minOffice: 'small', effect: 'Team morale +3 and the team works 5% faster.' },
   whiteboard: { name: 'Whiteboard wall', icon: '📋', price: 250, minOffice: 'small', effect: 'Designers work 10% faster.' },
   lounge: { name: 'Client lounge', icon: '🛋️', price: 1200, minOffice: 'small', effect: 'New leads start out warmer.' },
+  standing_desks: { name: 'Standing desks', icon: '🧍', price: 900, minOffice: 'small', effect: 'Designers and developers work 5% faster.' },
+  meeting_room: { name: 'Meeting room', icon: '🤝', price: 2500, minOffice: 'loft', effect: 'Clients come in to meet you, so new leads start out even warmer.' },
+  game_room: { name: 'Game room', icon: '🎮', price: 3000, minOffice: 'loft', effect: 'Team morale +5.' },
+  server_room: { name: 'Server room', icon: '🗄️', price: 4000, minOffice: 'floor', effect: 'Monthly clients’ sites go down half as often.' },
 };
 
-export const FURNITURE_ORDER: FurnitureId[] = ['laptop', 'monitor', 'coffee', 'plants', 'headsets', 'chairs', 'whiteboard', 'lounge'];
+export const FURNITURE_ORDER: FurnitureId[] = [
+  'laptop',
+  'monitor',
+  'coffee',
+  'plants',
+  'headsets',
+  'chairs',
+  'whiteboard',
+  'lounge',
+  'standing_desks',
+  'meeting_room',
+  'game_room',
+  'server_room',
+];
 
 /** True if the office is at least as big as `min`. */
 export function atLeast(office: OfficeId, min: OfficeId): boolean {
@@ -132,6 +187,8 @@ export interface OfficeEffects {
   teamSpeed: number;
   /** Extra multiplier for designers. */
   designSpeed: number;
+  /** Extra multiplier for designers and developers. */
+  buildSpeed: number;
   /** Multiplies your own building speed. */
   playerSpeed: number;
   /** Extra interest on cold calls. */
@@ -144,6 +201,8 @@ export interface OfficeEffects {
   leadWarmth: number;
   /** Quality lost per late-night hour of work. */
   latePenalty: number;
+  /** A server room keeps monthly clients' sites up more often. */
+  outageGuard: boolean;
 }
 
 export function officeEffects(office: OfficeId, owned: FurnitureId[]): OfficeEffects {
@@ -153,15 +212,17 @@ export function officeEffects(office: OfficeId, owned: FurnitureId[]): OfficeEff
     capacity: o.capacity,
     rent: o.rent,
     // Pay still matters most for morale. The office only adds a little.
-    morale: o.morale + (has.has('coffee') ? 3 : 0) + (has.has('plants') ? 2 : 0) + (has.has('chairs') ? 3 : 0),
+    morale: o.morale + (has.has('coffee') ? 3 : 0) + (has.has('plants') ? 2 : 0) + (has.has('chairs') ? 3 : 0) + (has.has('game_room') ? 5 : 0),
     teamSpeed: o.speed * (has.has('chairs') ? 1.05 : 1),
+    buildSpeed: has.has('standing_desks') ? 1.05 : 1,
     designSpeed: has.has('whiteboard') ? 1.1 : 1,
     playerSpeed: (has.has('laptop') ? 1.15 : 1) * (has.has('monitor') ? 1.05 : 1),
     presence: o.presence,
     prestige: o.prestige,
     dialMult: has.has('headsets') ? 1.2 : 1,
-    leadWarmth: has.has('lounge') ? 8 : 0,
+    leadWarmth: (has.has('lounge') ? 8 : 0) + (has.has('meeting_room') ? 6 : 0),
     latePenalty: has.has('coffee') ? 3 : 6,
+    outageGuard: has.has('server_room'),
   };
 }
 

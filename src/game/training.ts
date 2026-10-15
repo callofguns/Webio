@@ -59,9 +59,9 @@ export const EMPLOYEE_XP_MULT = 2;
 /** Employees like being invested in. */
 export const TRAINING_MORALE = 5;
 
-/** The skill a role learns. */
+/** The skill a role learns. Project managers learn people skills, testers and support techs learn development. */
 export function skillOfRole(role: Role): SkillId {
-  return role === 'designer' ? 'design' : role === 'developer' ? 'development' : 'sales';
+  return role === 'designer' ? 'design' : role === 'developer' || role === 'qa' || role === 'support' ? 'development' : 'sales';
 }
 
 /** Why a course can't be taken at this level, or null if it can. */

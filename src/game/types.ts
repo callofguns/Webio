@@ -267,12 +267,15 @@ export interface Project {
   lastNudgeDay: number | null;
   /** The day this happy client will text you about more work. Missing or null = they won't. */
   comebackDay?: number | null;
+  /** True once a project manager has warned you this site might be late. */
+  pmWarned?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Part 4: hiring
 
-export type Role = 'sales' | 'designer' | 'developer';
+/** pm = project manager, support = support tech, qa = QA tester. */
+export type Role = 'sales' | 'designer' | 'developer' | 'pm' | 'support' | 'qa';
 
 export type Trait = 'reliable' | 'lazy' | 'fast_learner' | 'perfectionist' | 'sloppy' | 'people_person';
 

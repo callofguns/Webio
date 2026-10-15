@@ -134,6 +134,21 @@ About once a week (never in your first few days, and at least 4 days apart), som
 - **A rival agency undercuts a deal**: promise a better price (they stay keen but expect about 15% less) or hold firm (they cool off and might walk away)
 - **A monthly client's site goes down**: fix it now (2 hours of your day, +1 reputation) or leave it (−2 reputation, and a 50% chance they cancel their monthly plan)
 
+## Team roles
+
+| Role | What they do |
+|---|---|
+| Sales caller | Calls businesses, then texts the interested ones, sends a quote and tries to sign the deal |
+| Designer | Plans new projects and does the design work |
+| Developer | Does the coding, then tests and fixes bugs |
+| Project manager | Designers and developers work faster (4% + 2% per level each, up to 25% in total). Warns you 2 days before a site might be late |
+| Support tech | Fixes monthly clients' crashed sites before anyone notices (no popup, +1 reputation). Monthly clients come back with more work more often |
+| QA tester | Tests sites for bugs, better than developers do, even while they're still being built |
+
+## Bigger offices and upgrades
+
+After the Studio loft come the **Full office floor** (20 people, $450/day, reputation 60) and **Your own building** (30 people, $900/day, reputation 90). New upgrades: **standing desks** (small office+, builders 5% faster), **meeting room** (loft+, warmer leads), **game room** (loft+, morale +5) and **server room** (office floor+, monthly sites go down half as often).
+
 ## Sorting projects
 
 On the Projects screen, **Sort by** puts your projects in order:
